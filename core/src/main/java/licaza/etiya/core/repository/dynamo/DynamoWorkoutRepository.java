@@ -3,6 +3,7 @@ package licaza.etiya.core.repository.dynamo;
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
 
 import jakarta.annotation.PostConstruct;
+import java.util.List;
 import licaza.etiya.core.model.Exercise;
 import licaza.etiya.core.model.GymSet;
 import licaza.etiya.core.model.WeightUnit;
@@ -81,6 +82,11 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     } catch (Exception e) {
       // Table already exist
     }
+  }
+
+  @Override
+  public List<Workout> findAll() {
+    return table.scan().items().stream().collect(java.util.stream.Collectors.toList());
   }
 
   @Override

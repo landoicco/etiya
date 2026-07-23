@@ -1,7 +1,9 @@
 package licaza.etiya.core.functions;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +32,14 @@ public class WorkoutFunctions {
 
       // Return
       return input;
+    };
+  }
+
+  @Bean
+  public Supplier<List<Workout>> getAllWorkouts() {
+    return () -> {
+      System.out.println("🔍 Quering all workouts on DynamoDB...");
+      return workoutRepository.findAll();
     };
   }
 }
