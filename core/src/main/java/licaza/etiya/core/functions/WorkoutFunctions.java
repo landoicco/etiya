@@ -23,14 +23,13 @@ public class WorkoutFunctions {
     return input -> {
       // Assign a unique ID
       if (input.getId() == null || input.getId().isEmpty()) {
-        input.setId(UUID.randomUUID().toString());
+        input.setId("wkt-" + UUID.randomUUID().toString());
       }
 
       workoutRepository.save(input);
 
       System.out.println("🏋️‍♂️ Workout registered! ID: " + input.getId());
 
-      // Return
       return input;
     };
   }
