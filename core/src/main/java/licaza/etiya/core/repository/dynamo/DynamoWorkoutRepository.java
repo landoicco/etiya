@@ -72,7 +72,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
                     a.name("exercises").getter(Workout::getExercises).setter(Workout::setExercises))
             .build();
 
-    this.table = enhancedClient.table("Workouts", workoutSchema);
+    this.table = enhancedClient.table("GymAppTable", workoutSchema);
   }
 
   @PostConstruct
