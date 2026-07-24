@@ -3,6 +3,7 @@ package licaza.etiya.core.functions;
 import java.util.List;
 import java.util.function.Function;
 import licaza.etiya.core.model.Gym;
+import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.repository.dynamo.DynamoGymRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GymFunctions {
 
-  private final DynamoGymRepository gymRepository;
+  private final GymRepository gymRepository;
 
   public GymFunctions(DynamoGymRepository gymRepository) {
     this.gymRepository = gymRepository;
