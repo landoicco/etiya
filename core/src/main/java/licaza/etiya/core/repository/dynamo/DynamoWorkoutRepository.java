@@ -67,6 +67,12 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
                 String.class,
                 a -> a.name("dateTime").getter(Workout::getDateTime).setter(Workout::setDateTime))
             .addAttribute(
+                String.class,
+                a -> a.name("gymId").getter(Workout::getGymId).setter(Workout::setGymId))
+            .addAttribute(
+                String.class,
+                a -> a.name("gymName").getter(Workout::getGymName).setter(Workout::setGymName))
+            .addAttribute(
                 EnhancedType.listOf(EnhancedType.documentOf(Exercise.class, exerciseSchema)),
                 a ->
                     a.name("exercises").getter(Workout::getExercises).setter(Workout::setExercises))

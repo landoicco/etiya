@@ -11,5 +11,7 @@ import lombok.NoArgsConstructor;
 public class Workout {
   private String id;
   private String dateTime;
+  private String gymId;
+  private String gymName;
   private List<Exercise> exercises;
 }
