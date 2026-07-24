@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import licaza.etiya.core.model.Gym;
 import licaza.etiya.core.repository.GymRepository;
@@ -89,5 +90,18 @@ public class DynamoGymRepository implements GymRepository {
     return gymTable.scan().items().stream()
         .filter(g -> g.getId().startsWith("gym-"))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Optional<Gym> findById(String id) {
+    // We add 'gym-' prefix, in case is not present
+    String finalId = id.startsWith("gym-") ? id : "gym-" + id;
+
+    System.out.println("⚡ Searching gym by ID: " + finalId);
+
+    // Get item using partition key
+    Gym gym = gymTable.getItem(r -> r.key(k -> k.partitionValue(finalId)));
+
+    return Optional.ofNullable(gym);
   }
 }
