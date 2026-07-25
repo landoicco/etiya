@@ -1,7 +1,5 @@
 package licaza.etiya.core.repository.dynamo;
 
-import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
-
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
@@ -15,42 +13,23 @@ import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @Repository
 public class DynamoGymRepository implements GymRepository {
 
-  private final DynamoDbTable<Gym> gymTable;
+  private final DynamoDbTable<Gym> table;
 
   public DynamoGymRepository(
       @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
-    TableSchema<Gym> gymSchema =
-        StaticTableSchema.builder(Gym.class)
-            .newItemSupplier(Gym::new)
-            .addAttribute(
-                String.class,
-                a ->
-                    a.name("id")
-                        .getter(Gym::getId)
-                        .setter(Gym::setId)
-                        .tags(primaryPartitionKey())) // Set primary key
-            .addAttribute(
-                String.class, a -> a.name("name").getter(Gym::getName).setter(Gym::setName))
-            .addAttribute(
-                String.class,
-                a -> a.name("location").getter(Gym::getLocation).setter(Gym::setLocation))
-            .build();
-
-    this.gymTable = enhancedClient.table("GymAppTable", gymSchema);
+    this.table = enhancedClient.table("GymAppTable", TableSchemaFactory.createGymSchema());
   }
 
   @PostConstruct
   public void initTable() {
     try {
-      this.gymTable.createTable();
+      this.table.createTable();
       System.out.println("🎉 Table 'GymAppTable' created!");
     } catch (Exception e) {
       // Table already exists
@@ -62,7 +41,7 @@ public class DynamoGymRepository implements GymRepository {
     if (!gym.getId().startsWith("gym-")) {
       gym.setId("gym-" + gym.getId());
     }
-    gymTable.putItem(gym);
+    table.putItem(gym);
   }
 
   public List<Gym> searchByName(String query) {
@@ -82,12 +61,12 @@ public class DynamoGymRepository implements GymRepository {
     ScanEnhancedRequest scanRequest =
         ScanEnhancedRequest.builder().filterExpression(filterExpression).build();
 
-    return gymTable.scan(scanRequest).items().stream().collect(Collectors.toList());
+    return table.scan(scanRequest).items().stream().collect(Collectors.toList());
   }
 
   @Override
   public List<Gym> findAll() {
-    return gymTable.scan().items().stream()
+    return table.scan().items().stream()
         .filter(g -> g.getId().startsWith("gym-"))
         .collect(Collectors.toList());
   }
@@ -100,7 +79,7 @@ public class DynamoGymRepository implements GymRepository {
     System.out.println("⚡ Searching gym by ID: " + finalId);
 
     // Get item using partition key
-    Gym gym = gymTable.getItem(r -> r.key(k -> k.partitionValue(finalId)));
+    Gym gym = table.getItem(r -> r.key(k -> k.partitionValue(finalId)));
 
     return Optional.ofNullable(gym);
   }
