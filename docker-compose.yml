@@ -13,7 +13,7 @@ services:
       retries: 3
 
   # Etiya's core app - Spring Cloud Function
-  etiya-core:
+  core-spring:
     build: core/
     container_name: etiya-core-cont
     ports:
