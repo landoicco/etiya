@@ -1,0 +1,34 @@
+meta {
+  name: Register Workout With Invalid Exercise
+  type: http
+  seq: 7
+}
+
+post {
+  url: http://localhost:8080/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "dateTime": "2026-07-24T21:15:00Z",
+    "exercises": [
+      {
+        "exerciseCatalogItemId": "exe-vuelo-espacial",
+        "name": "Flying Exercise",
+        "sets": [
+          { "count": 10, "weight": 0.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 500
+}

@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Exercise {
+
+  private String exerciseCatalogItemId;
+
   @NotBlank(message = "Exercise name cannot be blank")
   private String name;
 
