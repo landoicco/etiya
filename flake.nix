@@ -18,6 +18,7 @@
             maven
             docker
             docker-compose
+            bruno-cli
           ];
 
           shellHook = ''
@@ -27,6 +28,7 @@
             echo "☕ Java:  $(java -version 2>&1 | head -n 1)"
             echo "🛠️ Maven: $(mvn -v | head -n 1 | cut -d' ' -f1-3)"
             echo "🐳 Docker: $(docker --version)"
+            echo "🐶 Bruno CLI: $(bru --version 2>/dev/null || echo "unknown")"
             echo "========================================================="
           '';
         };
