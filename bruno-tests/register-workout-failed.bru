@@ -1,0 +1,33 @@
+meta {
+  name: Register Workout Failed - Jakarta
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8080/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "dateTime": "2026-07-24T20:15:00Z",
+    "exercises": [
+      {
+        "name": "Squats",
+        "sets": [
+          { "count": 12, "weight": -20.5, "unit": null }
+        ]
+      }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 500
+}

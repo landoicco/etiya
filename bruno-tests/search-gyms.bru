@@ -1,0 +1,16 @@
+meta {
+  name: Get All Gyms
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8080/searchGyms
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}
