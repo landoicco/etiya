@@ -47,8 +47,6 @@ public class DynamoGymRepository implements GymRepository {
   public List<Gym> searchByName(String query) {
     String searchKey = "gym-" + query.toLowerCase().replaceAll("\\s+", "-");
 
-    System.out.println("⚡ Searching on DynamoDB: " + searchKey);
-
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":prefix", AttributeValue.builder().s(searchKey).build());
 
@@ -75,8 +73,6 @@ public class DynamoGymRepository implements GymRepository {
   public Optional<Gym> findById(String id) {
     // We add 'gym-' prefix, in case is not present
     String finalId = id.startsWith("gym-") ? id : "gym-" + id;
-
-    System.out.println("⚡ Searching gym by ID: " + finalId);
 
     // Get item using partition key
     Gym gym = table.getItem(r -> r.key(k -> k.partitionValue(finalId)));

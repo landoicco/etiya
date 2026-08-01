@@ -4,8 +4,10 @@ import java.util.List;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ExerciseService {
 
@@ -23,7 +25,9 @@ public class ExerciseService {
 
     // Generate ID slug if empty
     if (input.getId() == null || input.getId().trim().isEmpty()) {
-      input.setId(input.getName().toLowerCase().replaceAll("\\s+", "-"));
+      String generatedId = input.getName().toLowerCase().replaceAll("\\s+", "-");
+      input.setId(generatedId);
+      log.debug("🆔 Generated new slug ID for exercise catalog: {}", generatedId);
     }
 
     // Save on database
@@ -33,6 +37,7 @@ public class ExerciseService {
   }
 
   public List<ExerciseCatalogItem> searchByName(String query) {
+    log.info("🔍 Querying database for exercises matching name: '{}'", query);
     return repository.searchByName(query);
   }
 }
