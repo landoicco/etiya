@@ -9,7 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticTableSchema;
 
 public class TableSchemaFactory {
 
-  // Factory for the Gym scheme
+  // Factory for the Gym schema
   public static TableSchema<Gym> createGymSchema() {
     return StaticTableSchema.builder(Gym.class)
         .newItemSupplier(Gym::new)
@@ -22,7 +22,33 @@ public class TableSchemaFactory {
         .build();
   }
 
-  // Factory for Workout scheme
+  // Factory for ExerciseCatalogItem schema
+  public static TableSchema<ExerciseCatalogItem> createExerciseCatalogItemSchema() {
+    return StaticTableSchema.builder(ExerciseCatalogItem.class)
+        .newItemSupplier(ExerciseCatalogItem::new)
+        .addAttribute(
+            String.class,
+            a ->
+                a.name("id")
+                    .getter(ExerciseCatalogItem::getId)
+                    .setter(ExerciseCatalogItem::setId)
+                    .tags(primaryPartitionKey()))
+        .addAttribute(
+            String.class,
+            a ->
+                a.name("name")
+                    .getter(ExerciseCatalogItem::getName)
+                    .setter(ExerciseCatalogItem::setName))
+        .addAttribute(
+            String.class,
+            a ->
+                a.name("muscleGroup")
+                    .getter(ExerciseCatalogItem::getMuscleGroup)
+                    .setter(ExerciseCatalogItem::setMuscleGroup))
+        .build();
+  }
+
+  // Factory for Workout schema
   public static TableSchema<Workout> createWorkoutSchema() {
     // GymSet
     TableSchema<GymSet> gymSetSchema =

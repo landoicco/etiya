@@ -1,9 +1,7 @@
 package licaza.etiya.core.model;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import java.util.List;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,14 +9,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Exercise {
-
-  private String exerciseCatalogItemId;
+public class ExerciseCatalogItem {
+  private String id;
 
   @NotBlank(message = "Exercise name cannot be blank")
+  @Size(min = 2, max = 50, message = "Exercise name must be between 2 and 50 characters")
   private String name;
 
-  @NotEmpty(message = "An exercise must have at least one set")
-  @Valid
-  private List<GymSet> sets;
+  @NotBlank(message = "Muscle group cannot be blank")
+  private String muscleGroup;
 }

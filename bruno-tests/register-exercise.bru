@@ -1,0 +1,27 @@
+meta {
+  name: Register Exercise Success
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8080/registerExerciseOnCatalog
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Leg Press",
+    "muscleGroup": "Quads"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq exe-leg-press
+}

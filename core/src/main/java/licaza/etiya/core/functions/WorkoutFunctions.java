@@ -9,22 +9,27 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import licaza.etiya.core.model.Exercise;
 import licaza.etiya.core.model.Workout;
-import licaza.etiya.core.repository.GymRepository;
-import licaza.etiya.core.repository.WorkoutRepository;
+import licaza.etiya.core.repository.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class WorkoutFunctions {
 
+  private final ExerciseCatalogItemRepository exerciseCatalogRepository;
   private final WorkoutRepository workoutRepository;
   private final GymRepository gymRepository;
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
-  public WorkoutFunctions(WorkoutRepository workoutRepository, GymRepository gymRepository) {
+  public WorkoutFunctions(
+      WorkoutRepository workoutRepository,
+      GymRepository gymRepository,
+      ExerciseCatalogItemRepository exerciseCatalogRepository) {
     this.workoutRepository = workoutRepository;
     this.gymRepository = gymRepository;
+    this.exerciseCatalogRepository = exerciseCatalogRepository;
   }
 
   @Bean
@@ -46,6 +51,23 @@ public class WorkoutFunctions {
         if (!existGym) {
           throw new IllegalArgumentException(
               "❌ Error: The gym with ID '" + input.getGymId() + "' does not exist.");
+        }
+      }
+
+      // Verify exercise is in catalog
+      if (input.getExercises() != null) {
+        for (Exercise exe : input.getExercises()) {
+          if (exe.getExerciseCatalogItemId() != null
+              && !exe.getExerciseCatalogItemId().trim().isEmpty()) {
+            boolean existExercise =
+                exerciseCatalogRepository.findById(exe.getExerciseCatalogItemId()).isPresent();
+            if (!existExercise) {
+              throw new IllegalArgumentException(
+                  "❌ Error: The exercise with ID '"
+                      + exe.getExerciseCatalogItemId()
+                      + "' does not exist in the master catalog.");
+            }
+          }
         }
       }
 

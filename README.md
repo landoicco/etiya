@@ -3,8 +3,26 @@
 A serverless-ready, high-efficiency backend for tracking gym workouts. Built with Java and **Spring Cloud Function**, and optimized for the AWS Free Tier using **Single Table Design** in DynamoDB.
 
 ---
+## 🚀 How to deploy?
 
-## 🚀 Development Environment (Nix Flake)
+### Local Deployment
+
+This project leverages Docker Compose to run DynamoDB Local (in-memory) alongside the Spring application. It incorporates Spring and Maven Profiles to strictly decouple local development configurations and testing dependencies from production-ready cloud code.
+
+Start the environment (this builds the app with the `local` Maven profile to include Spring Web):
+   ```bash
+   docker compose up --build
+   ```
+   
+   Your functions will be available at `http://localhost:8080/`.
+
+To stop the containers and wipe the temporary in-memory database:
+```bash
+docker compose down -v
+```
+
+
+## 🛠️ Local Development Environment (Nix Flake)
 
 This project unifies its entire development stack using a **Nix Flake**. If you are running NixOS or have the Nix package manager installed, there is no need to manually configure Java, Maven, or test clients.
 
@@ -15,24 +33,6 @@ nix develop
 *This will automatically load OpenJDK 21, Maven, AWS CLI, Docker, and the Bruno CLI (`bru`).*
 
 ---
-
-## 🛠️ Local Setup & Execution
-
-### 1. Start DynamoDB Local (Docker)
-The database runs isolated inside a local container. Spin up the database by executing:
-```bash
-docker run -d -p 8000:8000 amazon/dynamodb-local
-```
-
-### 2. Run the Spring Boot Application
-The project uses Spring Profiles to decouple development from production code. To start the local server pointing to your Docker container, run:
-```bash
-mvn spring-boot:run
-```
-*(The backend will boot on port `8080` and automatically create the unified table `GymAppTable` if it does not exist).*
-
----
-
 ## 📋 Data Architecture (Single Table Design)
 
 To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms** and **Workouts** are stored inside the **same single table** (`GymAppTable`) using a prefix strategy on its primary key (`id`):
