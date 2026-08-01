@@ -19,7 +19,7 @@ public class WorkoutFunctions {
   }
 
   @Bean
-  public Function<Workout, Workout> registerWorkout(WorkoutService workoutService) {
+  public Function<Workout, Workout> registerWorkout(WorkoutService service) {
     return input -> {
       // Count number of exercises in Workout
       int exerciseCount = (input.getExercises() != null) ? input.getExercises().size() : 0;
@@ -28,7 +28,7 @@ public class WorkoutFunctions {
           input.getGymId(),
           exerciseCount);
 
-      Workout savedWorkout = workoutService.registerWorkout(input);
+      Workout savedWorkout = service.registerWorkout(input);
 
       log.info(
           "🏋️‍♂️ Workout successfully registered and persisted with ID: {}", savedWorkout.getId());
@@ -41,7 +41,7 @@ public class WorkoutFunctions {
     return () -> {
       log.info("📥 Incoming request to fetch all workouts.");
 
-      List<Workout> workouts = workoutService.getAllWorkouts();
+      List<Workout> workouts = service.getAllWorkouts();
 
       log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
       return workouts;

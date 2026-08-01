@@ -1,6 +1,7 @@
 package licaza.etiya.core.repository.dynamo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,7 +23,9 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
 
   @Override
   public List<Workout> findAll() {
-    return table.scan().items().stream().collect(java.util.stream.Collectors.toList());
+    return table.scan().items().stream()
+        .filter(wkt -> wkt.getId().startsWith("wkt-"))
+        .collect(Collectors.toList());
   }
 
   @Override

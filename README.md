@@ -35,7 +35,7 @@ nix develop
 ---
 ## 📋 Data Architecture (Single Table Design)
 
-To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms** and **Workouts** are stored inside the **same single table** (`GymAppTable`) using a prefix strategy on its primary key (`id`):
+To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms** and **Workouts** are stored inside the **same single table** using a prefix strategy on its primary key (`id`):
 
 * `gym-<slug>`: Records corresponding to the global catalog of gym venues.
 * `wkt-<uuid>`: Workout session records, which optionally include denormalized `gymId` and `gymName` fields to eliminate expensive runtime queries (*JOINs*).
