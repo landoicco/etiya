@@ -5,9 +5,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.service.WorkoutService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class WorkoutFunctions {
   private final WorkoutService service;
@@ -19,8 +21,17 @@ public class WorkoutFunctions {
   @Bean
   public Function<Workout, Workout> registerWorkout(WorkoutService workoutService) {
     return input -> {
+      // Count number of exercises in Workout
+      int exerciseCount = (input.getExercises() != null) ? input.getExercises().size() : 0;
+      log.info(
+          "📥 Incoming request to register workout at Gym ID: '{}' with {} exercises.",
+          input.getGymId(),
+          exerciseCount);
+
       Workout savedWorkout = workoutService.registerWorkout(input);
-      System.out.println("🏋️‍♂️ Workout saved successfully! ID: " + savedWorkout.getId());
+
+      log.info(
+          "🏋️‍♂️ Workout successfully registered and persisted with ID: {}", savedWorkout.getId());
       return savedWorkout;
     };
   }
@@ -28,8 +39,12 @@ public class WorkoutFunctions {
   @Bean
   public Supplier<List<Workout>> getAllWorkouts(WorkoutService workoutService) {
     return () -> {
-      System.out.println("🔍 Querying all workouts on DynamoDB...");
-      return workoutService.getAllWorkouts();
+      log.info("📥 Incoming request to fetch all workouts.");
+
+      List<Workout> workouts = workoutService.getAllWorkouts();
+
+      log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
+      return workouts;
     };
   }
 }

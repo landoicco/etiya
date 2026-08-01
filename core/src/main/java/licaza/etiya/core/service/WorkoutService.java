@@ -8,8 +8,10 @@ import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.repository.WorkoutRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class WorkoutService {
 
@@ -37,6 +39,7 @@ public class WorkoutService {
     // Generate unique ID
     if (input.getId() == null || input.getId().isEmpty()) {
       input.setId("wkt-" + UUID.randomUUID().toString());
+      log.debug("🆔 Generated new unique UUID for workout: {}", input.getId());
     }
 
     workoutRepository.save(input);
@@ -44,17 +47,20 @@ public class WorkoutService {
   }
 
   public List<Workout> getAllWorkouts() {
+    log.info("🗄️ Fetching all workout records from the main table...");
     return workoutRepository.findAll();
   }
 
   // Validate Gym and Exercise data is consistent
   private void validateBusinessRules(Workout input) {
-    // if (true) return; // Disable on development
+    // log.warn("⚠️ WARNING: Business rule validations are TEMPORARILY DISABLED for workouts! ⚠️");
+    // return;
 
     // Verify Gym is on catalog
     if (input.getGymId() != null && !input.getGymId().trim().isEmpty()) {
       boolean existGym = gymRepository.findById(input.getGymId()).isPresent();
       if (!existGym) {
+        log.error("❌ Gym validation failed. ID '{}' does not exist in catalog.", input.getGymId());
         throw new IllegalArgumentException(
             "❌ Error: The gym with ID '" + input.getGymId() + "' does not exist.");
       }
@@ -68,6 +74,9 @@ public class WorkoutService {
           boolean existExercise =
               exerciseCatalogRepository.findById(exe.getExerciseCatalogItemId()).isPresent();
           if (!existExercise) {
+            log.error(
+                "❌ Exercise validation failed. Catalog Item ID '{}' not found.",
+                exe.getExerciseCatalogItemId());
             throw new IllegalArgumentException(
                 "❌ Error: The exercise with ID '"
                     + exe.getExerciseCatalogItemId()
