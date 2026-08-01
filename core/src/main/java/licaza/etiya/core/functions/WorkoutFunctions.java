@@ -3,15 +3,19 @@ package licaza.etiya.core.functions;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import licaza.etiya.core.exception.FunctionWrapper;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.service.WorkoutService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 @Slf4j
 @Configuration
 public class WorkoutFunctions {
+
   private final WorkoutService service;
 
   public WorkoutFunctions(WorkoutService service) {
@@ -19,32 +23,55 @@ public class WorkoutFunctions {
   }
 
   @Bean
-  public Function<Workout, Workout> registerWorkout(WorkoutService service) {
-    return input -> {
-      // Count number of exercises in Workout
-      int exerciseCount = (input.getExercises() != null) ? input.getExercises().size() : 0;
-      log.info(
-          "📥 Incoming request to register workout at Gym ID: '{}' with {} exercises.",
-          input.getGymId(),
-          exerciseCount);
+  public Function<Message<Workout>, Message<?>> registerWorkout() {
+    return FunctionWrapper.<Workout, Object>safe(
+        input -> {
 
-      Workout savedWorkout = service.registerWorkout(input);
+          // Get Workout object from payload
+          Workout workoutInput = input.getPayload();
 
-      log.info(
-          "🏋️‍♂️ Workout successfully registered and persisted with ID: {}", savedWorkout.getId());
-      return savedWorkout;
-    };
+          int exerciseCount =
+              (workoutInput.getExercises() != null) ? workoutInput.getExercises().size() : 0;
+          log.info(
+              "📥 Incoming request to register workout at Gym ID: '{}' with {} exercises.",
+              workoutInput.getGymId(),
+              exerciseCount);
+
+          Workout savedWorkout = service.registerWorkout(workoutInput);
+
+          log.info(
+              "🏋️‍♂️ Workout successfully registered and persisted with ID: {}",
+              savedWorkout.getId());
+
+          // Build return message
+          Message<Object> response =
+              MessageBuilder.withPayload((Object) savedWorkout)
+                  .setHeader("statusCode", 201)
+                  .setHeader("Content-Type", "application/json")
+                  .build();
+
+          return response;
+        });
   }
 
   @Bean
-  public Supplier<List<Workout>> getAllWorkouts(WorkoutService workoutService) {
-    return () -> {
-      log.info("📥 Incoming request to fetch all workouts.");
+  public Supplier<Message<?>> getAllWorkouts() {
+    return FunctionWrapper.<Object>safe(
+        () -> {
+          log.info("📥 Incoming request to fetch all workouts.");
 
-      List<Workout> workouts = service.getAllWorkouts();
+          List<Workout> workouts = service.getAllWorkouts();
 
-      log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
-      return workouts;
-    };
+          log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
+
+          // Build return message
+          Message<Object> response =
+              MessageBuilder.withPayload((Object) workouts)
+                  .setHeader("statusCode", 200)
+                  .setHeader("Content-Type", "application/json")
+                  .build();
+
+          return response;
+        });
   }
 }
