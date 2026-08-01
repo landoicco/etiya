@@ -1,6 +1,5 @@
 package licaza.etiya.core.repository.dynamo;
 
-import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,16 +23,6 @@ public class DynamoGymRepository implements GymRepository {
   public DynamoGymRepository(
       @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
     this.table = enhancedClient.table("GymAppTable", TableSchemaFactory.createGymSchema());
-  }
-
-  @PostConstruct
-  public void initTable() {
-    try {
-      this.table.createTable();
-      System.out.println("🎉 Table 'GymAppTable' created!");
-    } catch (Exception e) {
-      // Table already exists
-    }
   }
 
   public void save(Gym gym) {
