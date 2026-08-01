@@ -1,6 +1,7 @@
 package licaza.etiya.core.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,11 +14,12 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 @Profile("local") // Only used for DynamoDB local on Docker
 public class DynamoDbLocalInitializer {
 
+  @Value("${etiya.dynamodb.table-name}")
+  private String tableName;
+
   @Bean
   public CommandLineRunner initLocalTable(DynamoDbClient ddbClient) {
     return args -> {
-      String tableName = "GymAppTable";
-
       log.info("🔍 [DynamoDB Local] Checking database environment...");
 
       try {

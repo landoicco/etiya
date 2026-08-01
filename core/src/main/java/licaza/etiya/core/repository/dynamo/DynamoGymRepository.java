@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import licaza.etiya.core.model.Gym;
 import licaza.etiya.core.repository.GymRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -21,8 +22,9 @@ public class DynamoGymRepository implements GymRepository {
   private final DynamoDbTable<Gym> table;
 
   public DynamoGymRepository(
-      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
-    this.table = enhancedClient.table("GymAppTable", TableSchemaFactory.createGymSchema());
+      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient,
+      @Value("${etiya.dynamodb.table-name}") String tableName) {
+    this.table = enhancedClient.table(tableName, TableSchemaFactory.createGymSchema());
   }
 
   public void save(Gym gym) {

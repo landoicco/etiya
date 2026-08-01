@@ -4,6 +4,7 @@ import java.util.List;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -14,8 +15,9 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
   private final DynamoDbTable<Workout> table;
 
   public DynamoWorkoutRepository(
-      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
-    this.table = enhancedClient.table("GymAppTable", TableSchemaFactory.createWorkoutSchema());
+      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient,
+      @Value("${etiya.dynamodb.table-name}") String tableName) {
+    this.table = enhancedClient.table(tableName, TableSchemaFactory.createWorkoutSchema());
   }
 
   @Override
