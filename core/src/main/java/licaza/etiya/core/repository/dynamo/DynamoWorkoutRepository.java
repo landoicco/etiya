@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 @Repository
 public class DynamoWorkoutRepository implements WorkoutRepository {
@@ -24,7 +26,18 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
   @Override
   public List<Workout> findAll() {
     return table.scan().items().stream()
-        .filter(wkt -> wkt.getId().startsWith("wkt-"))
+        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<Workout> findByUserId(String userId) {
+    Key partitionKey = Key.builder().partitionValue(userId).build();
+
+    QueryConditional queryConditional = QueryConditional.keyEqualTo(partitionKey);
+
+    return table.query(r -> r.queryConditional(queryConditional)).items().stream()
+        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
         .collect(Collectors.toList());
   }
 

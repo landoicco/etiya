@@ -1,5 +1,5 @@
 meta {
-  name: Register Workout Error 404
+  name: Register Workout Missing User Error
   type: http
 }
 
@@ -15,9 +15,8 @@ headers {
 
 body:json {
   {
-    "userId": "user-default",
     "dateTime": "2026-07-31T18:30:00Z",
-    "gymId": "GYM-INEXISTENTE-999",
+    "gymId": "gym-golds-gym-sunset-st",
     "gymName": "Golds Gym Sunset St",
     "exercises": [
       {
@@ -31,8 +30,8 @@ body:json {
 }
 
 script:post-response {
-  test("Should return a structured JSON from ErrorResponse", function() {
-    expect(res.getStatus()).to.be.oneOf([200, 404]);
+  test("Verify Validation Error on missing user ID", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 400]);
 
     let body = res.getBody();
     if (typeof body === 'string') {
@@ -40,9 +39,9 @@ script:post-response {
     }
     
     expect(body).to.not.be.undefined;
-    expect(body.status).to.equal(404);
-    expect(body.error).to.equal("GYM_NOT_FOUND");
-    expect(body.message).to.contain("does not exist");
-    expect(body).to.have.property('timestamp');
+    expect(body.status).to.equal(400);
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("The user ID cannot be blank");
+    expect(body.timestamp).to.not.be.undefined;
   });
 }

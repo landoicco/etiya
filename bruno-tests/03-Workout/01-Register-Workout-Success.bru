@@ -15,6 +15,7 @@ headers {
 
 body:json {
   {
+    "userId": "user-default",
     "dateTime": "2026-07-31T18:30:00Z",
     "gymId": "gym-golds-gym-sunset-st",
     "gymName": "Golds Gym Sunset St",
@@ -49,6 +50,7 @@ script:post-response {
     
     expect(body).to.not.be.undefined;
     expect(body.id).to.not.be.undefined;
+    expect(body.userId).to.equal("user-default");
     expect(body.gymId).to.equal("gym-golds-gym-sunset-st");
     
     expect(body.exercises).to.be.an('array');
@@ -64,5 +66,3 @@ script:post-response {
     bru.setVar("lastWorkoutId", bodyData.id);
   }
 }
-
-
