@@ -16,13 +16,22 @@ headers {
 
 body:json {
   {
-    "gymId": "GYM-INEXISTENTE-999"
+    "dateTime": "2026-07-31T18:30:00Z",
+    "gymId": "GYM-INEXISTENTE-999",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" }
+        ]
+      }
+    ]
   }
 }
 
 script:post-response {
   test("Should return a structured JSON from ErrorResponse", function() {
-    // On local, we will get a 200 by Spring Web, on AWS, we get a 404
     expect(res.getStatus()).to.be.oneOf([200, 404]);
 
     let body = res.getBody();
@@ -30,7 +39,6 @@ script:post-response {
       body = JSON.parse(body);
     }
     
-    // Verify correct status on body
     expect(body).to.not.be.undefined;
     expect(body.status).to.equal(404);
     expect(body.error).to.equal("GYM_NOT_FOUND");

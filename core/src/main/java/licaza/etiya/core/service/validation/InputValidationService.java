@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.util.Set;
 import java.util.stream.Collectors;
+import licaza.etiya.core.exception.InputValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,10 @@ public class InputValidationService {
   }
 
   public <T> void validate(T input) {
-    if (true) { // Disable validations during development
-      log.warn("⚠️ WARNING: Jakarta validations are TEMPORARILY DISABLED for workouts! ⚠️");
-      return;
-    }
+    // if (true) { // Disable validations during development
+    //   log.warn("⚠️ WARNING: Jakarta validations are TEMPORARILY DISABLED for workouts! ⚠️");
+    //   return;
+    // }
 
     Set<ConstraintViolation<T>> violations = validator.validate(input);
     if (!violations.isEmpty()) {
@@ -29,7 +30,7 @@ public class InputValidationService {
           violations.stream()
               .map(ConstraintViolation::getMessage)
               .collect(Collectors.joining(", "));
-      throw new IllegalArgumentException("❌ Validation Error: " + errorMsg);
+      throw new InputValidationException("❌ Validation Error: " + errorMsg);
     }
   }
 }
