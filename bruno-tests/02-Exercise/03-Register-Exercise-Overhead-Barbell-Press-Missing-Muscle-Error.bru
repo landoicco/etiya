@@ -1,0 +1,36 @@
+meta {
+  name: Register Exercise Overhead Barbell Press Missing Muscle Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerExerciseOnCatalog
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Overhead Barbell Press"
+  }
+}
+
+script:post-response {
+  test("Verify Validation Error on missing muscle group", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 400]);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+
+    expect(body.status).to.equal(400);
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("Muscle group cannot be blank");
+    expect(body.timestamp).to.not.be.undefined;
+  });
+}
