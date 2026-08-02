@@ -1,0 +1,40 @@
+meta {
+  name: Register Workout Error 404
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "gymId": "GYM-INEXISTENTE-999"
+  }
+}
+
+script:post-response {
+  test("Should return a structured JSON from ErrorResponse", function() {
+    // On local, we will get a 200 by Spring Web, on AWS, we get a 404
+    expect(res.getStatus()).to.be.oneOf([200, 404]);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+    
+    // Verify correct status on body
+    expect(body).to.not.be.undefined;
+    expect(body.status).to.equal(404);
+    expect(body.error).to.equal("GYM_NOT_FOUND");
+    expect(body.message).to.contain("does not exist");
+    expect(body).to.have.property('timestamp');
+  });
+}

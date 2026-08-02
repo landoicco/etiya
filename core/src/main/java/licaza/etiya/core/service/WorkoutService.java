@@ -2,6 +2,8 @@ package licaza.etiya.core.service;
 
 import java.util.List;
 import java.util.UUID;
+import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
+import licaza.etiya.core.exception.GymNotFoundException;
 import licaza.etiya.core.model.Exercise;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
@@ -53,17 +55,18 @@ public class WorkoutService {
 
   // Validate Gym and Exercise data is consistent
   private void validateBusinessRules(Workout input) {
-    if (true) { // Disable validations during development
-      log.warn("⚠️ WARNING: Business rule validations are TEMPORARILY DISABLED for workouts! ⚠️");
-      return;
-    }
+    // if (true) { // Disable validations during development
+    //   log.warn("⚠️ WARNING: Business rule validations are TEMPORARILY DISABLED for workouts!
+    // ⚠️");
+    //   return;
+    // }
 
     // Verify Gym is on catalog
     if (input.getGymId() != null && !input.getGymId().trim().isEmpty()) {
       boolean existGym = gymRepository.findById(input.getGymId()).isPresent();
       if (!existGym) {
         log.error("❌ Gym validation failed. ID '{}' does not exist in catalog.", input.getGymId());
-        throw new IllegalArgumentException(
+        throw new GymNotFoundException(
             "❌ Error: The gym with ID '" + input.getGymId() + "' does not exist.");
       }
     }
@@ -79,7 +82,7 @@ public class WorkoutService {
             log.error(
                 "❌ Exercise validation failed. Catalog Item ID '{}' not found.",
                 exe.getExerciseCatalogItemId());
-            throw new IllegalArgumentException(
+            throw new ExerciseCatalogItemNotFoundException(
                 "❌ Error: The exercise with ID '"
                     + exe.getExerciseCatalogItemId()
                     + "' does not exist in the master catalog.");

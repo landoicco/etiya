@@ -1,0 +1,69 @@
+meta {
+  name: Register Workout Success
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "dateTime": "2026-07-31T18:30:00Z",
+    "gymId": "gym-golds-gym-sunset-st",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" },
+          { "count": 10, "weight": 80.0, "unit": "KG" }
+        ]
+      },
+      {
+        "name": "Overhead Barbell Press",
+        "sets": [
+          { "count": 10, "weight": 40.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should store Workout with several Exercises successfully", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 201]);
+
+    let body = res.getBody();
+    
+    // If Spring returned a string, parse to JSON
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+    
+    expect(body).to.not.be.undefined;
+    expect(body.id).to.not.be.undefined;
+    expect(body.gymId).to.equal("gym-golds-gym-sunset-st");
+    
+    expect(body.exercises).to.be.an('array');
+    expect(body.exercises.length).to.equal(2);
+    
+    expect(body.exercises[0].name).to.equal("Barbell Bench Press");
+    expect(body.exercises[1].name).to.equal("Overhead Barbell Press");
+  });
+
+  let bodyData = res.getBody();
+  if (typeof bodyData === 'string') { bodyData = JSON.parse(bodyData); }
+  if (bodyData && bodyData.id) {
+    bru.setVar("lastWorkoutId", bodyData.id);
+  }
+}
+
+
