@@ -20,3 +20,19 @@ body:json {
     "targetMuscle": "Chest"
   }
 }
+
+script:post-response {
+  test("Verify Exercise ID and exact name", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 201]);
+    
+    const body = res.getBody();
+
+    expect(body.id).to.equal("exe-barbell-bench-press");
+    expect(body.name).to.equal("Barbell Bench Press");
+  });
+
+  if (res.body && res.body.id) {
+    bru.setVar("generatedExerciseId", res.body.id);
+  }
+}
+

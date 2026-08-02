@@ -21,3 +21,19 @@ body:json {
     "status": "ACTIVE"
   }
 }
+
+script:post-response {
+  test("Verify Gym ID and exact name", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 201]);
+    
+    const body = res.getBody();
+    
+    expect(body.id).to.equal("gym-golds-gym-sunset-st");
+    expect(body.name).to.equal("Golds Gym Sunset St");
+  });
+
+  if (res.body && res.body.id) {
+    bru.setVar("generatedGymId", res.body.id);
+  }
+}
+
