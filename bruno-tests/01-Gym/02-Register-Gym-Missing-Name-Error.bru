@@ -1,0 +1,42 @@
+meta {
+  name: Register Gym Missing Name Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerGym
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "location": "Los Angeles, CA"
+  }
+}
+
+script:post-response {
+  test("Verify Validation Error on missing gym name", function() {
+    // Validate Spring Web response code
+    expect(res.getStatus()).to.equal(200);
+
+    // Get actual code from headers
+    const businessStatus = res.getHeader("statuscode");
+    expect(Number(businessStatus)).to.equal(400);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+
+    // Validate content
+    expect(body.status).to.equal(400);
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("Gym name cannot be blank");
+    expect(body.timestamp).to.not.be.undefined;
+  });
+}

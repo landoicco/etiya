@@ -16,17 +16,22 @@ headers {
 body:json {
   {
     "name": "Golds Gym Sunset St",
-    "location": "Los Angeles, CA",
-    "status": "ACTIVE"
+    "location": "Los Angeles, CA"
   }
 }
 
 script:post-response {
-  test("Verify Gym ID and exact name", function() {
-    expect(res.getStatus()).to.be.oneOf([200, 201]);
+  test("Verify Gym registration success", function() {
+    // Validate Spring Web code
+    expect(res.getStatus()).to.equal(200);
+    
+    // Get actual code from header
+    const businessStatus = res.getHeader("statuscode");
+    expect(Number(businessStatus)).to.equal(201);
     
     const body = res.getBody();
     
+    // Validate data in payload
     expect(body.id).to.equal("gym-golds-gym-sunset-st");
     expect(body.name).to.equal("Golds Gym Sunset St");
   });
@@ -35,4 +40,3 @@ script:post-response {
     bru.setVar("generatedGymId", res.body.id);
   }
 }
-
