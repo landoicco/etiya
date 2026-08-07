@@ -1,91 +1,77 @@
 package licaza.etiya.core.functions;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import licaza.etiya.core.model.Exercise;
+import licaza.etiya.core.exception.FunctionWrapper;
 import licaza.etiya.core.model.Workout;
-import licaza.etiya.core.repository.*;
+import licaza.etiya.core.service.WorkoutService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
+@Slf4j
 @Configuration
 public class WorkoutFunctions {
 
-  private final ExerciseCatalogItemRepository exerciseCatalogRepository;
-  private final WorkoutRepository workoutRepository;
-  private final GymRepository gymRepository;
-  private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+  private final WorkoutService service;
 
-  public WorkoutFunctions(
-      WorkoutRepository workoutRepository,
-      GymRepository gymRepository,
-      ExerciseCatalogItemRepository exerciseCatalogRepository) {
-    this.workoutRepository = workoutRepository;
-    this.gymRepository = gymRepository;
-    this.exerciseCatalogRepository = exerciseCatalogRepository;
+  public WorkoutFunctions(WorkoutService service) {
+    this.service = service;
   }
 
   @Bean
-  public Function<Workout, Workout> registerWorkout() {
-    return input -> {
-      // Jakarta validation, validate annotations (@NotBlank, @NotEmpty, etc.)
-      Set<ConstraintViolation<Workout>> violations = validator.validate(input);
-      if (!violations.isEmpty()) {
-        String errorMsg =
-            violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
-        throw new IllegalArgumentException("❌ Validation Error: " + errorMsg);
-      }
+  public Function<Message<Workout>, Message<?>> registerWorkout() {
+    return FunctionWrapper.<Workout, Object>safe(
+        input -> {
 
-      // Verify gym is in our catalog
-      if (input.getGymId() != null && !input.getGymId().trim().isEmpty()) {
-        boolean existGym = gymRepository.findById(input.getGymId()).isPresent();
-        if (!existGym) {
-          throw new IllegalArgumentException(
-              "❌ Error: The gym with ID '" + input.getGymId() + "' does not exist.");
-        }
-      }
+          // Get Workout object from payload
+          Workout workoutInput = input.getPayload();
 
-      // Verify exercise is in catalog
-      if (input.getExercises() != null) {
-        for (Exercise exe : input.getExercises()) {
-          if (exe.getExerciseCatalogItemId() != null
-              && !exe.getExerciseCatalogItemId().trim().isEmpty()) {
-            boolean existExercise =
-                exerciseCatalogRepository.findById(exe.getExerciseCatalogItemId()).isPresent();
-            if (!existExercise) {
-              throw new IllegalArgumentException(
-                  "❌ Error: The exercise with ID '"
-                      + exe.getExerciseCatalogItemId()
-                      + "' does not exist in the master catalog.");
-            }
-          }
-        }
-      }
+          int exerciseCount =
+              (workoutInput.getExercises() != null) ? workoutInput.getExercises().size() : 0;
+          log.info(
+              "📥 Incoming request to register workout at Gym ID: '{}' with {} exercises.",
+              workoutInput.getGymId(),
+              exerciseCount);
 
-      if (input.getId() == null || input.getId().isEmpty()) {
-        input.setId("wkt-" + UUID.randomUUID().toString());
-      }
+          Workout savedWorkout = service.registerWorkout(workoutInput);
 
-      workoutRepository.save(input);
-      System.out.println("🏋️‍♂️ Workout saved successfully! ID: " + input.getId());
-      return input;
-    };
+          log.info(
+              "🏋️‍♂️ Workout successfully registered and persisted with ID: {}",
+              savedWorkout.getId());
+
+          // Build return message
+          Message<Object> response =
+              MessageBuilder.withPayload((Object) savedWorkout)
+                  .setHeader("statusCode", 201)
+                  .setHeader("Content-Type", "application/json")
+                  .build();
+
+          return response;
+        });
   }
 
   @Bean
-  public Supplier<List<Workout>> getAllWorkouts() {
-    return () -> {
-      System.out.println("🔍 Quering all workouts on DynamoDB...");
-      return workoutRepository.findAll();
-    };
+  public Supplier<Message<?>> getAllWorkouts() {
+    return FunctionWrapper.<Object>safe(
+        () -> {
+          log.info("📥 Incoming request to fetch all workouts.");
+
+          List<Workout> workouts = service.getAllWorkouts();
+
+          log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
+
+          // Build return message
+          Message<Object> response =
+              MessageBuilder.withPayload((Object) workouts)
+                  .setHeader("statusCode", 200)
+                  .setHeader("Content-Type", "application/json")
+                  .build();
+
+          return response;
+        });
   }
 }

@@ -1,51 +1,63 @@
 package licaza.etiya.core.functions;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import licaza.etiya.core.exception.FunctionWrapper;
 import licaza.etiya.core.model.ExerciseCatalogItem;
-import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
+import licaza.etiya.core.service.ExerciseService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
+@Slf4j
 @Configuration
 public class ExerciseFunctions {
 
-  private final ExerciseCatalogItemRepository repository;
-  private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+  private final ExerciseService service;
 
-  public ExerciseFunctions(ExerciseCatalogItemRepository repository) {
-    this.repository = repository;
+  public ExerciseFunctions(ExerciseService service) {
+    this.service = service;
   }
 
   @Bean
-  public Function<ExerciseCatalogItem, ExerciseCatalogItem> registerExerciseOnCatalog() {
-    return input -> {
-      Set<ConstraintViolation<ExerciseCatalogItem>> violations = validator.validate(input);
-      if (!violations.isEmpty()) {
-        String errorMsg =
-            violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
-        throw new IllegalArgumentException("❌ Validation Error: " + errorMsg);
-      }
+  public Function<Message<ExerciseCatalogItem>, Message<?>> registerExerciseOnCatalog() {
+    return FunctionWrapper.<ExerciseCatalogItem, Object>safe(
+        input -> {
+          ExerciseCatalogItem exerciseInput = input.getPayload();
 
-      if (input.getId() == null || input.getId().trim().isEmpty()) {
-        input.setId(input.getName().toLowerCase().replaceAll("\\s+", "-"));
-      }
+          log.info("📥 Request received to catalog exercise: '{}'", exerciseInput.getName());
 
-      repository.save(input);
-      System.out.println("🏋️‍♂️ Exercise stored on our master catalog! ID: " + input.getId());
-      return input;
-    };
+          ExerciseCatalogItem savedItem = service.registerExercise(exerciseInput);
+
+          log.info(
+              "🏋️‍♂️ Exercise successfully stored on master catalog! ID: {}", savedItem.getId());
+
+          // Build message response
+          return MessageBuilder.withPayload((Object) savedItem)
+              .setHeader("statusCode", 201)
+              .setHeader("Content-Type", "application/json")
+              .build();
+        });
   }
 
   @Bean
-  public Function<String, List<ExerciseCatalogItem>> searchExerciseOnCatalog() {
-    return query -> repository.searchByName(query);
+  public Function<Message<String>, Message<?>> searchExerciseOnCatalog() {
+    return FunctionWrapper.<String, Object>safe(
+        input -> {
+          String query = input.getPayload();
+
+          log.info("📥 Incoming search request for exercise with query: '{}'", query);
+
+          List<ExerciseCatalogItem> results = service.searchByName(query);
+
+          log.info("✨ Exercise search completed. Found {}", results.size());
+
+          return MessageBuilder.withPayload((Object) results)
+              .setHeader("statusCode", 200)
+              .setHeader("Content-Type", "application/json")
+              .build();
+        });
   }
 }

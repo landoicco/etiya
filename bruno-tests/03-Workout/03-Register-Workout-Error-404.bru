@@ -1,0 +1,48 @@
+meta {
+  name: Register Workout Error 404
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "userId": "user-default",
+    "dateTime": "2026-07-31T18:30:00Z",
+    "gymId": "GYM-INEXISTENTE-999",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should return a structured JSON from ErrorResponse", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 404]);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+    
+    expect(body).to.not.be.undefined;
+    expect(body.status).to.equal(404);
+    expect(body.error).to.equal("GYM_NOT_FOUND");
+    expect(body.message).to.contain("does not exist");
+    expect(body).to.have.property('timestamp');
+  });
+}

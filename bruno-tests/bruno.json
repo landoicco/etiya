@@ -1,5 +1,10 @@
 {
   "version": "1",
   "name": "Etiya Gym App Local Tests",
-  "type": "collection"
+  "type": "collection",
+  "presets": {
+    "request": {
+      "runSequentially": true
+    }
+  }
 }

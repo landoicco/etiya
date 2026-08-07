@@ -1,54 +1,61 @@
 package licaza.etiya.core.functions;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import licaza.etiya.core.exception.FunctionWrapper;
 import licaza.etiya.core.model.Gym;
-import licaza.etiya.core.repository.GymRepository;
-import licaza.etiya.core.repository.dynamo.DynamoGymRepository;
+import licaza.etiya.core.service.GymService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
+@Slf4j
 @Configuration
 public class GymFunctions {
 
-  private final GymRepository gymRepository;
-  private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+  private final GymService service;
 
-  public GymFunctions(DynamoGymRepository gymRepository) {
-    this.gymRepository = gymRepository;
+  public GymFunctions(GymService service) {
+    this.service = service;
   }
 
   @Bean
-  public Function<Gym, Gym> registerGym() {
-    return input -> {
-      // Jakarta validations
-      Set<ConstraintViolation<Gym>> violations = validator.validate(input);
-      if (!violations.isEmpty()) {
-        String errorMsg =
-            violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
-        throw new IllegalArgumentException("❌ Validation Error: " + errorMsg);
-      }
+  public Function<Message<Gym>, Message<?>> registerGym() {
+    return FunctionWrapper.<Gym, Object>safe(
+        input -> {
+          Gym gymInput = input.getPayload();
 
-      // Generate ID, if its empty
-      if (input.getId() == null || input.getId().trim().isEmpty()) {
-        input.setId(input.getName().toLowerCase().replaceAll("\\s+", "-"));
-      }
+          log.info("📥 Request received to register a new gym: '{}'", gymInput.getName());
 
-      gymRepository.save(input);
-      System.out.println("🏢 Gym data saved and validated! ID: " + input.getId());
-      return input;
-    };
+          Gym savedGym = service.registerGym(gymInput);
+
+          log.info("🏢 Gym successfully processed and saved with ID: {}", savedGym.getId());
+
+          return MessageBuilder.withPayload((Object) savedGym)
+              .setHeader("statusCode", 201)
+              .setHeader("Content-Type", "application/json")
+              .build();
+        });
   }
 
   @Bean
-  public Function<String, List<Gym>> searchGyms() {
-    return query -> gymRepository.searchByName(query);
+  public Function<Message<String>, Message<?>> searchGyms() {
+    return FunctionWrapper.<String, Object>safe(
+        input -> {
+          String query = input.getPayload();
+
+          log.info("📥 Request received to search gyms with query: '{}'", query);
+
+          List<Gym> results = service.searchGyms(query);
+
+          log.info("✨ Search completed. Found {} gyms.", results.size());
+
+          return MessageBuilder.withPayload((Object) results)
+              .setHeader("statusCode", 200)
+              .setHeader("Content-Type", "application/json")
+              .build();
+        });
   }
 }

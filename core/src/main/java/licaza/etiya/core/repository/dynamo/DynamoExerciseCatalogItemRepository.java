@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
@@ -19,9 +20,10 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
   private final DynamoDbTable<ExerciseCatalogItem> table;
 
   public DynamoExerciseCatalogItemRepository(
-      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
+      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient,
+      @Value("${etiya.dynamodb.table-name}") String tableName) {
     this.table =
-        enhancedClient.table("GymAppTable", TableSchemaFactory.createExerciseCatalogItemSchema());
+        enhancedClient.table(tableName, TableSchemaFactory.createExerciseCatalogItemSchema());
   }
 
   @Override

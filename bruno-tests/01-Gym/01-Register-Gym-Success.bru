@@ -1,0 +1,42 @@
+meta {
+  name: Register Gym Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerGym
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Golds Gym Sunset St",
+    "location": "Los Angeles, CA"
+  }
+}
+
+script:post-response {
+  test("Verify Gym registration success", function() {
+    // Validate Spring Web code
+    expect(res.getStatus()).to.equal(200);
+    
+    // Get actual code from header
+    const businessStatus = res.getHeader("statuscode");
+    expect(Number(businessStatus)).to.equal(201);
+    
+    const body = res.getBody();
+    
+    // Validate data in payload
+    expect(body.id).to.equal("gym-golds-gym-sunset-st");
+    expect(body.name).to.equal("Golds Gym Sunset St");
+  });
+
+  if (res.body && res.body.id) {
+    bru.setVar("generatedGymId", res.body.id);
+  }
+}

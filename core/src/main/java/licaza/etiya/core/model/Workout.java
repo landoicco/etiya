@@ -14,6 +14,9 @@ import lombok.NoArgsConstructor;
 public class Workout {
   private String id;
 
+  @NotBlank(message = "The user ID cannot be blank")
+  private String userId;
+
   @NotBlank(message = "The workout date and time cannot be blank")
   private String dateTime;
 

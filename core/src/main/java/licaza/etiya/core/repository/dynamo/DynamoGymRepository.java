@@ -1,6 +1,5 @@
 package licaza.etiya.core.repository.dynamo;
 
-import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +8,7 @@ import java.util.stream.Collectors;
 import licaza.etiya.core.model.Gym;
 import licaza.etiya.core.repository.GymRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -22,18 +22,9 @@ public class DynamoGymRepository implements GymRepository {
   private final DynamoDbTable<Gym> table;
 
   public DynamoGymRepository(
-      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient) {
-    this.table = enhancedClient.table("GymAppTable", TableSchemaFactory.createGymSchema());
-  }
-
-  @PostConstruct
-  public void initTable() {
-    try {
-      this.table.createTable();
-      System.out.println("🎉 Table 'GymAppTable' created!");
-    } catch (Exception e) {
-      // Table already exists
-    }
+      @Qualifier("dynamoDbEnhancedClient") DynamoDbEnhancedClient enhancedClient,
+      @Value("${etiya.dynamodb.table-name}") String tableName) {
+    this.table = enhancedClient.table(tableName, TableSchemaFactory.createGymSchema());
   }
 
   public void save(Gym gym) {
@@ -46,8 +37,6 @@ public class DynamoGymRepository implements GymRepository {
 
   public List<Gym> searchByName(String query) {
     String searchKey = "gym-" + query.toLowerCase().replaceAll("\\s+", "-");
-
-    System.out.println("⚡ Searching on DynamoDB: " + searchKey);
 
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":prefix", AttributeValue.builder().s(searchKey).build());
@@ -75,8 +64,6 @@ public class DynamoGymRepository implements GymRepository {
   public Optional<Gym> findById(String id) {
     // We add 'gym-' prefix, in case is not present
     String finalId = id.startsWith("gym-") ? id : "gym-" + id;
-
-    System.out.println("⚡ Searching gym by ID: " + finalId);
 
     // Get item using partition key
     Gym gym = table.getItem(r -> r.key(k -> k.partitionValue(finalId)));

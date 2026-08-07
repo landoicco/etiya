@@ -1,0 +1,36 @@
+meta {
+  name: Register Exercise Overhead Barbell Press Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerExerciseOnCatalog
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Overhead Barbell Press",
+    "muscleGroup": "Chest"
+  }
+}
+
+script:post-response {
+  test("Verify Exercise ID and exact name", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 201]);
+    
+    const body = res.getBody();
+    
+    expect(body.id).to.equal("exe-overhead-barbell-press");
+    expect(body.name).to.equal("Overhead Barbell Press");
+  });
+
+  if (res.body && res.body.id) {
+    bru.setVar("generatedExerciseId", res.body.id);
+  }
+}

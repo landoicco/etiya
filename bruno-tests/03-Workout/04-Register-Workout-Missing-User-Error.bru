@@ -1,0 +1,47 @@
+meta {
+  name: Register Workout Missing User Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/registerWorkout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "dateTime": "2026-07-31T18:30:00Z",
+    "gymId": "gym-golds-gym-sunset-st",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Verify Validation Error on missing user ID", function() {
+    expect(res.getStatus()).to.be.oneOf([200, 400]);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+    
+    expect(body).to.not.be.undefined;
+    expect(body.status).to.equal(400);
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("The user ID cannot be blank");
+    expect(body.timestamp).to.not.be.undefined;
+  });
+}

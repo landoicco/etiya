@@ -1,6 +1,7 @@
 package licaza.etiya.core.repository.dynamo;
 
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
+import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primarySortKey;
 
 import licaza.etiya.core.model.*;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -83,10 +84,13 @@ public class TableSchemaFactory {
         .addAttribute(
             String.class,
             a ->
-                a.name("id")
-                    .getter(Workout::getId)
-                    .setter(Workout::setId)
+                a.name("userId")
+                    .getter(Workout::getUserId)
+                    .setter(Workout::setUserId)
                     .tags(primaryPartitionKey()))
+        .addAttribute(
+            String.class,
+            a -> a.name("id").getter(Workout::getId).setter(Workout::setId).tags(primarySortKey()))
         .addAttribute(
             String.class,
             a -> a.name("dateTime").getter(Workout::getDateTime).setter(Workout::setDateTime))
