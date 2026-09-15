@@ -4,12 +4,18 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    # Add Claude official community input
+    nix-claude-code.url = "github:ryoppippi/nix-claude-code";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, nix-claude-code }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        # Allow Claude unfree license
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "claude-code";
+        };
       in
       {
         devShells.default = pkgs.mkShell {
@@ -19,6 +25,8 @@
             docker
             docker-compose
             bruno-cli
+            # Add Claude
+            nix-claude-code.packages.${system}.default
           ];
 
           shellHook = ''
@@ -29,10 +37,10 @@
             echo "🛠️ Maven: $(mvn -v | head -n 1 | cut -d' ' -f1-3)"
             echo "🐳 Docker: $(docker --version)"
             echo "🐶 Bruno CLI: $(bru --version 2>/dev/null || echo "unknown")"
+            echo "🤖 Claude CLI: Ready $(claude --version)"
             echo "========================================================="
           '';
         };
       }
     );
-}   
-
+}
