@@ -5,7 +5,8 @@ import java.util.Optional;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 
 public interface ExerciseCatalogItemRepository {
-  void save(ExerciseCatalogItem exercise);
+  // Returns false, without overwriting, when an exercise with the same ID already exists
+  boolean create(ExerciseCatalogItem exercise);
 
   // slugPrefix must already be normalized with Slugs.of, like the stored IDs
   List<ExerciseCatalogItem> findBySlugPrefix(String slugPrefix);

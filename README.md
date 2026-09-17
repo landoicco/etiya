@@ -61,6 +61,11 @@ To execute the entire test suite in rapid succession (successful creations, list
 cd bruno-tests && bru run --env Local
 ```
 
+> **Run the suite against a fresh database.** Gyms and exercises can't be created twice (the API answers `409 Conflict`), so a second run over the same data fails on the registration tests. DynamoDB Local runs in memory, so restarting the stack wipes it:
+> ```bash
+> docker compose down -v && docker compose up --build
+> ```
+
 ### Available Endpoints:
 Lists always return `{ "items": [...], "nextCursor": null }`, and errors share the `ErrorResponse` format with real HTTP status codes.
 
