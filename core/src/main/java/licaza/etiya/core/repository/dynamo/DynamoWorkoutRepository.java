@@ -1,7 +1,9 @@
 package licaza.etiya.core.repository.dynamo;
 
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.USER_PK_PREFIX;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.WORKOUT_SK_PREFIX;
+
 import java.util.List;
-import java.util.stream.Collectors;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,22 +25,18 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     this.table = enhancedClient.table(tableName, TableSchemaFactory.createWorkoutSchema());
   }
 
-  @Override
-  public List<Workout> findAll() {
-    return table.scan().items().stream()
-        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
-        .collect(Collectors.toList());
-  }
-
+  // Newest first: the sort key starts with the workout's dateTime
   @Override
   public List<Workout> findByUserId(String userId) {
-    Key partitionKey = Key.builder().partitionValue(userId).build();
+    Key key =
+        Key.builder().partitionValue(USER_PK_PREFIX + userId).sortValue(WORKOUT_SK_PREFIX).build();
 
-    QueryConditional queryConditional = QueryConditional.keyEqualTo(partitionKey);
-
-    return table.query(r -> r.queryConditional(queryConditional)).items().stream()
-        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
-        .collect(Collectors.toList());
+    return table
+        .query(
+            r -> r.queryConditional(QueryConditional.sortBeginsWith(key)).scanIndexForward(false))
+        .items()
+        .stream()
+        .toList();
   }
 
   @Override

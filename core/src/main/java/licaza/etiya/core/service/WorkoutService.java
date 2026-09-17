@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.exception.GymNotFoundException;
+import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Exercise;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
@@ -48,9 +49,13 @@ public class WorkoutService {
     return input;
   }
 
-  public List<Workout> getAllWorkouts() {
-    log.info("🗄️ Fetching all workout records from the main table...");
-    return workoutRepository.findAll();
+  public List<Workout> getWorkoutsByUserId(String userId) {
+    if (userId == null || userId.isBlank()) {
+      throw new InputValidationException("❌ Validation Error: User ID cannot be blank");
+    }
+
+    log.info("🗄️ Fetching workout records for user '{}'...", userId.trim());
+    return workoutRepository.findByUserId(userId.trim());
   }
 
   // Validate Gym and Exercise data is consistent

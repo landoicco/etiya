@@ -1,0 +1,40 @@
+meta {
+  name: Get Workouts By User Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/getWorkoutsByUserId
+  body: text
+  auth: none
+}
+
+headers {
+  Content-Type: text/plain
+}
+
+body:text {
+  user-default
+}
+
+script:post-response {
+  test("Should retrieve workouts for user-default, newest first", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const businessStatus = res.getHeader("statuscode");
+    expect(Number(businessStatus)).to.equal(200);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+
+    expect(body).to.be.an('array');
+    expect(body.length).to.be.at.least(1);
+    expect(body[0].userId).to.equal("user-default");
+
+    for (let i = 1; i < body.length; i++) {
+      expect(body[i - 1].dateTime >= body[i].dateTime).to.be.true;
+    }
+  });
+}

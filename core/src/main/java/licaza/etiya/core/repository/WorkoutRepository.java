@@ -6,7 +6,5 @@ import licaza.etiya.core.model.Workout;
 public interface WorkoutRepository {
   void save(Workout workout);
 
-  List<Workout> findAll();
-
   List<Workout> findByUserId(String userId);
 }

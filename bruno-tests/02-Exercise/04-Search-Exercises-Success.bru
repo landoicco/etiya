@@ -1,0 +1,34 @@
+meta {
+  name: Search Exercises Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/searchExerciseOnCatalog
+  body: text
+  auth: none
+}
+
+headers {
+  Content-Type: text/plain
+}
+
+body:text {
+  barbell
+}
+
+script:post-response {
+  test("Should only match exercises whose name starts with the query", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    let body = res.getBody();
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+
+    expect(body).to.be.an('array');
+    const ids = body.map(e => e.id);
+    expect(ids).to.include("barbell-bench-press");
+    expect(ids).to.not.include("overhead-barbell-press");
+  });
+}

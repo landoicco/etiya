@@ -173,5 +173,15 @@
         </dependency>
       </dependencies>
     </profile>
+    <profile>
+      <id>prod</id>
+      <dependencies>
+        <!-- Lambda runtime adapter, only needed when deployed to AWS -->
+        <dependency>
+          <groupId>org.springframework.cloud</groupId>
+          <artifactId>spring-cloud-function-adapter-aws</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
   </profiles>
 </project>

@@ -2,7 +2,6 @@ package licaza.etiya.core.functions;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import licaza.etiya.core.exception.FunctionWrapper;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.service.WorkoutService;
@@ -55,12 +54,14 @@ public class WorkoutFunctions {
   }
 
   @Bean
-  public Supplier<Message<?>> getAllWorkouts() {
-    return FunctionWrapper.<Object>safe(
-        () -> {
-          log.info("📥 Incoming request to fetch all workouts.");
+  public Function<Message<String>, Message<?>> getWorkoutsByUserId() {
+    return FunctionWrapper.<String, Object>safe(
+        input -> {
+          String userId = input.getPayload();
 
-          List<Workout> workouts = service.getAllWorkouts();
+          log.info("📥 Incoming request to fetch workouts for user: '{}'", userId);
+
+          List<Workout> workouts = service.getWorkoutsByUserId(userId);
 
           log.info("✨ Successfully retrieved {} workouts from DynamoDB.", workouts.size());
 

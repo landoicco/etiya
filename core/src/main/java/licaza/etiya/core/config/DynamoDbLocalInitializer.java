@@ -1,5 +1,6 @@
 package licaza.etiya.core.config;
 
+import licaza.etiya.core.repository.dynamo.TableSchemaFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -36,10 +37,21 @@ public class DynamoDbLocalInitializer {
               CreateTableRequest.builder()
                   .tableName(tableName)
                   .keySchema(
-                      KeySchemaElement.builder().attributeName("id").keyType(KeyType.HASH).build())
+                      KeySchemaElement.builder()
+                          .attributeName(TableSchemaFactory.PK)
+                          .keyType(KeyType.HASH)
+                          .build(),
+                      KeySchemaElement.builder()
+                          .attributeName(TableSchemaFactory.SK)
+                          .keyType(KeyType.RANGE)
+                          .build())
                   .attributeDefinitions(
                       AttributeDefinition.builder()
-                          .attributeName("id")
+                          .attributeName(TableSchemaFactory.PK)
+                          .attributeType(ScalarAttributeType.S)
+                          .build(),
+                      AttributeDefinition.builder()
+                          .attributeName(TableSchemaFactory.SK)
                           .attributeType(ScalarAttributeType.S)
                           .build())
                   .billingMode(BillingMode.PAY_PER_REQUEST)
