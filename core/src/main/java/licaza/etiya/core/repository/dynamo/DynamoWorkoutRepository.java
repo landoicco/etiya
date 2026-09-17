@@ -8,6 +8,7 @@ import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.WORKOUT_SK_
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
@@ -33,7 +34,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     this.table = enhancedClient.table(tableName, TableSchemaFactory.createWorkoutSchema());
   }
 
-  // Newest first: the sort key starts with the workout's startedAt.
+  // Newest first: the sort key is the workout's ULID, which starts with its startedAt.
   // The cursor only carries the sort key and the partition key is rebuilt from userId,
   // so a crafted cursor can never read another user's workouts
   @Override
@@ -63,6 +64,17 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
         (lastKey == null || lastKey.isEmpty()) ? null : encodeCursor(lastKey.get(SK).s());
 
     return new Page<>(page.items(), nextCursor);
+  }
+
+  @Override
+  public Optional<Workout> findById(String userId, String workoutId) {
+    Key key =
+        Key.builder()
+            .partitionValue(USER_PK_PREFIX + userId)
+            .sortValue(WORKOUT_SK_PREFIX + workoutId)
+            .build();
+
+    return Optional.ofNullable(table.getItem(key));
   }
 
   @Override

@@ -1,0 +1,26 @@
+meta {
+  name: Get My Workout Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts/{{registeredWorkoutId}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+script:post-response {
+  test("Should return the workout registered earlier by its ID", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.id).to.equal(bru.getVar("registeredWorkoutId"));
+    expect(body.userId).to.equal(bru.getEnvVar("userId"));
+    expect(body.startedAt).to.equal("2026-07-31T18:30:00Z");
+    expect(body.exercises.length).to.equal(2);
+  });
+}

@@ -23,7 +23,8 @@ public class WorkoutRoutes implements ApiRoutes {
     this.routes =
         Map.of(
             "POST /me/workouts", this::registerWorkout,
-            "GET /me/workouts", this::getMyWorkouts);
+            "GET /me/workouts", this::getMyWorkouts,
+            "GET /me/workouts/{workoutId}", this::getMyWorkout);
   }
 
   @Override
@@ -63,6 +64,15 @@ public class WorkoutRoutes implements ApiRoutes {
     log.info("✨ Successfully retrieved {} workouts from DynamoDB.", page.items().size());
 
     return ApiResponse.ok(page);
+  }
+
+  private ApiResponse getMyWorkout(ApiRequest request) {
+    String userId = request.requireUserId();
+    String workoutId = request.pathParameter("workoutId");
+
+    log.info("📥 Incoming request to fetch workout '{}' for user: '{}'", workoutId, userId);
+
+    return ApiResponse.ok(service.getWorkout(userId, workoutId));
   }
 
   private int parseLimit(String value) {

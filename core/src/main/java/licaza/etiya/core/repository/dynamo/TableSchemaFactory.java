@@ -121,7 +121,7 @@ public class TableSchemaFactory {
             String.class,
             a ->
                 a.name(SK)
-                    .getter(w -> key(WORKOUT_SK_PREFIX, w.getStartedAt(), w.getId()))
+                    .getter(w -> key(WORKOUT_SK_PREFIX, w.getId()))
                     .setter((w, v) -> {})
                     .tags(primarySortKey()))
         .addAttribute(String.class, a -> a.name("id").getter(Workout::getId).setter(Workout::setId))

@@ -43,11 +43,17 @@ script:post-response {
     expect(res.getStatus()).to.equal(201);
 
     const body = res.getBody();
-    expect(body.id).to.not.be.undefined;
+    // A ULID: 26 Crockford base32 characters
+    expect(body.id).to.match(/^[0-9A-HJKMNP-TV-Z]{26}$/);
     expect(body.userId).to.equal(bru.getEnvVar("userId"));
     expect(body.gymId).to.equal("golds-gym-sunset-st");
     expect(body.startedAt).to.equal("2026-07-31T18:30:00Z");
     expect(body.endedAt).to.equal("2026-07-31T19:45:00Z");
     expect(body.exercises.length).to.equal(2);
   });
+
+  const body = res.getBody();
+  if (body && body.id) {
+    bru.setVar("registeredWorkoutId", body.id);
+  }
 }

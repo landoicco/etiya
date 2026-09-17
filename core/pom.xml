@@ -34,6 +34,7 @@
     <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
     <aws-lambda-java-serialization.version>1.4.1</aws-lambda-java-serialization.version>
     <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
+    <ulid-creator.version>5.2.4</ulid-creator.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -88,6 +89,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jackson</artifactId>
+    </dependency>
+    <!-- Workout IDs: sortable by start time, so they double as the sort key -->
+    <dependency>
+      <groupId>com.github.f4b6a3</groupId>
+      <artifactId>ulid-creator</artifactId>
+      <version>${ulid-creator.version}</version>
     </dependency>
     <!-- API Gateway event types, used by the handlers and by the local bridge -->
     <dependency>
