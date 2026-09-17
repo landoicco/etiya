@@ -175,6 +175,10 @@
     </profile>
     <profile>
       <id>prod</id>
+      <properties>
+        <!-- Lambda can't load the nested BOOT-INF layout, so the shade plugin builds a flat jar instead -->
+        <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+      </properties>
       <dependencies>
         <!-- Lambda runtime adapter, only needed when deployed to AWS -->
         <dependency>
@@ -182,6 +186,25 @@
           <artifactId>spring-cloud-function-adapter-aws</artifactId>
         </dependency>
       </dependencies>
+      <build>
+        <plugins>
+          <!-- Transformers that merge Spring metadata files are inherited from spring-boot-starter-parent -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>aws</shadedClassifierName>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.projectlombok:lombok</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>
