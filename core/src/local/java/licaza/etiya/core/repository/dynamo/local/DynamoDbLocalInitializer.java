@@ -1,4 +1,4 @@
-package licaza.etiya.core.config;
+package licaza.etiya.core.repository.dynamo.local;
 
 import licaza.etiya.core.repository.dynamo.TableSchemaFactory;
 import lombok.extern.slf4j.Slf4j;
