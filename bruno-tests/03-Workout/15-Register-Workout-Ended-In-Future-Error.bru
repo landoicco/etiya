@@ -1,0 +1,47 @@
+meta {
+  name: Register Workout Ended In Future Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "startedAt": "{{futureStartedAt}}",
+    "endedAt": "{{futureEndedAt}}",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  // Computed on every run, a hard-coded "future" date would eventually be in the past.
+  // The end is 1 hour ahead, well beyond the 5 minute tolerance
+  const hour = 60 * 60 * 1000;
+  bru.setVar("futureStartedAt", new Date(Date.now() - hour).toISOString());
+  bru.setVar("futureEndedAt", new Date(Date.now() + hour).toISOString());
+}
+
+script:post-response {
+  test("Should reject a workout that ends in the future", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("endedAt cannot be in the future");
+  });
+}

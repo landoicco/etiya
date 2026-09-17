@@ -33,7 +33,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     this.table = enhancedClient.table(tableName, TableSchemaFactory.createWorkoutSchema());
   }
 
-  // Newest first: the sort key starts with the workout's dateTime.
+  // Newest first: the sort key starts with the workout's startedAt.
   // The cursor only carries the sort key and the partition key is rebuilt from userId,
   // so a crafted cursor can never read another user's workouts
   @Override

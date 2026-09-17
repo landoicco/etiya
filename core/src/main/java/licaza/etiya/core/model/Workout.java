@@ -29,6 +29,5 @@ public class Workout {
   private String gymName;
 
   @NotEmpty(message = "A workout must have at least one exercise")
-  @Valid
-  private List<Exercise> exercises;
+  private List<@Valid Exercise> exercises;
 }
