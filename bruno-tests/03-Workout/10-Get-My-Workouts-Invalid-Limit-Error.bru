@@ -1,0 +1,28 @@
+meta {
+  name: Get My Workouts Invalid Limit Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts?limit=500
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 500
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+script:post-response {
+  test("Should reject a limit above the maximum", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("limit must be between 1 and 100");
+  });
+}

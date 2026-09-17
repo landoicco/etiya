@@ -1,0 +1,20 @@
+meta {
+  name: Get Exercise Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises/barbell-bench-press
+  body: none
+  auth: none
+}
+
+script:post-response {
+  test("Should return the exercise by its ID", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.id).to.equal("barbell-bench-press");
+    expect(body.muscleGroup).to.equal("Chest");
+  });
+}

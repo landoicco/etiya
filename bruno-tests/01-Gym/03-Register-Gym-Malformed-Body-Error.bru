@@ -1,0 +1,28 @@
+meta {
+  name: Register Gym Malformed Body Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/gyms
+  body: text
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:text {
+  { "name": "Golds Gym",
+}
+
+script:post-response {
+  test("Should reject a body that is not valid JSON", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("not valid JSON");
+  });
+}

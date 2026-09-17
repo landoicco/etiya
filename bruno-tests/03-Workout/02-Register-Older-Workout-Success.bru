@@ -1,5 +1,5 @@
 meta {
-  name: Register Workout Success
+  name: Register Older Workout Success
   type: http
 }
 
@@ -15,7 +15,7 @@ headers {
 
 body:json {
   {
-    "dateTime": "2026-07-31T18:30:00Z",
+    "dateTime": "2026-07-29T07:00:00Z",
     "gymId": "golds-gym-sunset-st",
     "gymName": "Golds Gym Sunset St",
     "exercises": [
@@ -38,13 +38,7 @@ body:json {
 }
 
 script:post-response {
-  test("Should store the workout under the authenticated user", function() {
+  test("Should store a second, older workout", function() {
     expect(res.getStatus()).to.equal(201);
-
-    const body = res.getBody();
-    expect(body.id).to.not.be.undefined;
-    expect(body.userId).to.equal(bru.getEnvVar("userId"));
-    expect(body.gymId).to.equal("golds-gym-sunset-st");
-    expect(body.exercises.length).to.equal(2);
   });
 }

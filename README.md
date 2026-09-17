@@ -52,9 +52,22 @@ cd bruno-tests && bru run --env Local
 ```
 
 ### Available Endpoints:
-* **Gym Catalog:**
-  * `POST /registerGym` - Registers a gym in the catalog (Validates fields via Jakarta).
-  * `POST /searchGyms` - Predictive prefix-based search engine (Mapped with efficient DynamoDB filter expressions).
-* **Workouts:**
-  * `POST /registerWorkout` - Saves a workout with cascade validation (Gym linking is optional).
-  * `GET /getAllWorkouts` - Retrieves the full workout history log.
+Lists always return `{ "items": [...], "nextCursor": null }`, and errors share the `ErrorResponse` format with real HTTP status codes.
+
+* **Gyms** (`gymsApi` Lambda):
+  * `POST /gyms` - Registers a gym in the catalog (Validates fields via Jakarta).
+  * `GET /gyms?q=golds` - Prefix search by name; without `q` it lists the whole catalog.
+  * `GET /gyms/{gymId}` - Returns one gym.
+* **Exercises** (`exercisesApi` Lambda):
+  * `POST /exercises` - Registers an exercise in the master catalog.
+  * `GET /exercises?q=bench&muscleGroup=chest` - Search by name prefix and/or muscle group (both optional).
+  * `GET /exercises/{exerciseId}` - Returns one exercise.
+* **Workouts** (`workoutsApi` Lambda, authenticated):
+  * `POST /me/workouts` - Saves a workout for the caller, with cascade validation (Gym linking is optional).
+  * `GET /me/workouts?limit=20&cursor=...` - The caller's workouts, newest first, paginated.
+
+### Authentication locally
+On AWS, the user comes from the Cognito `sub` claim validated by API Gateway. Locally, a bridge (`src/local/java`, never packaged for Lambda) builds the same API Gateway events and takes the user from the `X-User-Id` header:
+```bash
+curl -H "X-User-Id: user-default" http://localhost:8080/me/workouts
+```

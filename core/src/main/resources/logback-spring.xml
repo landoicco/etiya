@@ -1,21 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"service":"mi-spring-function","region":"us-east-1"}</customFields>
-            <providers>
-                <timestamp/>
-                <loggerName/>
-                <level/>
-                <message/>
-                <context/>
-                <stackTrace/>
-                <mdc/>
-            </providers>
-        </encoder>
-    </appender>
-
     <!-- Local Profile: Plain text on console -->
     <springProfile name="local">
         <appender name="CONSOLE_TEXT" class="ch.qos.logback.core.ConsoleAppender">
@@ -23,7 +8,7 @@
                 <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
             </encoder>
         </appender>
-        
+
         <root level="INFO">
             <appender-ref ref="CONSOLE_TEXT"/>
         </root>
@@ -31,7 +16,15 @@
     </springProfile>
 
     <!-- AWS Profile: JSON structure for CloudWatch -->
+    <!-- Declared inside the profile because logstash-logback-encoder is only bundled with prod -->
     <springProfile name="aws|prod">
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <!-- Already includes timestamp, level, logger, message, stack trace and MDC -->
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"etiya-core"}</customFields>
+            </encoder>
+        </appender>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE_JSON"/>
         </root>

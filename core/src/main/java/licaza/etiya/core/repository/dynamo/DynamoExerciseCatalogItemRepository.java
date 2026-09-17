@@ -55,13 +55,11 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
         .toList();
   }
 
-  // The catalog is small, so filtering in memory is cheaper than maintaining a GSI
   @Override
-  public List<ExerciseCatalogItem> findByMuscleGroup(String muscleGroup) {
+  public List<ExerciseCatalogItem> findAll() {
     Key key = Key.builder().partitionValue(EXERCISE_PK).build();
 
     return table.query(r -> r.queryConditional(QueryConditional.keyEqualTo(key))).items().stream()
-        .filter(e -> muscleGroup.equalsIgnoreCase(e.getMuscleGroup()))
         .toList();
   }
 }

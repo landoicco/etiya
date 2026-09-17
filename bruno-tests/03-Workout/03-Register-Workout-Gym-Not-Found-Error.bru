@@ -1,5 +1,5 @@
 meta {
-  name: Register Workout Success
+  name: Register Workout Gym Not Found Error
   type: http
 }
 
@@ -16,7 +16,7 @@ headers {
 body:json {
   {
     "dateTime": "2026-07-31T18:30:00Z",
-    "gymId": "golds-gym-sunset-st",
+    "gymId": "GYM-INEXISTENTE-999",
     "gymName": "Golds Gym Sunset St",
     "exercises": [
       {
@@ -38,13 +38,11 @@ body:json {
 }
 
 script:post-response {
-  test("Should store the workout under the authenticated user", function() {
-    expect(res.getStatus()).to.equal(201);
+  test("Should return 404 when the gym is not in the catalog", function() {
+    expect(res.getStatus()).to.equal(404);
 
     const body = res.getBody();
-    expect(body.id).to.not.be.undefined;
-    expect(body.userId).to.equal(bru.getEnvVar("userId"));
-    expect(body.gymId).to.equal("golds-gym-sunset-st");
-    expect(body.exercises.length).to.equal(2);
+    expect(body.error).to.equal("GYM_NOT_FOUND");
+    expect(body.message).to.contain("does not exist");
   });
 }

@@ -1,11 +1,11 @@
 package licaza.etiya.core.service;
 
-import java.util.List;
 import java.util.UUID;
 import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.exception.GymNotFoundException;
 import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Exercise;
+import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.repository.GymRepository;
@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class WorkoutService {
+
+  private static final int DEFAULT_PAGE_SIZE = 20;
+  private static final int MAX_PAGE_SIZE = 100;
 
   private final InputValidationService validatorService;
   private final GymRepository gymRepository;
@@ -34,7 +37,10 @@ public class WorkoutService {
     this.workoutRepository = workoutRepository;
   }
 
-  public Workout registerWorkout(Workout input) {
+  public Workout registerWorkout(String userId, Workout input) {
+    // The owner always comes from the authenticated caller, never from the request body
+    input.setUserId(userId);
+
     validatorService.validate(input);
 
     validateBusinessRules(input);
@@ -49,13 +55,16 @@ public class WorkoutService {
     return input;
   }
 
-  public List<Workout> getWorkoutsByUserId(String userId) {
-    if (userId == null || userId.isBlank()) {
-      throw new InputValidationException("❌ Validation Error: User ID cannot be blank");
+  // limit is optional and defaults to DEFAULT_PAGE_SIZE
+  public Page<Workout> getWorkoutsByUserId(String userId, Integer limit, String cursor) {
+    int pageSize = (limit == null) ? DEFAULT_PAGE_SIZE : limit;
+    if (pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+      throw new InputValidationException(
+          "❌ Validation Error: limit must be between 1 and " + MAX_PAGE_SIZE);
     }
 
-    log.info("🗄️ Fetching workout records for user '{}'...", userId.trim());
-    return workoutRepository.findByUserId(userId.trim());
+    log.info("🗄️ Fetching up to {} workout records for user '{}'...", pageSize, userId);
+    return workoutRepository.findByUserId(userId, pageSize, cursor);
   }
 
   // Validate Gym and Exercise data is consistent

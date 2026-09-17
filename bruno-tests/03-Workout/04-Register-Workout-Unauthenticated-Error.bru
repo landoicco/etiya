@@ -1,5 +1,5 @@
 meta {
-  name: Register Workout Success
+  name: Register Workout Unauthenticated Error
   type: http
 }
 
@@ -7,10 +7,6 @@ post {
   url: {{baseUrl}}/me/workouts
   body: json
   auth: none
-}
-
-headers {
-  X-User-Id: {{userId}}
 }
 
 body:json {
@@ -38,13 +34,8 @@ body:json {
 }
 
 script:post-response {
-  test("Should store the workout under the authenticated user", function() {
-    expect(res.getStatus()).to.equal(201);
-
-    const body = res.getBody();
-    expect(body.id).to.not.be.undefined;
-    expect(body.userId).to.equal(bru.getEnvVar("userId"));
-    expect(body.gymId).to.equal("golds-gym-sunset-st");
-    expect(body.exercises.length).to.equal(2);
+  test("Should return 401 without an authenticated user", function() {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().error).to.equal("UNAUTHORIZED");
   });
 }

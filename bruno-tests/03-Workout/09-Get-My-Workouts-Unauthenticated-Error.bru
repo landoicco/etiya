@@ -1,0 +1,17 @@
+meta {
+  name: Get My Workouts Unauthenticated Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts
+  body: none
+  auth: none
+}
+
+script:post-response {
+  test("Should return 401 without an authenticated user", function() {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().error).to.equal("UNAUTHORIZED");
+  });
+}

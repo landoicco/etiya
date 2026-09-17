@@ -9,7 +9,7 @@ public interface ExerciseCatalogItemRepository {
 
   List<ExerciseCatalogItem> searchByName(String query);
 
-  List<ExerciseCatalogItem> findByMuscleGroup(String muscleGroup);
+  List<ExerciseCatalogItem> findAll();
 
   Optional<ExerciseCatalogItem> findById(String id);
 }

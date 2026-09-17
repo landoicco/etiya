@@ -1,6 +1,7 @@
 package licaza.etiya.core.service;
 
 import java.util.List;
+import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
@@ -36,8 +37,32 @@ public class ExerciseService {
     return input;
   }
 
-  public List<ExerciseCatalogItem> searchByName(String query) {
-    log.info("🔍 Querying database for exercises matching name: '{}'", query);
-    return repository.searchByName(query);
+  // Both filters are optional; the catalog is small, so the muscle group is filtered in memory
+  public List<ExerciseCatalogItem> searchExercises(String query, String muscleGroup) {
+    log.info(
+        "🔍 Querying database for exercises matching name: '{}' and muscle group: '{}'",
+        query,
+        muscleGroup);
+
+    List<ExerciseCatalogItem> candidates =
+        (query == null || query.isBlank()) ? repository.findAll() : repository.searchByName(query);
+
+    if (muscleGroup == null || muscleGroup.isBlank()) {
+      return candidates;
+    }
+    return candidates.stream()
+        .filter(e -> muscleGroup.equalsIgnoreCase(e.getMuscleGroup()))
+        .toList();
+  }
+
+  public ExerciseCatalogItem getExercise(String id) {
+    return repository
+        .findById(id)
+        .orElseThrow(
+            () ->
+                new ExerciseCatalogItemNotFoundException(
+                    "❌ Error: The exercise with ID '"
+                        + id
+                        + "' does not exist in the master catalog."));
   }
 }

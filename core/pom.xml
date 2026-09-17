@@ -29,6 +29,11 @@
   <properties>
     <java.version>21</java.version>
     <spring-cloud.version>2025.1.2</spring-cloud.version>
+    <!-- Versions used by spring-cloud-function-adapter-aws 5.0.3 -->
+    <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
+    <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
+    <aws-lambda-java-serialization.version>1.4.1</aws-lambda-java-serialization.version>
+    <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -79,6 +84,16 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jackson</artifactId>
+    </dependency>
+    <!-- API Gateway event types, used by the handlers and by the local bridge -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-lambda-java-events</artifactId>
+      <version>${aws-lambda-java-events.version}</version>
     </dependency>
   </dependencies>
 
@@ -141,6 +156,7 @@
             <includes>
               <include>src/main/java/**/*.java</include>
               <include>src/test/java/**/*.java</include>
+              <include>src/local/java/**/*.java</include>
             </includes>
             <googleJavaFormat>
               <version>1.17.0</version>
@@ -166,24 +182,66 @@
     <profile>
       <id>local</id>
       <dependencies>
-        <!-- Spring Web only used when running locally -->
+        <!-- Spring Web only used by the local API Gateway bridge -->
         <dependency>
-          <groupId>org.springframework.cloud</groupId>
-          <artifactId>spring-cloud-starter-function-web</artifactId>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
       </dependencies>
+      <build>
+        <plugins>
+          <!-- src/local/java holds code that must never reach the Lambda jar -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>add-local-sources</id>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <phase>generate-sources</phase>
+                <configuration>
+                  <sources>
+                    <source>src/local/java</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>prod</id>
       <properties>
         <!-- Lambda can't load the nested BOOT-INF layout, so the shade plugin builds a flat jar instead -->
         <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+        <!-- Written as Main-Class by the shade plugin; FunctionInvoker uses it to boot Spring -->
+        <start-class>licaza.etiya.core.CoreApplication</start-class>
       </properties>
       <dependencies>
         <!-- Lambda runtime adapter, only needed when deployed to AWS -->
         <dependency>
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-function-adapter-aws</artifactId>
+        </dependency>
+        <!-- The adapter declares these as provided, so they must be bundled explicitly -->
+        <dependency>
+          <groupId>com.amazonaws</groupId>
+          <artifactId>aws-lambda-java-core</artifactId>
+          <version>${aws-lambda-java-core.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>com.amazonaws</groupId>
+          <artifactId>aws-lambda-java-serialization</artifactId>
+          <version>${aws-lambda-java-serialization.version}</version>
+        </dependency>
+        <!-- JSON log encoder used by logback-spring.xml for CloudWatch -->
+        <dependency>
+          <groupId>net.logstash.logback</groupId>
+          <artifactId>logstash-logback-encoder</artifactId>
+          <version>${logstash-logback-encoder.version}</version>
         </dependency>
       </dependencies>
       <build>

@@ -1,0 +1,24 @@
+meta {
+  name: Get My Workouts Other User Empty
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts
+  body: none
+  auth: none
+}
+
+headers {
+  X-User-Id: user-without-workouts
+}
+
+script:post-response {
+  test("Should only return the caller's own workouts", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.items).to.be.an('array').that.is.empty;
+    expect(body.nextCursor).to.equal(null);
+  });
+}

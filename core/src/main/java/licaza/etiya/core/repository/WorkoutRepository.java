@@ -1,10 +1,11 @@
 package licaza.etiya.core.repository;
 
-import java.util.List;
+import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 
 public interface WorkoutRepository {
   void save(Workout workout);
 
-  List<Workout> findByUserId(String userId);
+  // cursor is the nextCursor of a previous page, or null for the first one
+  Page<Workout> findByUserId(String userId, int limit, String cursor);
 }

@@ -4,13 +4,9 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/registerExerciseOnCatalog
+  url: {{baseUrl}}/exercises
   body: json
   auth: none
-}
-
-headers {
-  Content-Type: application/json
 }
 
 body:json {
@@ -22,16 +18,10 @@ body:json {
 
 script:post-response {
   test("Verify Exercise ID and exact name", function() {
-    expect(res.getStatus()).to.be.oneOf([200, 201]);
-    
-    const body = res.getBody();
+    expect(res.getStatus()).to.equal(201);
 
+    const body = res.getBody();
     expect(body.id).to.equal("barbell-bench-press");
     expect(body.name).to.equal("Barbell Bench Press");
   });
-
-  if (res.body && res.body.id) {
-    bru.setVar("generatedExerciseId", res.body.id);
-  }
 }
-

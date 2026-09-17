@@ -1,16 +1,12 @@
 meta {
-  name: Register Exercise Overhead Barbell Press Missing Muscle Error
+  name: Register Exercise Missing Muscle Error
   type: http
 }
 
 post {
-  url: {{baseUrl}}/registerExerciseOnCatalog
+  url: {{baseUrl}}/exercises
   body: json
   auth: none
-}
-
-headers {
-  Content-Type: application/json
 }
 
 body:json {
@@ -21,13 +17,9 @@ body:json {
 
 script:post-response {
   test("Verify Validation Error on missing muscle group", function() {
-    expect(res.getStatus()).to.be.oneOf([200, 400]);
+    expect(res.getStatus()).to.equal(400);
 
-    let body = res.getBody();
-    if (typeof body === 'string') {
-      body = JSON.parse(body);
-    }
-
+    const body = res.getBody();
     expect(body.status).to.equal(400);
     expect(body.error).to.equal("VALIDATION_ERROR");
     expect(body.message).to.contain("Muscle group cannot be blank");

@@ -1,6 +1,7 @@
 package licaza.etiya.core.service;
 
 import java.util.List;
+import licaza.etiya.core.exception.GymNotFoundException;
 import licaza.etiya.core.model.Gym;
 import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
@@ -33,8 +34,22 @@ public class GymService {
     return input;
   }
 
+  // Without a query, the whole catalog is returned
   public List<Gym> searchGyms(String query) {
+    if (query == null || query.isBlank()) {
+      log.info("🔍 No query given, listing the whole gym catalog");
+      return gymRepository.findAll();
+    }
+
     log.info("🔍 Searching gyms in database with query: '{}'", query);
     return gymRepository.searchByName(query);
+  }
+
+  public Gym getGym(String id) {
+    return gymRepository
+        .findById(id)
+        .orElseThrow(
+            () ->
+                new GymNotFoundException("❌ Error: The gym with ID '" + id + "' does not exist."));
   }
 }
