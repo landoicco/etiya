@@ -1,4 +1,4 @@
-package licaza.etiya.core.local;
+package licaza.etiya.core.api.local;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext;
@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import licaza.etiya.core.api.ApiRoutes;
-import licaza.etiya.core.aws.ApiGatewayAdapter;
+import licaza.etiya.core.api.apigateway.ApiGatewayAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;

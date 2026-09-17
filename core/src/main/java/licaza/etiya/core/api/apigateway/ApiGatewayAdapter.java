@@ -1,4 +1,4 @@
-package licaza.etiya.core.aws;
+package licaza.etiya.core.api.apigateway;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
