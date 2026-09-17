@@ -35,10 +35,18 @@ nix develop
 ---
 ## 📋 Data Architecture (Single Table Design)
 
-To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms** and **Workouts** are stored inside the **same single table** using a prefix strategy on its primary key (`id`):
+To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms**, **Exercises** and **Workouts** are stored inside the **same single table**, keyed by a partition key (`PK`) and a sort key (`SK`). Every access pattern is a `GetItem` or a `Query`; the table is never scanned.
 
-* `gym-<slug>`: Records corresponding to the global catalog of gym venues.
-* `wkt-<uuid>`: Workout session records, which optionally include denormalized `gymId` and `gymName` fields to eliminate expensive runtime queries (*JOINs*).
+| Item | `PK` | `SK` | Access patterns |
+|---|---|---|---|
+| Gym | `GYM` | `GYM#<slug>` | Get by ID, prefix search by name, list catalog |
+| Exercise | `EXERCISE` | `EXERCISE#<slug>` | Get by ID, prefix search by name, list catalog |
+| Workout | `USER#<userId>` | `WORKOUT#<ulid>` | Get by ID, list a user's workouts newest first (paginated) |
+
+* **Catalog IDs** are slugs generated from the name (`Golds Gym Sunset St` → `golds-gym-sunset-st`), which is what makes prefix search by name possible.
+* **Workouts** live under their owner's partition, so a user can only ever read their own. They optionally include denormalized `gymId` and `gymName` fields to eliminate expensive runtime queries (*JOINs*).
+* **Workout IDs** are [ULIDs](https://github.com/ulid/spec) generated from `startedAt`. Since a ULID starts with its timestamp, sorting by ID sorts by start time, so one key serves both "get by ID" and "list chronologically".
+* **Workout times** (`startedAt`, `endedAt`) are received as ISO-8601 with a time zone and stored in UTC (`yyyy-MM-ddTHH:mm:ssZ`). Only completed workouts are stored: both are required, the end must be after the start, within 12 hours and not in the future.
 
 ---
 
@@ -65,6 +73,7 @@ Lists always return `{ "items": [...], "nextCursor": null }`, and errors share t
 * **Workouts** (`workoutsApi` Lambda, authenticated):
   * `POST /me/workouts` - Saves a workout for the caller, with cascade validation (Gym linking is optional).
   * `GET /me/workouts?limit=20&cursor=...` - The caller's workouts, newest first, paginated.
+  * `GET /me/workouts/{workoutId}` - Returns one of the caller's workouts (another user's workout returns 404).
 
 ### Authentication locally
 On AWS, the user comes from the Cognito `sub` claim validated by API Gateway. Locally, a bridge (`src/local/java`, never packaged for Lambda) builds the same API Gateway events and takes the user from the `X-User-Id` header:
