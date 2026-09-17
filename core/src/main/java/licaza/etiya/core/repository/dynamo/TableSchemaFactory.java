@@ -37,7 +37,8 @@ public class TableSchemaFactory {
         .addAttribute(String.class, a -> a.name("id").getter(Gym::getId).setter(Gym::setId))
         .addAttribute(String.class, a -> a.name("name").getter(Gym::getName).setter(Gym::setName))
         .addAttribute(
-            String.class, a -> a.name("location").getter(Gym::getLocation).setter(Gym::setLocation))
+            String.class, a -> a.name("branch").getter(Gym::getBranch).setter(Gym::setBranch))
+        .addAttribute(String.class, a -> a.name("city").getter(Gym::getCity).setter(Gym::setCity))
         .build();
   }
 

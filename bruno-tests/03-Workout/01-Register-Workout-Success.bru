@@ -17,7 +17,7 @@ body:json {
   {
     "startedAt": "2026-07-31T18:30:00Z",
     "endedAt": "2026-07-31T19:45:00Z",
-    "gymId": "golds-gym-sunset-st",
+    "gymId": "golds-gym-sunset-st-los-angeles",
     "gymName": "Golds Gym Sunset St",
     "exercises": [
       {
@@ -46,7 +46,7 @@ script:post-response {
     // A ULID: 26 Crockford base32 characters
     expect(body.id).to.match(/^[0-9A-HJKMNP-TV-Z]{26}$/);
     expect(body.userId).to.equal(bru.getEnvVar("userId"));
-    expect(body.gymId).to.equal("golds-gym-sunset-st");
+    expect(body.gymId).to.equal("golds-gym-sunset-st-los-angeles");
     expect(body.startedAt).to.equal("2026-07-31T18:30:00Z");
     expect(body.endedAt).to.equal("2026-07-31T19:45:00Z");
     expect(body.exercises.length).to.equal(2);

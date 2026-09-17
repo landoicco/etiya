@@ -43,7 +43,9 @@ To maximize performance and guarantee that the application remains 100% free on 
 | Exercise | `EXERCISE` | `EXERCISE#<slug>` | Get by ID, prefix search by name, list catalog |
 | Workout | `USER#<userId>` | `WORKOUT#<ulid>` | Get by ID, list a user's workouts newest first (paginated) |
 
-* **Catalog IDs** are slugs generated from the name (`Golds Gym Sunset St` → `golds-gym-sunset-st`), which is what makes prefix search by name possible.
+* **Catalog IDs** are slugs without accents or symbols, which is what makes prefix search by name possible:
+  * Exercises use the name (`Farmer's Walk (Básico)` → `farmers-walk-basico`).
+  * Gyms use the chain name, the optional branch and the city (`Smart Fit` + `Valle Oriente` + `Monterrey` → `smart-fit-valle-oriente-monterrey`), so every branch of a chain is its own gym and searching `smart fit` finds all of them.
 * **Workouts** live under their owner's partition, so a user can only ever read their own. They optionally include denormalized `gymId` and `gymName` fields to eliminate expensive runtime queries (*JOINs*).
 * **Workout IDs** are [ULIDs](https://github.com/ulid/spec) generated from `startedAt`. Since a ULID starts with its timestamp, sorting by ID sorts by start time, so one key serves both "get by ID" and "list chronologically".
 * **Workout times** (`startedAt`, `endedAt`) are received as ISO-8601 with a time zone and stored in UTC (`yyyy-MM-ddTHH:mm:ssZ`). Only completed workouts are stored: both are required, the end must be after the start, within 12 hours and not in the future.

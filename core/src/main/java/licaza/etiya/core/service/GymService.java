@@ -24,13 +24,14 @@ public class GymService {
   public Gym registerGym(Gym input) {
     validatorService.validate(input);
 
-    // Generate ID slug
+    // Generate ID slug. The chain name goes first, so a name search finds every branch;
+    // the city is included because branches of the same chain can share a name across cities
     if (input.getId() == null || input.getId().trim().isEmpty()) {
-      String generatedId = Slugs.of(input.getName());
-      if (generatedId.isEmpty()) {
+      if (Slugs.of(input.getName()).isEmpty() || Slugs.of(input.getCity()).isEmpty()) {
         throw new InputValidationException(
-            "❌ Validation Error: Gym name must contain letters or numbers");
+            "❌ Validation Error: Gym name and city must contain letters or numbers");
       }
+      String generatedId = Slugs.of(input.getName(), input.getBranch(), input.getCity());
       input.setId(generatedId);
       log.debug("🆔 Generated new slug ID for gym: {}", generatedId);
     }

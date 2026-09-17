@@ -11,8 +11,9 @@ post {
 
 body:json {
   {
-    "name": "Golds Gym Sunset St",
-    "location": "Los Angeles, CA"
+    "name": "Golds Gym",
+    "branch": "Sunset St",
+    "city": "Los Angeles"
   }
 }
 
@@ -21,7 +22,9 @@ script:post-response {
     expect(res.getStatus()).to.equal(201);
 
     const body = res.getBody();
-    expect(body.id).to.equal("golds-gym-sunset-st");
-    expect(body.name).to.equal("Golds Gym Sunset St");
+    expect(body.id).to.equal("golds-gym-sunset-st-los-angeles");
+    expect(body.name).to.equal("Golds Gym");
+    expect(body.branch).to.equal("Sunset St");
+    expect(body.city).to.equal("Los Angeles");
   });
 }
