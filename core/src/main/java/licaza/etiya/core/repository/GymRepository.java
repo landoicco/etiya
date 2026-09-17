@@ -7,7 +7,8 @@ import licaza.etiya.core.model.Gym;
 public interface GymRepository {
   void save(Gym gym);
 
-  List<Gym> searchByName(String query);
+  // slugPrefix must already be normalized with Slugs.of, like the stored IDs
+  List<Gym> findBySlugPrefix(String slugPrefix);
 
   List<Gym> findAll();
 

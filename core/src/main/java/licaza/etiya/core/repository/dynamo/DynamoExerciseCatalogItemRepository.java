@@ -40,8 +40,7 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
   }
 
   @Override
-  public List<ExerciseCatalogItem> searchByName(String query) {
-    String slugPrefix = query.trim().toLowerCase().replaceAll("\\s+", "-");
+  public List<ExerciseCatalogItem> findBySlugPrefix(String slugPrefix) {
     Key key =
         Key.builder()
             .partitionValue(EXERCISE_PK)

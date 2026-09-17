@@ -32,8 +32,7 @@ public class DynamoGymRepository implements GymRepository {
   }
 
   @Override
-  public List<Gym> searchByName(String query) {
-    String slugPrefix = query.trim().toLowerCase().replaceAll("\\s+", "-");
+  public List<Gym> findBySlugPrefix(String slugPrefix) {
     Key key = Key.builder().partitionValue(GYM_PK).sortValue(GYM_SK_PREFIX + slugPrefix).build();
 
     return table

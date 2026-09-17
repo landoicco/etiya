@@ -7,7 +7,8 @@ import licaza.etiya.core.model.ExerciseCatalogItem;
 public interface ExerciseCatalogItemRepository {
   void save(ExerciseCatalogItem exercise);
 
-  List<ExerciseCatalogItem> searchByName(String query);
+  // slugPrefix must already be normalized with Slugs.of, like the stored IDs
+  List<ExerciseCatalogItem> findBySlugPrefix(String slugPrefix);
 
   List<ExerciseCatalogItem> findAll();
 

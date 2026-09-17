@@ -2,6 +2,7 @@ package licaza.etiya.core.service;
 
 import java.util.List;
 import licaza.etiya.core.exception.GymNotFoundException;
+import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Gym;
 import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
@@ -25,7 +26,11 @@ public class GymService {
 
     // Generate ID slug
     if (input.getId() == null || input.getId().trim().isEmpty()) {
-      String generatedId = input.getName().toLowerCase().replaceAll("\\s+", "-");
+      String generatedId = Slugs.of(input.getName());
+      if (generatedId.isEmpty()) {
+        throw new InputValidationException(
+            "❌ Validation Error: Gym name must contain letters or numbers");
+      }
       input.setId(generatedId);
       log.debug("🆔 Generated new slug ID for gym: {}", generatedId);
     }
@@ -34,15 +39,16 @@ public class GymService {
     return input;
   }
 
-  // Without a query, the whole catalog is returned
+  // Without a usable query, the whole catalog is returned
   public List<Gym> searchGyms(String query) {
-    if (query == null || query.isBlank()) {
+    String slugPrefix = (query == null) ? "" : Slugs.of(query);
+    if (slugPrefix.isEmpty()) {
       log.info("🔍 No query given, listing the whole gym catalog");
       return gymRepository.findAll();
     }
 
-    log.info("🔍 Searching gyms in database with query: '{}'", query);
-    return gymRepository.searchByName(query);
+    log.info("🔍 Searching gyms in database with query: '{}' (slug '{}')", query, slugPrefix);
+    return gymRepository.findBySlugPrefix(slugPrefix);
   }
 
   public Gym getGym(String id) {

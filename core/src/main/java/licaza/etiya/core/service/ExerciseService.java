@@ -2,6 +2,7 @@ package licaza.etiya.core.service;
 
 import java.util.List;
 import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
+import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
@@ -26,7 +27,11 @@ public class ExerciseService {
 
     // Generate ID slug if empty
     if (input.getId() == null || input.getId().trim().isEmpty()) {
-      String generatedId = input.getName().toLowerCase().replaceAll("\\s+", "-");
+      String generatedId = Slugs.of(input.getName());
+      if (generatedId.isEmpty()) {
+        throw new InputValidationException(
+            "❌ Validation Error: Exercise name must contain letters or numbers");
+      }
       input.setId(generatedId);
       log.debug("🆔 Generated new slug ID for exercise catalog: {}", generatedId);
     }
@@ -44,8 +49,9 @@ public class ExerciseService {
         query,
         muscleGroup);
 
+    String slugPrefix = (query == null) ? "" : Slugs.of(query);
     List<ExerciseCatalogItem> candidates =
-        (query == null || query.isBlank()) ? repository.findAll() : repository.searchByName(query);
+        slugPrefix.isEmpty() ? repository.findAll() : repository.findBySlugPrefix(slugPrefix);
 
     if (muscleGroup == null || muscleGroup.isBlank()) {
       return candidates;
