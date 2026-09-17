@@ -1,5 +1,12 @@
 package licaza.etiya.core.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.exception.GymNotFoundException;
@@ -20,6 +27,10 @@ public class WorkoutService {
 
   private static final int DEFAULT_PAGE_SIZE = 20;
   private static final int MAX_PAGE_SIZE = 100;
+  private static final Duration MAX_WORKOUT_DURATION = Duration.ofHours(12);
+  private static final Duration CLOCK_SKEW_TOLERANCE = Duration.ofMinutes(5);
+  private static final DateTimeFormatter UTC_SECONDS =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
 
   private final InputValidationService validatorService;
   private final GymRepository gymRepository;
@@ -43,6 +54,8 @@ public class WorkoutService {
 
     validatorService.validate(input);
 
+    normalizeTimes(input);
+
     validateBusinessRules(input);
 
     // Generate unique ID
@@ -65,6 +78,40 @@ public class WorkoutService {
 
     log.info("🗄️ Fetching up to {} workout records for user '{}'...", pageSize, userId);
     return workoutRepository.findByUserId(userId, pageSize, cursor);
+  }
+
+  // Stored in UTC with a fixed width, so sort keys built from startedAt order like the instants
+  private void normalizeTimes(Workout input) {
+    Instant startedAt = parseInstant("startedAt", input.getStartedAt());
+    Instant endedAt = parseInstant("endedAt", input.getEndedAt());
+
+    if (!endedAt.isAfter(startedAt)) {
+      throw new InputValidationException("❌ Validation Error: endedAt must be after startedAt");
+    }
+    if (Duration.between(startedAt, endedAt).compareTo(MAX_WORKOUT_DURATION) > 0) {
+      throw new InputValidationException(
+          "❌ Validation Error: A workout cannot last more than "
+              + MAX_WORKOUT_DURATION.toHours()
+              + " hours");
+    }
+    // Small tolerance for clients whose clock runs slightly ahead
+    if (endedAt.isAfter(Instant.now().plus(CLOCK_SKEW_TOLERANCE))) {
+      throw new InputValidationException("❌ Validation Error: endedAt cannot be in the future");
+    }
+
+    input.setStartedAt(UTC_SECONDS.format(startedAt));
+    input.setEndedAt(UTC_SECONDS.format(endedAt));
+  }
+
+  private Instant parseInstant(String field, String value) {
+    try {
+      return OffsetDateTime.parse(value).toInstant().truncatedTo(ChronoUnit.SECONDS);
+    } catch (DateTimeParseException ex) {
+      throw new InputValidationException(
+          "❌ Validation Error: "
+              + field
+              + " must be an ISO-8601 date-time with a time zone, e.g. 2026-07-31T18:30:00-06:00");
+    }
   }
 
   // Validate Gym and Exercise data is consistent

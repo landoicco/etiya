@@ -121,7 +121,7 @@ public class TableSchemaFactory {
             String.class,
             a ->
                 a.name(SK)
-                    .getter(w -> key(WORKOUT_SK_PREFIX, w.getDateTime(), w.getId()))
+                    .getter(w -> key(WORKOUT_SK_PREFIX, w.getStartedAt(), w.getId()))
                     .setter((w, v) -> {})
                     .tags(primarySortKey()))
         .addAttribute(String.class, a -> a.name("id").getter(Workout::getId).setter(Workout::setId))
@@ -130,7 +130,10 @@ public class TableSchemaFactory {
             a -> a.name("userId").getter(Workout::getUserId).setter(Workout::setUserId))
         .addAttribute(
             String.class,
-            a -> a.name("dateTime").getter(Workout::getDateTime).setter(Workout::setDateTime))
+            a -> a.name("startedAt").getter(Workout::getStartedAt).setter(Workout::setStartedAt))
+        .addAttribute(
+            String.class,
+            a -> a.name("endedAt").getter(Workout::getEndedAt).setter(Workout::setEndedAt))
         .addAttribute(
             String.class, a -> a.name("gymId").getter(Workout::getGymId).setter(Workout::setGymId))
         .addAttribute(

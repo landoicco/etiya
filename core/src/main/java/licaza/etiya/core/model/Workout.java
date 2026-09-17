@@ -17,8 +17,13 @@ public class Workout {
   @NotBlank(message = "The user ID cannot be blank")
   private String userId;
 
-  @NotBlank(message = "The workout date and time cannot be blank")
-  private String dateTime;
+  // ISO-8601 with a time zone on input, stored in UTC (yyyy-MM-ddTHH:mm:ssZ)
+  @NotBlank(message = "The workout start time cannot be blank")
+  private String startedAt;
+
+  // Only completed workouts are stored, so the end time is required
+  @NotBlank(message = "The workout end time cannot be blank")
+  private String endedAt;
 
   private String gymId;
   private String gymName;

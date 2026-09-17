@@ -15,7 +15,8 @@ headers {
 
 body:json {
   {
-    "dateTime": "2026-07-29T07:00:00Z",
+    "startedAt": "2026-07-29T01:00:00.750-06:00",
+    "endedAt": "2026-07-29T02:10:00-06:00",
     "gymId": "golds-gym-sunset-st",
     "gymName": "Golds Gym Sunset St",
     "exercises": [
@@ -38,7 +39,11 @@ body:json {
 }
 
 script:post-response {
-  test("Should store a second, older workout", function() {
+  test("Should store a second, older workout with its times normalized to UTC", function() {
     expect(res.getStatus()).to.equal(201);
+
+    const body = res.getBody();
+    expect(body.startedAt).to.equal("2026-07-29T07:00:00Z");
+    expect(body.endedAt).to.equal("2026-07-29T08:10:00Z");
   });
 }
