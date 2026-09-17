@@ -25,6 +25,10 @@
             docker
             docker-compose
             bruno-cli
+            # Infrastructure: the CDK CLI is a Node.js tool, and CDK Java apps also need Node to synth
+            aws-cdk-cli
+            nodejs
+            awscli2
             # Add Claude
             nix-claude-code.packages.${system}.default
           ];
@@ -37,6 +41,9 @@
             echo "🛠️ Maven: $(mvn -v | head -n 1 | cut -d' ' -f1-3)"
             echo "🐳 Docker: $(docker --version)"
             echo "🐶 Bruno CLI: $(bru --version 2>/dev/null || echo "unknown")"
+            echo "🟩 Node:  $(node --version)"
+            echo "☁️ AWS CLI: $(aws --version 2>&1 | cut -d' ' -f1)"
+            echo "🏗️ AWS CDK CLI: ${pkgs.aws-cdk-cli.version}"
             echo "🤖 Claude CLI: Ready $(claude --version)"
             echo "========================================================="
           '';
