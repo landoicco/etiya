@@ -46,6 +46,7 @@ Not every task needs every tool, so the flake exposes one shell per use case. Pi
 | `dev` | Java, Maven, Docker, Bruno, Claude | Write code, run it locally, run the test suite |
 | `infra` | Java, Maven, CDK, Node.js, AWS CLI | `cdk synth`, `cdk deploy`, inspect AWS |
 | `run` | Docker, Docker Compose | Only start the app: `docker compose up --build` |
+| `ci` | Java, Maven, Bruno, CDK, Node.js | What GitHub Actions runs; Docker comes from the runner |
 
 ```bash
 nix develop .#dev     # daily development

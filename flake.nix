@@ -92,6 +92,13 @@
             purpose = "just start the app";
             groups = [ "container" ];
           };
+
+          # Used by GitHub Actions. Docker comes from the runner, and Claude is left out
+          ci = mkEtiyaShell {
+            name = "ci";
+            purpose = "what GitHub Actions runs";
+            groups = [ "java" "testing" "cloud" ];
+          };
         };
       }
     );

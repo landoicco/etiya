@@ -6,12 +6,14 @@
 
 | Construct | Resources |
 |---|---|
-| `Database` | DynamoDB table `EtiyaDev-Workouts`, provisioned 5 RCU / 5 WCU |
+| `Database` | DynamoDB table `EtiyaDev-Workouts`, provisioned 5 RCU / 5 WCU, with point-in-time recovery |
 | `Auth` | Cognito user pool with self sign-up disabled, plus a public app client |
 | `Functions` | Three Lambdas (one per domain) with SnapStart, each exposed through a `live` alias |
-| `Api` | HTTP API with a Cognito JWT authorizer on every route, CORS and throttling |
+| `Api` | HTTP API with a Cognito JWT authorizer on every route, CORS, throttling and access logs |
 
 One stack per environment. Today there is only `EtiyaDev`; the name leaves room for `EtiyaProd` later.
+
+Every synth also runs [cdk-nag](decisions.md#security-rules-checked-on-every-synth) security checks, and fails if a finding is neither fixed nor acknowledged.
 
 ![Resources created by the stack](images/architecture.png)
 
@@ -73,6 +75,7 @@ aws cognito-idp admin-set-user-password --user-pool-id <POOL_ID> \
   --username you@example.com --password '<PASSWORD>' --permanent
 ```
 
+* The password needs at least 8 characters, with uppercase, lowercase, a digit and a symbol.
 * `--message-action SUPPRESS` skips the invitation email. The address is never contacted, so it does not need to be real.
 * `--permanent` matters: without it the user stays in `FORCE_CHANGE_PASSWORD` and login returns a challenge instead of tokens.
 
@@ -91,14 +94,15 @@ The table and the user pool use `RemovalPolicy.DESTROY`, so nothing is left behi
 
 ## Cost
 
-Everything here fits the AWS free tier, with two exceptions worth knowing about:
+Everything here fits the AWS free tier, with three exceptions worth knowing about:
 
 | Service | Situation |
 |---|---|
 | Lambda | 1M requests and 400k GB-s per month, always free. **SnapStart costs nothing extra for Java** |
 | DynamoDB | The always-free 25 RCU / 25 WCU apply to *provisioned* capacity, which is why the table is provisioned rather than on-demand |
+| DynamoDB backups | ⚠️ Point-in-time recovery is not free: $0.20 per GB-month of table size. A personal workout history weighs a few MB, so this is a fraction of a cent |
 | Cognito | Free monthly active users far above what this project needs |
-| CloudWatch Logs | 5 GB per month; log groups are set to a 14 day retention, since the default is to keep them forever |
+| CloudWatch Logs | 5 GB per month; log groups, including the API access logs, keep 14 days, since the default is to keep them forever |
 | HTTP API | ⚠️ ~$1 per million requests. Its free tier only lasts 12 months |
 | S3 (CDK assets) | ⚠️ Each deploy uploads the ~52 MB jar. Cents per month, but old assets accumulate |
 
@@ -106,7 +110,7 @@ Deliberately avoided: NAT gateways, customer-managed KMS keys, Secrets Manager a
 
 ## Abuse and limits
 
-* Every route requires a valid Cognito token, and API Gateway answers `401` **before invoking any Lambda**, so unauthorized traffic costs no Lambda time.
+* Every route requires a valid Cognito token, and API Gateway answers `401` **before invoking any Lambda**, so unauthorized traffic costs no Lambda time. It still shows up in the access logs, with the source IP and the reason for the rejection.
 * Self sign-up is disabled, so knowing the URL is not enough to get an account.
 * The default stage throttles at 10 requests per second with a burst of 20.
 * **Honest limitation:** API Gateway bills for every request it receives, including the ones it rejects. A sustained flood at the throttle limit would cost real money, so the API URL is not published in this repo and a budget alarm is the safety net.

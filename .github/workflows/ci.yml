@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same branch makes the running check pointless
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# No AWS credentials and a read-only token: nothing in this workflow can deploy or change the repo
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # Every step runs with the toolchain pinned in flake.nix, the same one used locally
+    shell: nix develop .#ci --command bash -euo pipefail {0}
+
+jobs:
+  api:
+    name: API tests on the local stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start the stack
+        run: docker compose up --build --detach
+
+      # The app has no healthcheck, so poll until it answers
+      - name: Wait for the API
+        run: |
+          curl --silent --fail --output /dev/null \
+            --retry 30 --retry-delay 2 --retry-all-errors \
+            -H "X-User-Id: user-default" http://localhost:8080/gyms
+
+      # The database is created empty on every run, so no 409s from a previous one
+      - name: Run the Bruno suite
+        run: cd bruno-tests && bru run --env Local
+
+      - name: Show container logs
+        if: failure()
+        run: docker compose logs
+
+  build:
+    name: Format, Lambda build and CDK synth
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # There are no credentials to find, so the CDK should not wait on EC2 instance metadata
+      AWS_EC2_METADATA_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('core/pom.xml', 'infra/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+
+      - name: Check formatting
+        run: |
+          mvn -B -f core/pom.xml spotless:check
+          mvn -B -f infra/pom.xml spotless:check
+
+      # The Docker image builds the local profile, so this is the only check on the jar Lambda runs
+      - name: Build the Lambda jar
+        run: mvn -B -f core/pom.xml -P prod clean package
+
+      # Needs no credentials: without an account, the stack is synthesized environment-agnostic
+      - name: Synthesize the stack
+        run: cd infra && cdk synth --no-notices > /dev/null

@@ -2,6 +2,7 @@
 
 **A serverless gym tracker API.** Log your workouts, keep a history, and pay nothing to run it.
 
+[![CI](https://github.com/landoicco/etiya/actions/workflows/ci.yml/badge.svg)](https://github.com/landoicco/etiya/actions/workflows/ci.yml)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![AWS CDK](https://img.shields.io/badge/IaC-AWS%20CDK-yellow)](https://aws.amazon.com/cdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
