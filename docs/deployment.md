@@ -13,6 +13,15 @@
 
 One stack per environment. Today there is only `EtiyaDev`; the name leaves room for `EtiyaProd` later.
 
+![Resources created by the stack](images/architecture.png)
+
+That diagram is generated from the CDK code itself, so it cannot drift from what is deployed. Regenerate it after changing the infrastructure:
+```bash
+cd infra && cdk synth >/dev/null
+npx cdk-dia --target-path "$(git rev-parse --show-toplevel)/docs/images/architecture.png"
+```
+It reads `cdk.out/tree.json` and needs Graphviz, which the `infra` shell provides. Pass an absolute path: `cdk-dia` mangles relative ones that start with `..`.
+
 ## Prerequisites
 
 **AWS credentials.** Either sign in with the console session (temporary credentials, no long-lived keys):

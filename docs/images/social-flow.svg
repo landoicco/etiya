@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="DejaVu Sans, Liberation Sans, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#111c33"/>
+    </linearGradient>
+    <linearGradient id="lambda" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+
+  <!-- Header -->
+  <text x="80" y="108" fill="#F8FAFC" font-size="52" font-weight="700">Etiya — serverless gym tracker API</text>
+  <text x="80" y="156" fill="#94A3B8" font-size="26">Java 21 · Spring Cloud Function on AWS Lambda · DynamoDB single table · AWS CDK</text>
+  <text x="1520" y="112" fill="#64748B" font-size="21" text-anchor="end">github.com/landoicco/etiya</text>
+  <rect x="80" y="186" width="120" height="5" rx="2" fill="#F59E0B"/>
+
+  <!-- Client -->
+  <rect x="80" y="380" width="200" height="120" rx="16" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <text x="180" y="432" fill="#F8FAFC" font-size="26" font-weight="600" text-anchor="middle">Client</text>
+  <text x="180" y="466" fill="#94A3B8" font-size="19" text-anchor="middle">Bearer token</text>
+
+  <!-- Arrow client -> api -->
+  <line x1="290" y1="440" x2="378" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- API Gateway -->
+  <rect x="390" y="340" width="270" height="200" rx="16" fill="#1E293B" stroke="#7C3AED" stroke-width="2.5"/>
+  <text x="525" y="398" fill="#F8FAFC" font-size="27" font-weight="600" text-anchor="middle">HTTP API</text>
+  <text x="525" y="436" fill="#C4B5FD" font-size="20" text-anchor="middle">Cognito JWT authorizer</text>
+  <text x="525" y="478" fill="#94A3B8" font-size="18" text-anchor="middle">rejects 401 before</text>
+  <text x="525" y="504" fill="#94A3B8" font-size="18" text-anchor="middle">any code runs</text>
+
+  <!-- Arrows api -> lambdas -->
+  <line x1="670" y1="400" x2="778" y2="330" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="670" y1="440" x2="778" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="670" y1="480" x2="778" y2="550" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Lambdas -->
+  <rect x="790" y="270" width="290" height="110" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="318" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">gymsApi</text>
+  <text x="935" y="350" fill="#3F2A06" font-size="19" text-anchor="middle">/gyms</text>
+
+  <rect x="790" y="385" width="290" height="110" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="433" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">exercisesApi</text>
+  <text x="935" y="465" fill="#3F2A06" font-size="19" text-anchor="middle">/exercises</text>
+
+  <rect x="790" y="500" width="290" height="110" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="548" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">workoutsApi</text>
+  <text x="935" y="580" fill="#3F2A06" font-size="19" text-anchor="middle">/me/workouts</text>
+
+  <text x="935" y="655" fill="#FBBF24" font-size="20" font-weight="600" text-anchor="middle">SnapStart · ~400 ms warm</text>
+
+  <!-- Arrows lambdas -> ddb -->
+  <line x1="1090" y1="325" x2="1198" y2="400" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1090" y1="440" x2="1198" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1090" y1="555" x2="1198" y2="480" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- DynamoDB -->
+  <rect x="1210" y="340" width="300" height="200" rx="16" fill="#1E293B" stroke="#2563EB" stroke-width="2.5"/>
+  <text x="1360" y="396" fill="#F8FAFC" font-size="27" font-weight="600" text-anchor="middle">DynamoDB</text>
+  <text x="1360" y="434" fill="#93C5FD" font-size="20" text-anchor="middle">single table</text>
+  <text x="1360" y="476" fill="#94A3B8" font-size="18" text-anchor="middle">GYM# · EXERCISE#</text>
+  <text x="1360" y="502" fill="#94A3B8" font-size="18" text-anchor="middle">USER#&#8203;id / WORKOUT#&#8203;ulid</text>
+
+  <!-- Footer highlights -->
+  <rect x="80" y="726" width="1440" height="96" rx="14" fill="#0F1A2E" stroke="#1E293B" stroke-width="2"/>
+  <text x="112" y="768" fill="#E2E8F0" font-size="21">Same handlers run locally — a bridge builds the same API Gateway events, so one test suite covers both environments.</text>
+  <text x="112" y="800" fill="#94A3B8" font-size="21">ULID sort keys order workouts by start time · every design decision documented · runs inside the AWS free tier.</text>
+</svg>

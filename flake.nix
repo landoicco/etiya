@@ -22,8 +22,9 @@
           java = with pkgs; [ jdk21 maven ];
           container = with pkgs; [ docker docker-compose ];
           testing = [ pkgs.bruno-cli ];
-          # The CDK CLI is a Node.js tool, and CDK Java apps also need Node to synth
-          cloud = with pkgs; [ aws-cdk-cli nodejs awscli2 ];
+          # The CDK CLI is a Node.js tool, and CDK Java apps also need Node to synth.
+          # graphviz renders the architecture diagram from the synthesized stack
+          cloud = with pkgs; [ aws-cdk-cli nodejs awscli2 graphviz ];
           claude = [ nix-claude-code.packages.${system}.default ];
         };
 
