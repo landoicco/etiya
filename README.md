@@ -133,7 +133,11 @@ Four tests are tagged `local-only` and excluded above, because they depend on ho
 * Two expect `401` without a user. On AWS, API Gateway rejects those before any code runs.
 * Two check that a user cannot see another user's workouts, using the `X-User-Id` header. On AWS the identity comes from the token, so verifying this would need a second Cognito user.
 
-`environments/Dev.bru` stores the API URL and the `userId`, which on AWS is the Cognito `sub` rather than `user-default`. To repeat the full suite against AWS, the catalog items from the previous run have to be deleted first, or the registration tests get `409`:
+The `Dev` environment is not versioned, since the API URL and the user belong to whoever deployed the stack. Create yours from the example, filling in the values that `cdk deploy` printed:
+```bash
+cp bruno-tests/environments/Dev.example.bru bruno-tests/environments/Dev.bru
+```
+It stores the API URL and the `userId`, which on AWS is the Cognito `sub` rather than `user-default`. To repeat the full suite against AWS, the catalog items from the previous run have to be deleted first, or the registration tests get `409`:
 ```bash
 aws dynamodb delete-item --table-name <TABLE_NAME> \
   --key '{"PK":{"S":"GYM"},"SK":{"S":"GYM#golds-gym-sunset-st-los-angeles"}}'
