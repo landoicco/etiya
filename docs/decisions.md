@@ -116,5 +116,6 @@ Deliberately postponed, with the trigger that would justify each:
 | A Cognito `admin` group gating catalog writes, and MFA | There are users other than the owner |
 | Narrower IAM: per-item-type conditions instead of `grantReadWriteData`, and an inline logs policy instead of the managed one | Tightening dev into something production-shaped |
 | Java 25: Lambda runtime, flake JDK, Docker images and compiler release together | Spring or a dependency needs it, or Java 21 nears end of support on Lambda |
-| Unit tests for `Slugs`, time normalization and key building | The suite stops being enough |
 | Measuring the real cold start in CloudWatch | Latency becomes a complaint |
+| A smaller Lambda jar: it is 54 MB, mostly Netty, Reactor, WebFlux and native QUIC libraries for every OS, none of them used on Lambda | Deploys or cold starts become slow. Trim with the integration suite against AWS as the safety net |
+| Slugs for non-Latin alphabets: `ß` and `Ø` are dropped, Cyrillic produces an empty slug and the item is rejected | A user needs names in another alphabet. Needs transliteration (ICU) |

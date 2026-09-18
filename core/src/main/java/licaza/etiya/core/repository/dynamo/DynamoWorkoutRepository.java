@@ -5,11 +5,8 @@ import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.SK;
 import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.USER_PK_PREFIX;
 import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.WORKOUT_SK_PREFIX;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
-import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
@@ -35,8 +32,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
   }
 
   // Newest first: the sort key is the workout's ULID, which starts with its startedAt.
-  // The cursor only carries the sort key and the partition key is rebuilt from userId,
-  // so a crafted cursor can never read another user's workouts
+  // The partition key always comes from userId, never from the cursor (see WorkoutCursors)
   @Override
   public Page<Workout> findByUserId(String userId, int limit, String cursor) {
     String partitionKey = USER_PK_PREFIX + userId;
@@ -52,7 +48,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
       request.exclusiveStartKey(
           Map.of(
               PK, AttributeValue.fromS(partitionKey),
-              SK, AttributeValue.fromS(decodeCursor(cursor))));
+              SK, AttributeValue.fromS(WorkoutCursors.decode(cursor))));
     }
 
     software.amazon.awssdk.enhanced.dynamodb.model.Page<Workout> page =
@@ -61,7 +57,7 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     // Dynamo may return a last key even when no items are left; the next page is then just empty
     Map<String, AttributeValue> lastKey = page.lastEvaluatedKey();
     String nextCursor =
-        (lastKey == null || lastKey.isEmpty()) ? null : encodeCursor(lastKey.get(SK).s());
+        (lastKey == null || lastKey.isEmpty()) ? null : WorkoutCursors.encode(lastKey.get(SK).s());
 
     return new Page<>(page.items(), nextCursor);
   }
@@ -80,23 +76,5 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
   @Override
   public void save(Workout workout) {
     table.putItem(workout);
-  }
-
-  private static String encodeCursor(String sortKey) {
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(sortKey.getBytes(StandardCharsets.UTF_8));
-  }
-
-  private static String decodeCursor(String cursor) {
-    try {
-      String sortKey = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
-      if (sortKey.startsWith(WORKOUT_SK_PREFIX)) {
-        return sortKey;
-      }
-    } catch (IllegalArgumentException ignored) {
-      // Falls through to the validation error below
-    }
-    throw new InputValidationException("❌ Validation Error: The cursor is not valid");
   }
 }

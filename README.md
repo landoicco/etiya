@@ -83,7 +83,7 @@ Deploying your own copy takes two commands and is covered in [the deployment gui
 | [Deployment](docs/deployment.md) | CDK stack, bootstrap, first Cognito user, cost and abuse limits |
 | [API reference](docs/api.md) | Endpoints, conventions, status codes |
 | [Data model](docs/data-model.md) | Single table design, slugs, ULIDs, workout times |
-| [Testing](docs/testing.md) | Bruno against local and AWS, the `local-only` tag |
+| [Testing](docs/testing.md) | Unit tests, Bruno against local and AWS, what CI runs |
 | [Decisions](docs/decisions.md) | Why the project looks the way it does, and what is postponed |
 
 ## Layout

@@ -30,6 +30,10 @@ updates:
       # runtime in infra and the JDK in the flake
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # In "3.9-eclipse-temurin-21" Dependabot reads 3.9 (Maven) as the version and the Java
+      # version as a suffix, so the rule above misses Java bumps: it once proposed Java 24.
+      # The floating tag already picks up Maven 3.9 and Java 21 patches on every build
+      - dependency-name: "maven"
 
   - package-ecosystem: docker-compose
     directory: "/"

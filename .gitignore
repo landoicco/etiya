@@ -1,2 +1,6 @@
 # Per-deployment values: the API URL and the Cognito user of whoever deployed it
 bruno-tests/environments/Dev.bru
+
+# Login for the dev Cognito user, sourced by the shell to request tokens.
+# Acceptable for a throwaway dev user; production credentials never go in a file
+.env.dev
