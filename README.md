@@ -57,7 +57,7 @@ flowchart TB
 With [Nix](https://nixos.org/) installed, no other setup is needed:
 
 ```bash
-nix develop            # Java 21, Maven, Docker, Bruno, AWS + CDK CLIs
+nix develop            # Java 21, Maven, Docker, Bruno, Node.js, AWS + CDK CLIs
 docker compose up --build
 ```
 
@@ -79,7 +79,7 @@ Deploying your own copy takes two commands and is covered in [the deployment gui
 
 | Guide | What's in it |
 |---|---|
-| [Local development](docs/local-development.md) | Docker Compose, the Nix shells, how identity works locally, building |
+| [Local development](docs/local-development.md) | Docker Compose, the web app, the Nix shells, how identity works locally, building |
 | [Deployment](docs/deployment.md) | CDK stack, bootstrap, first Cognito user, cost and abuse limits |
 | [API reference](docs/api.md) | Endpoints, conventions, status codes |
 | [Data model](docs/data-model.md) | Single table design, slugs, ULIDs, workout times |
@@ -89,7 +89,8 @@ Deploying your own copy takes two commands and is covered in [the deployment gui
 ## Layout
 
 ```
-core/         the application (Spring Cloud Function, DynamoDB)
+core/         the API (Spring Cloud Function, DynamoDB)
+web/          the web app, a PWA (Vite, React, TypeScript, Tailwind)
 infra/        infrastructure as code (AWS CDK in Java)
 bruno-tests/  integration tests (Bruno CLI)
 docs/         guides and design decisions
@@ -104,4 +105,6 @@ This project is developed alongside [Claude Code](https://claude.com/claude-code
 
 The API is complete and deployed: gyms, exercises and workouts, with authentication, pagination and validation. Releases track what each version added.
 
-What comes next, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table. The short version: editing and deleting workouts, tighter limits, and a frontend in this same repository.
+In progress: the web app in `web/`, a PWA built for logging sets with one hand. Its design is in [decisions](docs/decisions.md#the-frontend-is-a-pwa).
+
+What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
