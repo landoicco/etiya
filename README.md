@@ -57,7 +57,28 @@ To activate the environment with all tools ready to use, run in the root directo
 ```bash
 nix develop
 ```
-*This will automatically load OpenJDK 21, Maven, AWS CLI, Docker, and the Bruno CLI (`bru`).*
+*This will automatically load OpenJDK 21, Maven, AWS CLI, AWS CDK CLI, Node.js, Docker, the Bruno CLI (`bru`) and the Claude CLI.*
+
+### Picking a shell for the task at hand
+
+Not every task needs every tool, so the flake exposes one shell per use case. Pick one with `nix develop .#<name>`; each prints the versions of what it loaded:
+
+| Shell | Tools | Use it to |
+|---|---|---|
+| `default` | Everything | Anything, or when in doubt |
+| `dev` | Java, Maven, Docker, Bruno, Claude | Write code, run it locally, run the test suite |
+| `infra` | Java, Maven, CDK, Node.js, AWS CLI | `cdk synth`, `cdk deploy`, inspect AWS |
+| `run` | Docker, Docker Compose | Only start the app: `docker compose up --build` |
+
+```bash
+nix develop .#dev     # daily development
+nix develop .#infra   # deploying
+```
+
+Shells share the Nix store, so a tool is downloaded once no matter how many shells use it; switching between them after that is instant. The gain is a smaller first download and a clear record of which tool belongs to which task. For a one-off command, no shell is needed at all:
+```bash
+nix shell nixpkgs#awscli2 --command aws sts get-caller-identity
+```
 
 ---
 ## 📋 Data Architecture (Single Table Design)
