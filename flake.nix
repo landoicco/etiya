@@ -22,6 +22,8 @@
           java = with pkgs; [ jdk21 maven ];
           container = with pkgs; [ docker docker-compose ];
           testing = [ pkgs.bruno-cli ];
+          # The frontend in web/; npm ships with Node
+          web = [ pkgs.nodejs ];
           # The CDK CLI is a Node.js tool, and CDK Java apps also need Node to synth.
           # graphviz renders the architecture diagram from the synthesized stack
           cloud = with pkgs; [ aws-cdk-cli nodejs awscli2 graphviz ];
@@ -40,8 +42,10 @@
           testing = ''
             echo "🐶 Bruno CLI: $(bru --version 2>/dev/null || echo "unknown")"
           '';
+          web = ''
+            echo "🟩 Node:  $(node --version), npm $(npm --version)"
+          '';
           cloud = ''
-            echo "🟩 Node:  $(node --version)"
             echo "☁️ AWS CLI: $(aws --version 2>&1 | cut -d' ' -f1)"
             echo "🏗️ AWS CDK CLI: ${pkgs.aws-cdk-cli.version}"
           '';
@@ -72,13 +76,13 @@
           default = mkEtiyaShell {
             name = "default";
             purpose = "every tool";
-            groups = [ "java" "container" "testing" "cloud" "claude" ];
+            groups = [ "java" "container" "testing" "web" "cloud" "claude" ];
           };
 
           dev = mkEtiyaShell {
             name = "dev";
             purpose = "build, run and test locally";
-            groups = [ "java" "container" "testing" "claude" ];
+            groups = [ "java" "container" "testing" "web" "claude" ];
           };
 
           infra = mkEtiyaShell {
@@ -97,7 +101,7 @@
           ci = mkEtiyaShell {
             name = "ci";
             purpose = "what GitHub Actions runs";
-            groups = [ "java" "testing" "cloud" ];
+            groups = [ "java" "testing" "web" "cloud" ];
           };
         };
       }

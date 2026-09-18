@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A loaded barbell on the app's background. Kept inside the central safe zone,
+       so maskable icons can crop it into a circle or a squircle -->
+  <rect width="512" height="512" fill="#0b0f14"/>
+  <rect x="96" y="244" width="320" height="24" rx="6" fill="#8b95a3"/>
+  <rect x="136" y="176" width="36" height="160" rx="8" fill="#f97316"/>
+  <rect x="176" y="204" width="24" height="104" rx="6" fill="#f97316"/>
+  <rect x="340" y="176" width="36" height="160" rx="8" fill="#f97316"/>
+  <rect x="312" y="204" width="24" height="104" rx="6" fill="#f97316"/>
+</svg>

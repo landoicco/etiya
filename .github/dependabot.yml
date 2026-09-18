@@ -1,4 +1,5 @@
-# Weekly version updates, grouped so each ecosystem opens one PR for minor and patch bumps.
+# Weekly version updates for the API (Maven), the web app (npm), CI and the Docker images,
+# grouped so each ecosystem opens one PR for minor and patch bumps.
 # Major bumps arrive as their own PR, since they are the ones that can break something.
 # Security updates are not grouped and do not wait for the schedule.
 # flake.lock is not covered: the toolchain is updated by hand with `nix flake update`
@@ -11,6 +12,14 @@ updates:
       interval: weekly
     groups:
       maven-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: "/web"
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-and-patch:
         update-types: [minor, patch]
 
   - package-ecosystem: github-actions

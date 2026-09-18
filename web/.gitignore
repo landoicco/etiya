@@ -1,0 +1,5 @@
+node_modules/
+dist/
+
+# Vite's local env files, for per-deployment values like the API URL and Cognito IDs
+*.local

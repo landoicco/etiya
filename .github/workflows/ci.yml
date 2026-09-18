@@ -80,3 +80,26 @@ jobs:
       # Needs no credentials: without an account, the stack is synthesized environment-agnostic
       - name: Synthesize the stack
         run: cd infra && cdk synth --no-notices > /dev/null
+
+  web:
+    name: Web app type check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      # ci installs exactly what package-lock.json says, and fails if it disagrees with package.json
+      - name: Install dependencies
+        run: cd web && npm ci
+
+      # TypeScript first, then the Vite build, which also generates the service worker and icons
+      - name: Type check and build
+        run: cd web && npm run build

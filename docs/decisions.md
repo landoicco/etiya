@@ -103,6 +103,15 @@ The rest are acknowledged, each with a trigger in [still open](#still-open):
 
 `bruno-tests/environments/Dev.bru` is ignored and a `Dev.example.bru` with placeholders is versioned instead. The API URL and the Cognito user belong to whoever deployed the stack, and publishing a live URL invites traffic that is billed even when it is rejected.
 
+## The frontend is a PWA
+
+The app is meant to be used with one hand, between sets, on a phone. A progressive web app opens from a link with nothing to install, and a service worker keeps it working with bad signal. Vite, React, TypeScript and Tailwind are mainstream choices that need no justification to whoever reads the code next.
+
+* **The workout in progress lives on the phone**, in IndexedDB, and is sent once finished. A send that fails waits in a queue and is retried when the app opens or the connection returns; iOS has no Background Sync. Those retries are why workout idempotency comes before any other API change.
+* **Login is the app's own form, using Amplify Auth with SRP**, so the password never travels to the server. The Cognito Hosted UI would mean a redirect to a generic page, which breaks the feel of an app on a phone.
+* **S3 and CloudFront, on the default `cloudfront.net` domain.** Service workers require HTTPS, which that domain already has, and CloudFront's always-free tier covers personal use. A custom domain costs about $12 a year and can be added later without other changes.
+* **Development runs against the dev API on AWS**, not the Docker stack, so the real login is exercised from day one. The alternative needed a mode without login that would exist only for development.
+
 ## Still open
 
 Deliberately postponed, with the trigger that would justify each:

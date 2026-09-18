@@ -27,6 +27,23 @@ curl -H "X-User-Id: user-default" http://localhost:8080/me/workouts
 
 The bridge matches the request against the same route table the Lambdas use, so local and AWS run the same handler code. It lives in a separate source folder that only the `local` Maven profile compiles, so it can never reach the Lambda jar.
 
+## Running the web app
+
+The PWA in `web/` uses Vite, React, TypeScript and Tailwind. The `dev` shell provides Node.js:
+```bash
+cd web
+npm install
+npm run dev          # http://localhost:5173, reloads on every change
+```
+
+`npm run build` checks the types and writes `web/dist`, including the service worker and every icon size, generated from `public/icon.svg`. The service worker only runs in a production build, so test installation and offline behavior with:
+```bash
+npm run build && npm run preview     # http://localhost:4173
+```
+Service workers require HTTPS everywhere except `localhost`, so installing the app on a phone needs the deployed version.
+
+The web app is developed against the dev API on AWS with a real Cognito login, not against the Docker stack; `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
+
 ## Nix Flake
 
 The whole toolchain is defined in `flake.nix`. With Nix installed there is no need to set up Java, Maven or any CLI by hand:
@@ -43,7 +60,7 @@ Not every task needs every tool, so the flake exposes one shell per use case. Pi
 | Shell | Tools | Use it to |
 |---|---|---|
 | `default` | Everything | Anything, or when in doubt |
-| `dev` | Java, Maven, Docker, Bruno, Claude | Write code, run it locally, run the test suite |
+| `dev` | Java, Maven, Docker, Bruno, Node.js, Claude | Write code, run it locally, run the test suite |
 | `infra` | Java, Maven, CDK, Node.js, AWS CLI | `cdk synth`, `cdk deploy`, inspect AWS |
 | `run` | Docker, Docker Compose | Only start the app: `docker compose up --build` |
 | `ci` | Java, Maven, Bruno, CDK, Node.js | What GitHub Actions runs; Docker comes from the runner |
