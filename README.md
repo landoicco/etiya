@@ -95,6 +95,10 @@ docs/         guides and design decisions
 flake.nix     the whole toolchain
 ```
 
+## Built with Claude Code
+
+This project is developed alongside [Claude Code](https://claude.com/claude-code) as a pair-programming partner: options are weighed before any code is written, changes land in small reviewable steps, and the reasoning behind each one ends up in [docs/decisions.md](docs/decisions.md) instead of being lost. Every change is reviewed and committed by a human. The `dev` Nix shell ships the CLI, so the setup is part of the toolchain rather than a personal detail.
+
 ## Status and roadmap
 
 The API is complete and deployed: gyms, exercises and workouts, with authentication, pagination and validation. Releases track what each version added.
