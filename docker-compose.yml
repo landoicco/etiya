@@ -1,7 +1,7 @@
 services:
   # Local DynamoDB
   dynamodb-local:
-    image: amazon/dynamodb-local:2.5.2
+    image: amazon/dynamodb-local:3.3.1
     container_name: etiya-dynamodb-cont
     ports:
       - "8000:8000"
