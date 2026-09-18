@@ -10,12 +10,14 @@ public class EtiyaStack extends Stack {
 
   private final Database database;
   private final Auth auth;
+  private final Functions functions;
 
   public EtiyaStack(final Construct scope, final String id, final StackProps props) {
     super(scope, id, props);
 
     this.database = new Database(this, "Database");
     this.auth = new Auth(this, "Auth");
+    this.functions = new Functions(this, "Functions", database.getWorkoutsTable());
   }
 
   public Database getDatabase() {
@@ -24,5 +26,9 @@ public class EtiyaStack extends Stack {
 
   public Auth getAuth() {
     return auth;
+  }
+
+  public Functions getFunctions() {
+    return functions;
   }
 }
