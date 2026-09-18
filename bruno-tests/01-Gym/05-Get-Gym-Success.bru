@@ -1,0 +1,21 @@
+meta {
+  name: Get Gym Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/gyms/golds-gym-sunset-st-los-angeles
+  body: none
+  auth: none
+}
+
+script:post-response {
+  test("Should return the gym by its ID", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.id).to.equal("golds-gym-sunset-st-los-angeles");
+    expect(body.branch).to.equal("Sunset St");
+    expect(body.city).to.equal("Los Angeles");
+  });
+}

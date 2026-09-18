@@ -1,12 +1,15 @@
 package licaza.etiya.core.repository;
 
-import java.util.List;
+import java.util.Optional;
+import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 
 public interface WorkoutRepository {
   void save(Workout workout);
 
-  List<Workout> findAll();
+  // Scoped to the owner: another user's workout is never returned
+  Optional<Workout> findById(String userId, String workoutId);
 
-  List<Workout> findByUserId(String userId);
+  // cursor is the nextCursor of a previous page, or null for the first one
+  Page<Workout> findByUserId(String userId, int limit, String cursor);
 }

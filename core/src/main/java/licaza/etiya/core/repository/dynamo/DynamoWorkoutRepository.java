@@ -1,7 +1,16 @@
 package licaza.etiya.core.repository.dynamo;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.PK;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.SK;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.USER_PK_PREFIX;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.WORKOUT_SK_PREFIX;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
+import java.util.Optional;
+import licaza.etiya.core.exception.InputValidationException;
+import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 import licaza.etiya.core.repository.WorkoutRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -11,6 +20,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @Repository
 public class DynamoWorkoutRepository implements WorkoutRepository {
@@ -23,26 +34,69 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     this.table = enhancedClient.table(tableName, TableSchemaFactory.createWorkoutSchema());
   }
 
+  // Newest first: the sort key is the workout's ULID, which starts with its startedAt.
+  // The cursor only carries the sort key and the partition key is rebuilt from userId,
+  // so a crafted cursor can never read another user's workouts
   @Override
-  public List<Workout> findAll() {
-    return table.scan().items().stream()
-        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
-        .collect(Collectors.toList());
+  public Page<Workout> findByUserId(String userId, int limit, String cursor) {
+    String partitionKey = USER_PK_PREFIX + userId;
+    Key key = Key.builder().partitionValue(partitionKey).sortValue(WORKOUT_SK_PREFIX).build();
+
+    QueryEnhancedRequest.Builder request =
+        QueryEnhancedRequest.builder()
+            .queryConditional(QueryConditional.sortBeginsWith(key))
+            .scanIndexForward(false)
+            .limit(limit);
+
+    if (cursor != null) {
+      request.exclusiveStartKey(
+          Map.of(
+              PK, AttributeValue.fromS(partitionKey),
+              SK, AttributeValue.fromS(decodeCursor(cursor))));
+    }
+
+    software.amazon.awssdk.enhanced.dynamodb.model.Page<Workout> page =
+        table.query(request.build()).iterator().next();
+
+    // Dynamo may return a last key even when no items are left; the next page is then just empty
+    Map<String, AttributeValue> lastKey = page.lastEvaluatedKey();
+    String nextCursor =
+        (lastKey == null || lastKey.isEmpty()) ? null : encodeCursor(lastKey.get(SK).s());
+
+    return new Page<>(page.items(), nextCursor);
   }
 
   @Override
-  public List<Workout> findByUserId(String userId) {
-    Key partitionKey = Key.builder().partitionValue(userId).build();
+  public Optional<Workout> findById(String userId, String workoutId) {
+    Key key =
+        Key.builder()
+            .partitionValue(USER_PK_PREFIX + userId)
+            .sortValue(WORKOUT_SK_PREFIX + workoutId)
+            .build();
 
-    QueryConditional queryConditional = QueryConditional.keyEqualTo(partitionKey);
-
-    return table.query(r -> r.queryConditional(queryConditional)).items().stream()
-        .filter(wkt -> wkt.getId() != null && wkt.getId().startsWith("wkt-"))
-        .collect(Collectors.toList());
+    return Optional.ofNullable(table.getItem(key));
   }
 
   @Override
   public void save(Workout workout) {
     table.putItem(workout);
+  }
+
+  private static String encodeCursor(String sortKey) {
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(sortKey.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static String decodeCursor(String cursor) {
+    try {
+      String sortKey = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
+      if (sortKey.startsWith(WORKOUT_SK_PREFIX)) {
+        return sortKey;
+      }
+    } catch (IllegalArgumentException ignored) {
+      // Falls through to the validation error below
+    }
+    throw new InputValidationException("❌ Validation Error: The cursor is not valid");
   }
 }

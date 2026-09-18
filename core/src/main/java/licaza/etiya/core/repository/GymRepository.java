@@ -5,9 +5,11 @@ import java.util.Optional;
 import licaza.etiya.core.model.Gym;
 
 public interface GymRepository {
-  void save(Gym gym);
+  // Returns false, without overwriting, when a gym with the same ID already exists
+  boolean create(Gym gym);
 
-  List<Gym> searchByName(String query);
+  // slugPrefix must already be normalized with Slugs.of, like the stored IDs
+  List<Gym> findBySlugPrefix(String slugPrefix);
 
   List<Gym> findAll();
 

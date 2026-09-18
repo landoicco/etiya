@@ -1,0 +1,25 @@
+meta {
+  name: Get My Workouts Invalid Cursor Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts?cursor=not-a-real-cursor
+  body: none
+  auth: none
+}
+
+params:query {
+  cursor: not-a-real-cursor
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+script:post-response {
+  test("Should reject a cursor that was not issued by the API", function() {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().message).to.contain("cursor is not valid");
+  });
+}

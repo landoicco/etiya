@@ -1,0 +1,29 @@
+meta {
+  name: Get My Workouts Next Page Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/me/workouts?limit=1&cursor={{workoutsCursor}}
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 1
+  cursor: {{workoutsCursor}}
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+script:post-response {
+  test("Should continue after the previous page without repeating items", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const items = res.getBody().items;
+    expect(items.length).to.equal(1);
+    expect(items[0].id).to.not.equal(bru.getVar("firstPageWorkoutId"));
+  });
+}

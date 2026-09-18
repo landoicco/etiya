@@ -1,0 +1,31 @@
+meta {
+  name: Register Gym Duplicate Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/gyms
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": "a-different-id",
+    "name": "GOLD'S GYM",
+    "branch": "sunset st.",
+    "city": "Los Ángeles"
+  }
+}
+
+script:post-response {
+  // Same slug as the gym registered in 01, only written differently. If the client ID were used,
+  // this would be created as "a-different-id" instead of being rejected
+  test("Should reject a gym that already exists, ignoring the client ID", function() {
+    expect(res.getStatus()).to.equal(409);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("GYM_ALREADY_EXISTS");
+    expect(body.message).to.contain("golds-gym-sunset-st-los-angeles");
+  });
+}

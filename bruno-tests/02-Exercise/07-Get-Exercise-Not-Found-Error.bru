@@ -1,0 +1,19 @@
+meta {
+  name: Get Exercise Not Found Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises/exercise-that-does-not-exist
+  body: none
+  auth: none
+}
+
+script:post-response {
+  test("Should return 404 for an unknown exercise", function() {
+    expect(res.getStatus()).to.equal(404);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("EXERCISE_NOT_FOUND");
+  });
+}

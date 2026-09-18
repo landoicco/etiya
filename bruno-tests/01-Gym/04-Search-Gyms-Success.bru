@@ -1,0 +1,25 @@
+meta {
+  name: Search Gyms Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/gyms?q=Golds Gym
+  body: none
+  auth: none
+}
+
+params:query {
+  q: Golds Gym
+}
+
+script:post-response {
+  test("Should find the chain's branches by case-insensitive name prefix", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.items).to.be.an('array');
+    expect(body.items.map(g => g.id)).to.include("golds-gym-sunset-st-los-angeles");
+    expect(body.nextCursor).to.equal(null);
+  });
+}

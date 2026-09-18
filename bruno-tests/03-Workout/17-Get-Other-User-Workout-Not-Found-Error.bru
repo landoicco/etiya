@@ -1,0 +1,27 @@
+meta {
+  name: Get Other User Workout Not Found Error
+  type: http
+  tags: [
+    local-only
+  ]
+}
+
+get {
+  url: {{baseUrl}}/me/workouts/{{registeredWorkoutId}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-User-Id: user-without-workouts
+}
+
+script:post-response {
+  // The workout exists, but belongs to another user
+  test("Should not expose another user's workout", function() {
+    expect(res.getStatus()).to.equal(404);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("WORKOUT_NOT_FOUND");
+  });
+}

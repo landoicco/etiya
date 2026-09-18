@@ -1,0 +1,23 @@
+meta {
+  name: Search Exercises Normalized Query Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises?q=FARMERS wálk
+  body: none
+  auth: none
+}
+
+params:query {
+  q: FARMERS wálk
+}
+
+script:post-response {
+  test("Should normalize the query the same way as the IDs", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const ids = res.getBody().items.map(e => e.id);
+    expect(ids).to.include("farmers-walk-basico");
+  });
+}

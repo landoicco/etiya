@@ -19,6 +19,5 @@ public class Exercise {
   private String name;
 
   @NotEmpty(message = "An exercise must have at least one set")
-  @Valid
-  private List<GymSet> sets;
+  private List<@Valid GymSet> sets;
 }

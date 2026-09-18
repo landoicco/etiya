@@ -1,21 +1,33 @@
 package licaza.etiya.core.repository.dynamo;
 
-import java.util.HashMap;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.EXERCISE_PK;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.EXERCISE_SK_PREFIX;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.PK;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import software.amazon.awssdk.enhanced.dynamodb.*;
-import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 @Repository
 public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemRepository {
+
+  // Checked atomically by DynamoDB, so two concurrent creations can't both succeed
+  private static final Expression EXERCISE_DOES_NOT_EXIST =
+      Expression.builder()
+          .expression("attribute_not_exists(#pk)")
+          .putExpressionName("#pk", PK)
+          .build();
 
   private final DynamoDbTable<ExerciseCatalogItem> table;
 
@@ -27,43 +39,46 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
   }
 
   @Override
-  public void save(ExerciseCatalogItem exercise) {
-    if (!exercise.getId().startsWith("exe-")) {
-      exercise.setId("exe-" + exercise.getId());
+  public boolean create(ExerciseCatalogItem exercise) {
+    try {
+      table.putItem(
+          PutItemEnhancedRequest.builder(ExerciseCatalogItem.class)
+              .item(exercise)
+              .conditionExpression(EXERCISE_DOES_NOT_EXIST)
+              .build());
+      return true;
+    } catch (ConditionalCheckFailedException ex) {
+      return false;
     }
-    table.putItem(exercise);
   }
 
   @Override
   public Optional<ExerciseCatalogItem> findById(String id) {
-    String finalId = id.startsWith("exe-") ? id : "exe-" + id;
-    return Optional.ofNullable(table.getItem(r -> r.key(k -> k.partitionValue(finalId))));
+    Key key = Key.builder().partitionValue(EXERCISE_PK).sortValue(EXERCISE_SK_PREFIX + id).build();
+
+    return Optional.ofNullable(table.getItem(key));
   }
 
   @Override
-  public List<ExerciseCatalogItem> searchByName(String query) {
-    String searchKey = "exe-" + query.toLowerCase().replaceAll("\\s+", "-");
-    Map<String, AttributeValue> expressionValues = new HashMap<>();
-    expressionValues.put(":prefix", AttributeValue.builder().s(searchKey).build());
-
-    Expression filterExpression =
-        Expression.builder()
-            .expression("begins_with(id, :prefix)")
-            .expressionValues(expressionValues)
+  public List<ExerciseCatalogItem> findBySlugPrefix(String slugPrefix) {
+    Key key =
+        Key.builder()
+            .partitionValue(EXERCISE_PK)
+            .sortValue(EXERCISE_SK_PREFIX + slugPrefix)
             .build();
 
-    ScanEnhancedRequest scanRequest =
-        ScanEnhancedRequest.builder().filterExpression(filterExpression).build();
-
-    return table.scan(scanRequest).items().stream().collect(Collectors.toList());
+    return table
+        .query(r -> r.queryConditional(QueryConditional.sortBeginsWith(key)))
+        .items()
+        .stream()
+        .toList();
   }
 
   @Override
-  public List<ExerciseCatalogItem> findByMuscleGroup(String muscleGroup) {
-    // Filter items with prefix 'exe-' and belong to selected muscular group
-    return table.scan().items().stream()
-        .filter(e -> e.getId().startsWith("exe-"))
-        .filter(e -> e.getMuscleGroup().equalsIgnoreCase(muscleGroup))
-        .collect(Collectors.toList());
+  public List<ExerciseCatalogItem> findAll() {
+    Key key = Key.builder().partitionValue(EXERCISE_PK).build();
+
+    return table.query(r -> r.queryConditional(QueryConditional.keyEqualTo(key))).items().stream()
+        .toList();
   }
 }

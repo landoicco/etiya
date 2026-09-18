@@ -5,10 +5,8 @@ import jakarta.validation.Validator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import licaza.etiya.core.exception.InputValidationException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 public class InputValidationService {
 
@@ -19,11 +17,6 @@ public class InputValidationService {
   }
 
   public <T> void validate(T input) {
-    // if (true) { // Disable validations during development
-    //   log.warn("⚠️ WARNING: Jakarta validations are TEMPORARILY DISABLED for workouts! ⚠️");
-    //   return;
-    // }
-
     Set<ConstraintViolation<T>> violations = validator.validate(input);
     if (!violations.isEmpty()) {
       String errorMsg =

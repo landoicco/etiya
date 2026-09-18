@@ -1,0 +1,31 @@
+package licaza.etiya.core.repository.dynamo.local;
+
+import java.net.URI;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+
+@Slf4j
+@Configuration
+@Profile("local") // Only used for DynamoDB local on Docker
+public class DynamoDbLocalConfig {
+
+  @Bean
+  public DynamoDbClient localDynamoDbClient(
+      @Value("${aws.dynamodb.endpoint}") String endpoint,
+      @Value("${aws.region:us-east-1}") String region) {
+    log.info("🔌 Connecting to local DynamoDB (Docker)...");
+    return DynamoDbClient.builder()
+        .endpointOverride(URI.create(endpoint))
+        .region(Region.of(region))
+        .credentialsProvider(
+            StaticCredentialsProvider.create(AwsBasicCredentials.create("local", "local")))
+        .build();
+  }
+}

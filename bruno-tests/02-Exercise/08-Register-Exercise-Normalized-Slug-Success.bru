@@ -1,0 +1,27 @@
+meta {
+  name: Register Exercise Normalized Slug Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/exercises
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "  Farmer's Walk (Básico) ",
+    "muscleGroup": "Forearms"
+  }
+}
+
+script:post-response {
+  test("Should drop accents, apostrophes and symbols from the generated ID", function() {
+    expect(res.getStatus()).to.equal(201);
+
+    const body = res.getBody();
+    expect(body.id).to.equal("farmers-walk-basico");
+    expect(body.name).to.equal("  Farmer's Walk (Básico) ");
+  });
+}

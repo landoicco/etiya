@@ -1,0 +1,24 @@
+meta {
+  name: Search Exercises Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises?q=barbell
+  body: none
+  auth: none
+}
+
+params:query {
+  q: barbell
+}
+
+script:post-response {
+  test("Should only match exercises whose name starts with the query", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const ids = res.getBody().items.map(e => e.id);
+    expect(ids).to.include("barbell-bench-press");
+    expect(ids).to.not.include("overhead-barbell-press");
+  });
+}

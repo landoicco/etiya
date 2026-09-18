@@ -1,0 +1,49 @@
+meta {
+  name: Register Older Workout Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "startedAt": "2026-07-29T01:00:00.750-06:00",
+    "endedAt": "2026-07-29T02:10:00-06:00",
+    "gymId": "golds-gym-sunset-st-los-angeles",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "exerciseCatalogItemId": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" },
+          { "count": 10, "weight": 80.0, "unit": "KG" }
+        ]
+      },
+      {
+        "name": "Overhead Barbell Press",
+        "sets": [
+          { "count": 10, "weight": 40.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should store a second, older workout with its times normalized to UTC", function() {
+    expect(res.getStatus()).to.equal(201);
+
+    const body = res.getBody();
+    expect(body.startedAt).to.equal("2026-07-29T07:00:00Z");
+    expect(body.endedAt).to.equal("2026-07-29T08:10:00Z");
+  });
+}

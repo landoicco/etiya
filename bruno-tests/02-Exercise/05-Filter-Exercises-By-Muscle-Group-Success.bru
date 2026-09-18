@@ -1,0 +1,24 @@
+meta {
+  name: Filter Exercises By Muscle Group Success
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises?muscleGroup=shoulders
+  body: none
+  auth: none
+}
+
+params:query {
+  muscleGroup: shoulders
+}
+
+script:post-response {
+  test("Should filter the catalog by muscle group, ignoring case", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const items = res.getBody().items;
+    expect(items.map(e => e.id)).to.include("overhead-barbell-press");
+    items.forEach(e => expect(e.muscleGroup.toLowerCase()).to.equal("shoulders"));
+  });
+}

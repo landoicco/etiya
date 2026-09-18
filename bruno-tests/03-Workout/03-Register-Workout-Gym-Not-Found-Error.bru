@@ -1,0 +1,49 @@
+meta {
+  name: Register Workout Gym Not Found Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "startedAt": "2026-07-31T18:30:00Z",
+    "endedAt": "2026-07-31T19:45:00Z",
+    "gymId": "GYM-INEXISTENTE-999",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "exerciseCatalogItemId": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" },
+          { "count": 10, "weight": 80.0, "unit": "KG" }
+        ]
+      },
+      {
+        "name": "Overhead Barbell Press",
+        "sets": [
+          { "count": 10, "weight": 40.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should return 404 when the gym is not in the catalog", function() {
+    expect(res.getStatus()).to.equal(404);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("GYM_NOT_FOUND");
+    expect(body.message).to.contain("does not exist");
+  });
+}

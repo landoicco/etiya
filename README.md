@@ -1,60 +1,49 @@
 # Etiya - Gym Tracker
 
-A serverless-ready, high-efficiency backend for tracking gym workouts. Built with Java and **Spring Cloud Function**, and optimized for the AWS Free Tier using **Single Table Design** in DynamoDB.
+A serverless backend for tracking gym workouts, built with Java and **Spring Cloud Function**, deployed on AWS Lambda behind an **HTTP API**, and using **Single Table Design** in DynamoDB to stay inside the AWS free tier.
 
----
-## 🚀 How to deploy?
-
-### Local Deployment
-
-This project leverages Docker Compose to run DynamoDB Local (in-memory) alongside the Spring application. It incorporates Spring and Maven Profiles to strictly decouple local development configurations and testing dependencies from production-ready cloud code.
-
-Start the environment (this builds the app with the `local` Maven profile to include Spring Web):
-   ```bash
-   docker compose up --build
-   ```
-   
-   Your functions will be available at `http://localhost:8080/`.
-
-To stop the containers and wipe the temporary in-memory database:
-```bash
-docker compose down -v
+```
+Client ──► HTTP API ──► 3 Lambdas ──► DynamoDB
+            (Cognito    (gyms,        (single table)
+             JWT auth)   exercises,
+                         workouts)
 ```
 
+Every route requires a Cognito token. Workouts are stored under their owner, so a user can only ever read their own.
 
-## 🛠️ Local Development Environment (Nix Flake)
+## Quick start
 
-This project unifies its entire development stack using a **Nix Flake**. If you are running NixOS or have the Nix package manager installed, there is no need to manually configure Java, Maven, or test clients.
-
-To activate the environment with all tools ready to use, run in the root directory:
+With [Nix](https://nixos.org/) installed:
 ```bash
-nix develop
+nix develop            # Java 21, Maven, Docker, Bruno, AWS + CDK CLIs
+docker compose up --build
 ```
-*This will automatically load OpenJDK 21, Maven, AWS CLI, Docker, and the Bruno CLI (`bru`).*
+The API answers at `http://localhost:8080`. Locally the user comes from a header:
+```bash
+curl -H "X-User-Id: user-default" http://localhost:8080/me/workouts
+```
 
----
-## 📋 Data Architecture (Single Table Design)
-
-To maximize performance and guarantee that the application remains 100% free on AWS, **Gyms** and **Workouts** are stored inside the **same single table** using a prefix strategy on its primary key (`id`):
-
-* `gym-<slug>`: Records corresponding to the global catalog of gym venues.
-* `wkt-<uuid>`: Workout session records, which optionally include denormalized `gymId` and `gymName` fields to eliminate expensive runtime queries (*JOINs*).
-
----
-
-## 🔬 Automated Integration Tests (Bruno CLI)
-
-The project includes a comprehensive suite of automated, plain-text integration tests written for **Bruno**. There is no need for a heavy graphical interface to test the API; the Flake bundles the official CLI.
-
-To execute the entire test suite in rapid succession (successful creations, listings, and Jakarta validation failure rejections), open another terminal and run:
+Run the test suite in another terminal:
 ```bash
 cd bruno-tests && bru run --env Local
 ```
 
-### Available Endpoints:
-* **Gym Catalog:**
-  * `POST /registerGym` - Registers a gym in the catalog (Validates fields via Jakarta).
-  * `POST /searchGyms` - Predictive prefix-based search engine (Mapped with efficient DynamoDB filter expressions).
-* **Workouts:**
-  * `POST /registerWorkout` - Saves a workout with cascade validation (Gym linking is optional).
-  * `GET /getAllWorkouts` - Retrieves the full workout history log.
+## Documentation
+
+| Guide | What's in it |
+|---|---|
+| [Local development](docs/local-development.md) | Docker Compose, the Nix shells, how identity works locally, building |
+| [Deployment](docs/deployment.md) | CDK stack, bootstrap, first Cognito user, cost and abuse limits |
+| [API reference](docs/api.md) | Endpoints, conventions, status codes |
+| [Data model](docs/data-model.md) | Single table design, slugs, ULIDs, workout times |
+| [Testing](docs/testing.md) | Bruno against local and AWS, the `local-only` tag |
+| [Decisions](docs/decisions.md) | Why the project looks the way it does, and what is deliberately postponed |
+
+## Layout
+
+```
+core/         the application (Spring Cloud Function, DynamoDB)
+infra/        infrastructure as code (AWS CDK in Java)
+bruno-tests/  integration tests (Bruno CLI)
+flake.nix     the whole toolchain
+```

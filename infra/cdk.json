@@ -1,0 +1,7 @@
+{
+  "app": "mvn -e -q compile exec:java",
+  "watch": {
+    "include": ["src/main/java/**"],
+    "exclude": ["target", "cdk.out"]
+  }
+}

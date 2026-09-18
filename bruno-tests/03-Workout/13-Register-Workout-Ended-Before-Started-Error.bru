@@ -1,0 +1,40 @@
+meta {
+  name: Register Workout Ended Before Started Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "startedAt": "2026-07-31T18:30:00-06:00",
+    "endedAt": "2026-07-31T23:45:00Z",
+    "exercises": [
+      {
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  // 18:30-06:00 is 00:30Z on the next day, so this end time is 45 minutes before the start
+  test("Should reject a workout that ends before it starts", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("endedAt must be after startedAt");
+  });
+}

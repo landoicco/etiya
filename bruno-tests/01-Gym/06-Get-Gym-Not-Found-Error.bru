@@ -1,0 +1,20 @@
+meta {
+  name: Get Gym Not Found Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/gyms/gym-that-does-not-exist
+  body: none
+  auth: none
+}
+
+script:post-response {
+  test("Should return 404 for an unknown gym", function() {
+    expect(res.getStatus()).to.equal(404);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("GYM_NOT_FOUND");
+    expect(body.message).to.contain("does not exist");
+  });
+}

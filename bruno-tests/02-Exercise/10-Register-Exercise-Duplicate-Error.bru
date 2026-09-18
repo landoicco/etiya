@@ -1,0 +1,29 @@
+meta {
+  name: Register Exercise Duplicate Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/exercises
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": "a-different-id",
+    "name": "barbell bench-press",
+    "muscleGroup": "Chest"
+  }
+}
+
+script:post-response {
+  // Same slug as the exercise registered in 01, so the stored one must not be overwritten
+  test("Should reject an exercise that already exists, ignoring the client ID", function() {
+    expect(res.getStatus()).to.equal(409);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("EXERCISE_ALREADY_EXISTS");
+    expect(body.message).to.contain("barbell-bench-press");
+  });
+}

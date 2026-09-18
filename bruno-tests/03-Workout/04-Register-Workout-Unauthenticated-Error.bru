@@ -1,0 +1,45 @@
+meta {
+  name: Register Workout Unauthenticated Error
+  type: http
+  tags: [
+    local-only
+  ]
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "startedAt": "2026-07-31T18:30:00Z",
+    "endedAt": "2026-07-31T19:45:00Z",
+    "gymId": "golds-gym-sunset-st",
+    "gymName": "Golds Gym Sunset St",
+    "exercises": [
+      {
+        "exerciseCatalogItemId": "barbell-bench-press",
+        "name": "Barbell Bench Press",
+        "sets": [
+          { "count": 12, "weight": 60.0, "unit": "KG" },
+          { "count": 10, "weight": 80.0, "unit": "KG" }
+        ]
+      },
+      {
+        "name": "Overhead Barbell Press",
+        "sets": [
+          { "count": 10, "weight": 40.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should return 401 without an authenticated user", function() {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().error).to.equal("UNAUTHORIZED");
+  });
+}
