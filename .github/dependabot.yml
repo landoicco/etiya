@@ -1,0 +1,37 @@
+# Weekly version updates, grouped so each ecosystem opens one PR for minor and patch bumps.
+# Major bumps arrive as their own PR, since they are the ones that can break something.
+# Security updates are not grouped and do not wait for the schedule.
+# flake.lock is not covered: the toolchain is updated by hand with `nix flake update`
+version: 2
+
+updates:
+  - package-ecosystem: maven
+    directories: ["/core", "/infra"]
+    schedule:
+      interval: weekly
+    groups:
+      maven-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: "/core"
+    schedule:
+      interval: weekly
+    ignore:
+      # A major bump here is a new Java version, which has to move together with the Lambda
+      # runtime in infra and the JDK in the flake
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: weekly

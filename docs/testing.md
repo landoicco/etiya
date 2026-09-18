@@ -61,6 +61,8 @@ Four tests are tagged `local-only` and excluded when running against AWS, becaus
 
 The workflow has **no AWS credentials** and a read-only token, so it never deploys and never runs against the `Dev` environment. That keeps the repo safe to have public: pull requests from forks run the exact same checks with nothing to steal.
 
+Both jobs are required to merge into `main`, and so is every pull request that **Dependabot** opens: once a week it proposes dependency updates for Maven, GitHub Actions and the Docker images (see [its configuration](../.github/dependabot.yml)). `flake.lock` is not covered, so the toolchain is updated by hand with `nix flake update`, which the CI then tests in the same pull request. **CodeQL** scans the Java code on every pull request as well.
+
 ## What is covered
 
 Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), unauthenticated requests, invalid `limit` and forged cursors.
