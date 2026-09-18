@@ -21,6 +21,33 @@ To stop the containers and wipe the temporary in-memory database:
 docker compose down -v
 ```
 
+### AWS Deployment (CDK)
+
+The `infra/` directory holds an independent Maven project that defines the infrastructure with the **AWS CDK in Java**: a DynamoDB table, a Cognito user pool, three Lambdas (one per domain, with **SnapStart**) and an **HTTP API** where every route is protected by a JWT authorizer.
+
+The Lambda jar is built first, since CDK packages it as an asset:
+```bash
+cd core && mvn -P prod clean package -DskipTests
+cd ../infra && cdk deploy
+```
+
+The deploy prints everything needed to use the API: `ApiUrl`, `UserPoolId`, `UserPoolClientId` and `TableName`.
+
+Users cannot sign themselves up, so the first one is created by an administrator:
+```bash
+aws cognito-idp admin-create-user --user-pool-id <POOL_ID> \
+  --username you@example.com --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password --user-pool-id <POOL_ID> \
+  --username you@example.com --password '<PASSWORD>' --permanent
+```
+`--permanent` matters: without it the user stays in `FORCE_CHANGE_PASSWORD` and login returns a challenge instead of tokens.
+
+To tear everything down (the dev environment keeps no data on purpose):
+```bash
+cd infra && cdk destroy
+```
+
 
 ## 🛠️ Local Development Environment (Nix Flake)
 
@@ -65,6 +92,31 @@ cd bruno-tests && bru run --env Local
 > ```bash
 > docker compose down -v && docker compose up --build
 > ```
+
+### Running the suite against AWS
+
+The same tests run against the deployed API with the `Dev` environment. Every request there needs a Cognito token, which the collection sends as `Authorization: Bearer {{authToken}}`. The token is passed on the command line, so it is never written to a file:
+
+```bash
+TOKEN=$(aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
+  --client-id <CLIENT_ID> \
+  --auth-parameters USERNAME=you@example.com,PASSWORD='<PASSWORD>' \
+  --query 'AuthenticationResult.AccessToken' --output text)
+
+cd bruno-tests && bru run --env Dev --env-var authToken="$TOKEN" --exclude-tags local-only
+```
+
+Tokens last one hour; when one expires, request another.
+
+Four tests are tagged `local-only` and excluded above, because they depend on how the local bridge fakes identity:
+* Two expect `401` without a user. On AWS, API Gateway rejects those before any code runs.
+* Two check that a user cannot see another user's workouts, using the `X-User-Id` header. On AWS the identity comes from the token, so verifying this would need a second Cognito user.
+
+`environments/Dev.bru` stores the API URL and the `userId`, which on AWS is the Cognito `sub` rather than `user-default`. To repeat the full suite against AWS, the catalog items from the previous run have to be deleted first, or the registration tests get `409`:
+```bash
+aws dynamodb delete-item --table-name <TABLE_NAME> \
+  --key '{"PK":{"S":"GYM"},"SK":{"S":"GYM#golds-gym-sunset-st-los-angeles"}}'
+```
 
 ### Available Endpoints:
 Lists always return `{ "items": [...], "nextCursor": null }`, and errors share the `ErrorResponse` format with real HTTP status codes.
