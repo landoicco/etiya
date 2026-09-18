@@ -1,5 +1,7 @@
 # Testing
 
+*For running the suite against either environment, and knowing what it covers.*
+
 The suite is a set of plain-text integration tests written for **Bruno**. No graphical client is needed; the Nix shell bundles the CLI (`bru`).
 
 ## Against the local stack
@@ -51,5 +53,7 @@ Four tests are tagged `local-only` and excluded when running against AWS, becaus
 ## What is covered
 
 Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), unauthenticated requests, invalid `limit` and forged cursors.
+
+That is 34 requests locally and 30 against AWS, the difference being the four `local-only` tests.
 
 There are no unit tests yet; the suite is the safety net.

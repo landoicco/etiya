@@ -1,5 +1,7 @@
 # Local Development
 
+*For working on the code: running the app, the toolchain, and how the local environment mirrors AWS. No AWS account needed.*
+
 ## Running the app
 
 Docker Compose runs DynamoDB Local (in memory) next to the Spring application. Spring and Maven profiles keep local-only configuration and dependencies out of the production build.
