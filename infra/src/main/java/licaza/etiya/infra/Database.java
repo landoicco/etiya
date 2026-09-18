@@ -5,6 +5,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.constructs.Construct;
 
@@ -34,6 +35,10 @@ public class Database extends Construct {
             .billingMode(BillingMode.PROVISIONED)
             .readCapacity(READ_CAPACITY)
             .writeCapacity(WRITE_CAPACITY)
+            // Restores the table to any second of the last 35 days. Billed per GB of table size,
+            // which for this data is a fraction of a cent. Deleting the table keeps a backup too
+            .pointInTimeRecoverySpecification(
+                PointInTimeRecoverySpecification.builder().pointInTimeRecoveryEnabled(true).build())
             // Dev environment: cdk destroy must not leave the table behind
             .removalPolicy(RemovalPolicy.DESTROY)
             .build();

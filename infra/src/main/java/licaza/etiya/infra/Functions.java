@@ -1,8 +1,11 @@
 package licaza.etiya.infra;
 
 import java.util.Map;
+import software.amazon.awscdk.Acknowledgment;
+import software.amazon.awscdk.Annotations;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Validations;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.Alias;
 import software.amazon.awscdk.services.lambda.Code;
@@ -75,6 +78,30 @@ public class Functions extends Construct {
     // Every domain shares the table, so each one gets read and write access to all of it.
     // Narrowing this per item type would need IAM conditions on the partition key
     table.grantReadWriteData(function);
+
+    Validations.of(function)
+        .acknowledge(
+            Acknowledgment.builder()
+                .id(
+                    "AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/"
+                        + "AWSLambdaBasicExecutionRole]")
+                .reason(
+                    "Only grants writing to CloudWatch Logs. Replacing it with an inline policy"
+                        + " is part of the narrower IAM item in docs/decisions.md")
+                .build(),
+            Acknowledgment.builder()
+                .id("AwsSolutions-L1")
+                .reason(
+                    "Java 21 is an LTS runtime supported by Lambda. Moving to Java 25 changes the"
+                        + " flake, the Docker images and the compiler release too, so it is its own"
+                        + " step")
+                .build());
+
+    // The alias below publishes a version, which is what SnapStart needs; the CDK cannot tell
+    Annotations.of(function)
+        .acknowledgeWarning(
+            "@aws-cdk/aws-lambda:snapStartRequirePublish",
+            "Published through the live alias, which is what the API invokes");
 
     return Alias.Builder.create(this, name + "Alias")
         .aliasName("live")

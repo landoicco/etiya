@@ -2,6 +2,7 @@ package licaza.etiya.infra;
 
 import java.util.List;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpUserPoolAuthorizer;
 import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpUserPoolAuthorizerProps;
@@ -14,6 +15,8 @@ import software.amazon.awscdk.services.apigatewayv2.HttpApi;
 import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
 import software.amazon.awscdk.services.apigatewayv2.HttpRouteIntegration;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 // HTTP API in front of the three Lambdas. Routes must match the route keys declared in core,
@@ -27,6 +30,18 @@ public class Api extends Construct {
   // Caps the damage from a runaway client or a bad loop; well within the free tier
   private static final int THROTTLE_RATE_PER_SECOND = 10;
   private static final int THROTTLE_BURST = 20;
+
+  // JSON, so CloudWatch Logs Insights can filter on any field. authorizerError says why a
+  // request got a 401; routeKey is "-" for paths that match no route
+  private static final String ACCESS_LOG_FORMAT =
+      "{\"requestId\":\"$context.requestId\","
+          + "\"requestTime\":\"$context.requestTime\","
+          + "\"sourceIp\":\"$context.identity.sourceIp\","
+          + "\"routeKey\":\"$context.routeKey\","
+          + "\"status\":\"$context.status\","
+          + "\"latencyMs\":\"$context.responseLatency\","
+          + "\"authorizerError\":\"$context.authorizer.error\","
+          + "\"error\":\"$context.error.message\"}";
 
   private final HttpApi httpApi;
 
@@ -75,7 +90,9 @@ public class Api extends Construct {
         "Workouts", functions.getWorkoutsApi(), "/me/workouts", HttpMethod.POST, HttpMethod.GET);
     addRoute("Workout", functions.getWorkoutsApi(), "/me/workouts/{workoutId}", HttpMethod.GET);
 
-    throttleDefaultStage();
+    CfnStage stage = (CfnStage) httpApi.getDefaultStage().getNode().getDefaultChild();
+    throttle(stage);
+    logAccess(stage);
   }
 
   private void addRoute(
@@ -90,13 +107,29 @@ public class Api extends Construct {
             .build());
   }
 
-  // Throttling has no L2 support yet, so the generated stage is patched directly
-  private void throttleDefaultStage() {
-    CfnStage stage = (CfnStage) httpApi.getDefaultStage().getNode().getDefaultChild();
+  // The default stage cannot be configured through the L2 construct, so these two methods
+  // patch the generated CloudFormation resource directly
+  private void throttle(final CfnStage stage) {
     stage.setDefaultRouteSettings(
         CfnStage.RouteSettingsProperty.builder()
             .throttlingRateLimit(THROTTLE_RATE_PER_SECOND)
             .throttlingBurstLimit(THROTTLE_BURST)
+            .build());
+  }
+
+  // One line per request, including the ones rejected with 401 before reaching any Lambda.
+  // Without this, traffic that never gets past the authorizer leaves no trace at all
+  private void logAccess(final CfnStage stage) {
+    LogGroup accessLogs =
+        LogGroup.Builder.create(this, "AccessLogs")
+            .retention(RetentionDays.TWO_WEEKS)
+            .removalPolicy(RemovalPolicy.DESTROY)
+            .build();
+
+    stage.setAccessLogSettings(
+        CfnStage.AccessLogSettingsProperty.builder()
+            .destinationArn(accessLogs.getLogGroupArn())
+            .format(ACCESS_LOG_FORMAT)
             .build());
   }
 

@@ -74,7 +74,26 @@ Rejected for dev testing: IAM authorizers (secure but thrown away once a fronten
 
 The table is provisioned at 5/5 because the always-free tier covers provisioned capacity, while on-demand bills from the first request. SnapStart is enabled and each Lambda is exposed through a `live` alias, because **SnapStart only applies to published versions**: pointing the API at the function directly would silently disable it.
 
-Throttling on the stage is set through an escape hatch (`CfnStage`), since the L2 construct does not expose it. That is the most fragile line in the stack and the first thing to check if a CDK upgrade breaks synthesis.
+Throttling and access logs on the stage are set through an escape hatch (`CfnStage`), since the L2 construct does not expose the default stage's settings. That is the most fragile code in the stack and the first thing to check if a CDK upgrade breaks synthesis.
+
+## Security rules checked on every synth
+
+[cdk-nag](https://github.com/cdklabs/cdk-nag) runs the *AwsSolutions* rules on every `cdk synth`, so CI fails on any finding that is neither fixed nor acknowledged. An acknowledgment requires a written reason, and it lives next to the resource it applies to.
+
+The first run found nine issues. Three were fixed, since they cost nothing or close to it:
+
+* **Stronger password policy**, now requiring symbols. It applies the next time a password is set.
+* **Access logs on the API.** Requests rejected with `401` never reach a Lambda, so before this they left no trace at all.
+* **Point-in-time recovery on the table**, billed per GB of data, which here is a fraction of a cent.
+
+The rest are acknowledged, each with a trigger in [still open](#still-open):
+
+| Rule | Why it is accepted today |
+|---|---|
+| MFA not required, Cognito *Plus* plan not used | A single user in dev. *Plus* is paid, and required MFA would break the CLI login Bruno uses |
+| AWS managed policy on the Lambda roles | `AWSLambdaBasicExecutionRole` only grants writing logs |
+| Lambda runtime is not the latest | Java 21 is LTS; moving to 25 changes the whole toolchain at once |
+| SnapStart without a published version | A false positive: each function publishes one behind the `live` alias |
 
 ## Infrastructure as a separate Maven project
 
@@ -94,7 +113,8 @@ Deliberately postponed, with the trigger that would justify each:
 | Reserved concurrency per Lambda and a lower stage throttle | Before the API is shared with anyone |
 | `gymName` read from the catalog instead of trusting the client | The frontend shows gyms in the history |
 | `PUT` / `DELETE` for workouts | The app can edit or delete |
-| A Cognito `admin` group gating catalog writes | There are users other than the owner |
-| Narrower IAM: per-item-type conditions instead of `grantReadWriteData` | Tightening dev into something production-shaped |
+| A Cognito `admin` group gating catalog writes, and MFA | There are users other than the owner |
+| Narrower IAM: per-item-type conditions instead of `grantReadWriteData`, and an inline logs policy instead of the managed one | Tightening dev into something production-shaped |
+| Java 25: Lambda runtime, flake JDK, Docker images and compiler release together | Spring or a dependency needs it, or Java 21 nears end of support on Lambda |
 | Unit tests for `Slugs`, time normalization and key building | The suite stops being enough |
 | Measuring the real cold start in CloudWatch | Latency becomes a complaint |

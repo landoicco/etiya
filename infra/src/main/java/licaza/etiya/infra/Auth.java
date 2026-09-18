@@ -1,8 +1,10 @@
 package licaza.etiya.infra;
 
+import software.amazon.awscdk.Acknowledgment;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.Validations;
 import software.amazon.awscdk.services.cognito.AccountRecovery;
 import software.amazon.awscdk.services.cognito.AuthFlow;
 import software.amazon.awscdk.services.cognito.FeaturePlan;
@@ -42,7 +44,7 @@ public class Auth extends Construct {
                     .requireLowercase(true)
                     .requireUppercase(true)
                     .requireDigits(true)
-                    .requireSymbols(false)
+                    .requireSymbols(true)
                     .build())
             .accountRecovery(AccountRecovery.EMAIL_ONLY)
             .mfa(Mfa.OFF)
@@ -50,6 +52,21 @@ public class Auth extends Construct {
             .featurePlan(FeaturePlan.LITE)
             .removalPolicy(RemovalPolicy.DESTROY)
             .build();
+
+    Validations.of(userPool)
+        .acknowledge(
+            Acknowledgment.builder()
+                .id("AwsSolutions-COG2")
+                .reason(
+                    "Single user in a dev environment. Required MFA would also break the"
+                        + " USER_PASSWORD_AUTH flow the CLI uses to get a token for Bruno")
+                .build(),
+            Acknowledgment.builder()
+                .id("AwsSolutions-COG8")
+                .reason(
+                    "The Plus plan (threat protection) is paid; Lite covers sign-in and JWT,"
+                        + " and self sign-up is disabled")
+                .build());
 
     this.apiClient =
         userPool.addClient(

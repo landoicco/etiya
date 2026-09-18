@@ -1,9 +1,11 @@
 package licaza.etiya.infra;
 
+import io.github.cdklabs.cdknag.AwsSolutionsChecks;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.Validations;
 
 public final class EtiyaApp {
 
@@ -26,6 +28,9 @@ public final class EtiyaApp {
 
     // Lets every resource be filtered by project in Cost Explorer
     Tags.of(app).add("project", "etiya");
+
+    // Fails the synth on any finding that is neither fixed nor acknowledged with a reason
+    Validations.of(app).addPlugins(new AwsSolutionsChecks(app));
 
     app.synth();
   }
