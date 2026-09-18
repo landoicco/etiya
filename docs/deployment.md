@@ -1,5 +1,7 @@
 # Deployment (AWS CDK)
 
+*For deploying your own copy to an AWS account, and for understanding what it costs.*
+
 `infra/` is an independent Maven project that defines the infrastructure with the **AWS CDK in Java**:
 
 | Construct | Resources |

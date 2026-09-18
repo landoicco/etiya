@@ -1,6 +1,8 @@
 # Decisions
 
-Why the project looks the way it does. Each entry is a choice that had alternatives worth considering.
+*For reviewers, and for future me: why the project looks the way it does.*
+
+Each entry is a choice that had alternatives worth considering, including the ones that were rejected.
 
 ## Three Lambdas, one per domain
 

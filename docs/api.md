@@ -1,5 +1,7 @@
 # API Reference
 
+*For anyone calling the API: every endpoint, what it accepts and what it answers.*
+
 Base URL: the `ApiUrl` printed by `cdk deploy`. Locally, `http://localhost:8080`.
 
 ## Authentication

@@ -1,5 +1,7 @@
 # Data Model (Single Table Design)
 
+*For understanding how the data is stored, and why the keys look the way they do.*
+
 Gyms, exercises and workouts live in the **same table**, keyed by a partition key (`PK`) and a sort key (`SK`). Every access pattern is a `GetItem` or a `Query`; the table is never scanned.
 
 | Item | `PK` | `SK` | Access patterns |
