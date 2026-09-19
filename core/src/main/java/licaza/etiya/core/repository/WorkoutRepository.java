@@ -5,7 +5,8 @@ import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
 
 public interface WorkoutRepository {
-  void save(Workout workout);
+  // Returns false, and writes nothing, when the owner already has a workout with that ID
+  boolean create(Workout workout);
 
   // Scoped to the owner: another user's workout is never returned
   Optional<Workout> findById(String userId, String workoutId);

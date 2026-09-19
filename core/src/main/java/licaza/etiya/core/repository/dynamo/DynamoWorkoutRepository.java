@@ -15,13 +15,24 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 @Repository
 public class DynamoWorkoutRepository implements WorkoutRepository {
+
+  // Evaluated against the item with the same PK and SK, atomically, so a retry arriving while
+  // the first request is still being written cannot create a second copy either
+  private static final Expression WORKOUT_DOES_NOT_EXIST =
+      Expression.builder()
+          .expression("attribute_not_exists(#pk)")
+          .putExpressionName("#pk", PK)
+          .build();
 
   private final DynamoDbTable<Workout> table;
 
@@ -62,6 +73,8 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
     return new Page<>(page.items(), nextCursor);
   }
 
+  // Strongly consistent, so a retry that finds the workout already written can always read it
+  // back, even milliseconds after the first request. It costs one read unit instead of half
   @Override
   public Optional<Workout> findById(String userId, String workoutId) {
     Key key =
@@ -70,11 +83,20 @@ public class DynamoWorkoutRepository implements WorkoutRepository {
             .sortValue(WORKOUT_SK_PREFIX + workoutId)
             .build();
 
-    return Optional.ofNullable(table.getItem(key));
+    return Optional.ofNullable(table.getItem(r -> r.key(key).consistentRead(true)));
   }
 
   @Override
-  public void save(Workout workout) {
-    table.putItem(workout);
+  public boolean create(Workout workout) {
+    try {
+      table.putItem(
+          PutItemEnhancedRequest.builder(Workout.class)
+              .item(workout)
+              .conditionExpression(WORKOUT_DOES_NOT_EXIST)
+              .build());
+      return true;
+    } catch (ConditionalCheckFailedException ex) {
+      return false;
+    }
   }
 }
