@@ -1,5 +1,8 @@
 node_modules/
 dist/
 
-# Vite's local env files, for per-deployment values like the API URL and Cognito IDs
+# Vite's local env files
 *.local
+
+# API URL and Cognito IDs of a deployed stack, written by npm run config
+public/config.json

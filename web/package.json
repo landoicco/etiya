@@ -7,9 +7,13 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 5173 --strictPort",
+    "config": "scripts/config.sh public/config.json",
+    "deploy": "scripts/deploy.sh"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.103.1",
+    "aws-amplify": "^6.20.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
