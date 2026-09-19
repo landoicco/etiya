@@ -1,5 +1,6 @@
 package licaza.etiya.infra;
 
+import java.util.ArrayList;
 import java.util.List;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
@@ -23,8 +24,9 @@ import software.constructs.Construct;
 // because each handler dispatches on the routeKey the API sends
 public class Api extends Construct {
 
-  // Where the frontend will run during development. CORS only affects browsers
-  private static final List<String> ALLOWED_ORIGINS =
+  // Where the frontend runs during development, besides the deployed one. CORS only affects
+  // browsers
+  private static final List<String> DEV_ORIGINS =
       List.of("http://localhost:5173", "http://localhost:3000");
 
   // Caps the damage from a runaway client or a bad loop; well within the free tier
@@ -45,8 +47,16 @@ public class Api extends Construct {
 
   private final HttpApi httpApi;
 
-  public Api(final Construct scope, final String id, final Auth auth, final Functions functions) {
+  public Api(
+      final Construct scope,
+      final String id,
+      final Auth auth,
+      final Functions functions,
+      final String webOrigin) {
     super(scope, id);
+
+    List<String> allowedOrigins = new ArrayList<>(DEV_ORIGINS);
+    allowedOrigins.add(webOrigin);
 
     // Applied to every route: API Gateway validates the Cognito token and rejects
     // unauthenticated requests with 401, before any Lambda is invoked
@@ -66,7 +76,7 @@ public class Api extends Construct {
             .defaultAuthorizer(authorizer)
             .corsPreflight(
                 CorsPreflightOptions.builder()
-                    .allowOrigins(ALLOWED_ORIGINS)
+                    .allowOrigins(allowedOrigins)
                     .allowMethods(
                         List.of(
                             CorsHttpMethod.GET,

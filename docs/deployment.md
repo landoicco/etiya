@@ -10,6 +10,7 @@
 | `Auth` | Cognito user pool with self sign-up disabled, plus a public app client |
 | `Functions` | Three Lambdas (one per domain) with SnapStart, each exposed through a `live` alias |
 | `Api` | HTTP API with a Cognito JWT authorizer on every route, CORS, throttling and access logs |
+| `Web` | Private S3 bucket and a CloudFront distribution that serves the web app from it |
 
 One stack per environment. Today there is only `EtiyaDev`; the name leaves room for `EtiyaProd` later.
 
@@ -56,13 +57,28 @@ cd ../infra && cdk deploy
 
 The deploy prints everything needed to use the API:
 ```
+WebUrl           = https://<distribution-id>.cloudfront.net
+WebBucketName    = etiyadev-webbucketxxxxxxxx-xxxxxxxxxxxx
 ApiUrl           = https://<api-id>.execute-api.us-east-1.amazonaws.com
 UserPoolId       = us-east-1_xxxxxxxxx
 UserPoolClientId = xxxxxxxxxxxxxxxxxxxxxxxxxx
 TableName        = EtiyaDev-Workouts
 ```
 
-The first deploy takes a few minutes: it uploads the jar and publishes the SnapStart snapshots.
+The first deploy takes a few minutes: it uploads the jar, publishes the SnapStart snapshots and creates the CloudFront distribution.
+
+## Deploying the web app
+
+`cdk deploy` creates the bucket and the distribution, but leaves the bucket empty. The app is uploaded separately, and every UI change takes seconds without going through CloudFormation:
+```bash
+cd web && npm run deploy
+```
+
+[`web/scripts/deploy.sh`](../web/scripts/deploy.sh) reads the outputs of the stack, builds the app, writes `dist/config.json` with the API URL and the Cognito IDs, and syncs `dist/` to the bucket. Set `STACK` to target a stack other than `EtiyaDev`. The app is then at `WebUrl`.
+
+* `config.json` is written after the build, so the same build works for any stack and none of those values is committed.
+* Files under `assets/` have a content hash in their name and are cached for a year. Everything else, including `index.html`, the service worker and `config.json`, is never cached, so a deploy reaches the phones on their next launch and no CloudFront invalidation is needed.
+* `assets/` is uploaded first, so a phone that fetches the new `index.html` mid-upload finds every file it points to. Old hashed files are not deleted, for phones still running the previous build.
 
 ## Creating the first user
 
@@ -87,10 +103,12 @@ aws cognito-idp admin-get-user --user-pool-id <POOL_ID> --username you@example.c
 
 ## Tearing it down
 
+CloudFormation only deletes empty buckets, so empty the web bucket first:
 ```bash
+aws s3 rm "s3://<WebBucketName>" --recursive
 cd infra && cdk destroy
 ```
-The table and the user pool use `RemovalPolicy.DESTROY`, so nothing is left behind. That is deliberate for a dev environment and would have to change for production.
+The table, the user pool and the web bucket use `RemovalPolicy.DESTROY`, so nothing is left behind. Without the first command the destroy fails on the bucket and leaves it behind; running both again finishes the job. That is deliberate for a dev environment and would have to change for production.
 
 ## Cost
 
@@ -105,8 +123,10 @@ Everything here fits the AWS free tier, with three exceptions worth knowing abou
 | CloudWatch Logs | 5 GB per month; log groups, including the API access logs, keep 14 days, since the default is to keep them forever |
 | HTTP API | ⚠️ ~$1 per million requests. Its free tier only lasts 12 months |
 | S3 (CDK assets) | ⚠️ Each deploy uploads the ~52 MB jar. Cents per month, but old assets accumulate |
+| CloudFront | 1 TB of transfer and 10M requests per month, always free. Cache and header policies, Origin Access Control and error pages cost nothing. No invalidations are used |
+| S3 (web bucket) | ⚠️ Not in the always-free tier: a few hundred KB per build, plus one GET per app launch for the uncached files. A fraction of a cent per month |
 
-Deliberately avoided: NAT gateways, customer-managed KMS keys, Secrets Manager and WAF.
+Deliberately avoided: NAT gateways, customer-managed KMS keys, Secrets Manager, WAF, Lambda@Edge and a custom domain.
 
 ## Abuse and limits
 

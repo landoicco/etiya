@@ -94,6 +94,11 @@ The rest are acknowledged, each with a trigger in [still open](#still-open):
 | AWS managed policy on the Lambda roles | `AWSLambdaBasicExecutionRole` only grants writing logs |
 | Lambda runtime is not the latest | Java 21 is LTS; moving to 25 changes the whole toolchain at once |
 | SnapStart without a published version | A false positive: each function publishes one behind the `live` alias |
+| No access logs on the web bucket or the distribution | Both would need a log bucket; the files are public by design and the API access logs record every call that matters |
+| No WAF or geo restriction on the distribution | WAF is billed per web ACL and per request, and the distribution only serves static files |
+| TLS 1.0 allowed for viewers | The default `cloudfront.net` certificate does not allow choosing the minimum version; a custom domain does |
+
+cdk-nag 3 matches acknowledgments by exact ID, walking up from the resource to its parents. Rules that report one finding per permission, like `AwsSolutions-IAM5[Action::s3:List*]`, need one acknowledgment each.
 
 ## Infrastructure as a separate Maven project
 
@@ -103,6 +108,10 @@ The rest are acknowledged, each with a trigger in [still open](#still-open):
 
 `bruno-tests/environments/Dev.bru` is ignored and a `Dev.example.bru` with placeholders is versioned instead. The API URL and the Cognito user belong to whoever deployed the stack, and publishing a live URL invites traffic that is billed even when it is rejected.
 
+The web app follows the same rule: it reads those values from a `config.json` that the deploy script writes next to the build, never from the source or from build-time variables.
+
+The AWS account ID never appears in versioned files either. It is not a credential, but a public repo has no reason to carry it, and anything that would need it, like an acknowledgment naming the CDK assets bucket, is avoided.
+
 ## The frontend is a PWA
 
 The app is meant to be used with one hand, between sets, on a phone. A progressive web app opens from a link with nothing to install, and a service worker keeps it working with bad signal. Vite, React, TypeScript and Tailwind are mainstream choices that need no justification to whoever reads the code next.
@@ -110,6 +119,10 @@ The app is meant to be used with one hand, between sets, on a phone. A progressi
 * **The workout in progress lives on the phone**, in IndexedDB, and is sent once finished. A send that fails waits in a queue and is retried when the app opens or the connection returns; iOS has no Background Sync. Those retries are why workout idempotency comes before any other API change.
 * **Login is the app's own form, using Amplify Auth with SRP**, so the password never travels to the server. The Cognito Hosted UI would mean a redirect to a generic page, which breaks the feel of an app on a phone.
 * **S3 and CloudFront, on the default `cloudfront.net` domain.** Service workers require HTTPS, which that domain already has, and CloudFront's always-free tier covers personal use. A custom domain costs about $12 a year and can be added later without other changes.
+* **The bucket is private** and only CloudFront can read it, through Origin Access Control. S3 website hosting would need a public bucket and serves HTTP only.
+* **Caching is decided by CloudFront, not by S3 metadata.** Files under `/assets/*` carry a content hash in their name, so they are cached for a year as `immutable`. Everything else is never cached, because a stale `index.html` or service worker would keep phones on an old version. That makes invalidations unnecessary. Deep links fall back to `index.html` on a 403 or 404, since the app routes in the browser.
+* **The app is uploaded by a script, not by the CDK.** `BucketDeployment` would add a Lambda of the CDK's own to the stack, which needs nine cdk-nag acknowledgments, one of them naming the account's assets bucket. [`web/scripts/deploy.sh`](../web/scripts/deploy.sh) runs `aws s3 sync` instead, so a UI change never goes through CloudFormation. The cost is a second command, and emptying the bucket by hand before `cdk destroy`.
+* **Stack values reach the app at runtime**, through a `config.json` written next to the build. One build works for any stack, and changing the API does not mean rebuilding the app.
 * **Development runs against the dev API on AWS**, not the Docker stack, so the real login is exercised from day one. The alternative needed a mode without login that would exist only for development.
 
 ## Still open
@@ -120,6 +133,8 @@ Deliberately postponed, with the trigger that would justify each:
 |---|---|
 | Idempotency for workout writes (client-generated ULID, re-stamped with `startedAt`) | The frontend retries failed uploads |
 | Reserved concurrency per Lambda and a lower stage throttle | Before the API is shared with anyone |
+| Deploying the web app from CI, with an AWS role assumed through GitHub OIDC instead of stored keys, running the same `deploy.sh` | Deploying by hand becomes a chore, or someone else contributes |
+| A custom domain, which also allows TLS 1.2 as the minimum | The app is shared beyond a link on a profile |
 | `gymName` read from the catalog instead of trusting the client | The frontend shows gyms in the history |
 | `PUT` / `DELETE` for workouts | The app can edit or delete |
 | A Cognito `admin` group gating catalog writes, and MFA | There are users other than the owner |
