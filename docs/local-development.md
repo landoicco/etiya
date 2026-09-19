@@ -33,16 +33,17 @@ The PWA in `web/` uses Vite, React, TypeScript and Tailwind. The `dev` shell pro
 ```bash
 cd web
 npm install
+npm run config       # once per stack: writes public/config.json from its outputs
 npm run dev          # http://localhost:5173, reloads on every change
 ```
 
+The web app is developed against the dev API on AWS with a real Cognito login, not against the Docker stack, so it needs a [deployed stack](deployment.md) and AWS credentials for `npm run config`. That file holds the API URL and the Cognito IDs, is ignored by git, and is what the app reads at startup; without it the app says so instead of starting. `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
+
 `npm run build` checks the types and writes `web/dist`, including the service worker and every icon size, generated from `public/icon.svg`. The service worker only runs in a production build, so test installation and offline behavior with:
 ```bash
-npm run build && npm run preview     # http://localhost:4173
+npm run build && npm run preview     # also on http://localhost:5173, the origin CORS allows
 ```
-Service workers require HTTPS everywhere except `localhost`, so installing the app on a phone needs the deployed version.
-
-The web app is developed against the dev API on AWS with a real Cognito login, not against the Docker stack; `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
+Service workers require HTTPS everywhere except `localhost`, so installing the app on a phone needs the deployed version: `npm run deploy`, see [deployment](deployment.md#deploying-the-web-app).
 
 ## Nix Flake
 

@@ -15,6 +15,18 @@ export default defineConfig({
       // A new version activates on the next launch, without asking. Nothing is lost:
       // the workout in progress lives in IndexedDB, not in the page
       registerType: "autoUpdate",
+      workbox: {
+        runtimeCaching: [
+          {
+            // Written after the build, so it is not precached with the rest. The latest one
+            // when there is signal; the last one seen when there is none, or it is too slow,
+            // so the app still opens at the gym
+            urlPattern: ({ url }) => url.pathname === "/config.json",
+            handler: "NetworkFirst",
+            options: { cacheName: "config", networkTimeoutSeconds: 3 },
+          },
+        ],
+      },
       // Every icon size, plus the matching <link> tags, is generated from this one SVG
       pwaAssets: {
         image: "public/icon.svg",

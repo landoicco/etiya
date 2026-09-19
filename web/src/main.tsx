@@ -1,11 +1,24 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { type Api, ApiError, createApi } from "./api";
 import { type Auth, cognitoAuth, type User } from "./auth";
 import { loadConfig } from "./config";
+import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
 import "./index.css";
 
-function App({ auth, initialUser }: { auth: Auth; initialUser: User | null }) {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // A 4xx will not change by asking again; network errors and 5xx get three tries
+      retry: (failures, error) =>
+        !(error instanceof ApiError && error.status < 500) && failures < 3,
+    },
+  },
+});
+
+function App({ auth, api, initialUser }: { auth: Auth; api: Api; initialUser: User | null }) {
   const [user, setUser] = useState(initialUser);
 
   if (!user) {
@@ -14,43 +27,12 @@ function App({ auth, initialUser }: { auth: Auth; initialUser: User | null }) {
 
   async function signOut() {
     await auth.signOut();
+    // The next user must not see this one's data, not even for a moment
+    queryClient.clear();
     setUser(null);
   }
 
-  return <HomeScreen user={user} onSignOut={signOut} />;
-}
-
-// Placeholder until the home screen lists workouts. It sets the layout every screen follows,
-// with the content on top and the actions at the bottom, in reach of the thumb
-function HomeScreen({ user, onSignOut }: { user: User; onSignOut: () => void }) {
-  return (
-    <main className="safe-padding flex min-h-dvh flex-col">
-      <header className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">Etiya</h1>
-          <p className="mt-1 truncate text-sm text-muted">{user.email ?? "Offline"}</p>
-        </div>
-        <button type="button" onClick={onSignOut} className="h-11 px-2 text-sm text-muted">
-          Sign out
-        </button>
-      </header>
-
-      <section className="mt-8 rounded-2xl border border-line bg-raised p-5">
-        <p className="text-sm text-muted">No workouts yet.</p>
-      </section>
-
-      <footer className="mt-auto pt-6">
-        <button
-          type="button"
-          disabled
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
-        >
-          Start workout
-        </button>
-        <p className="mt-2 text-center text-xs text-muted">Coming soon</p>
-      </footer>
-    </main>
-  );
+  return <HomeScreen api={api} user={user} onSignOut={signOut} />;
 }
 
 function StartupError({ message }: { message: string }) {
@@ -67,11 +49,15 @@ function StartupError({ message }: { message: string }) {
 async function start(container: HTMLElement) {
   const root = createRoot(container);
   try {
-    const auth = cognitoAuth(await loadConfig());
+    const config = await loadConfig();
+    const auth = cognitoAuth(config);
+    const api = createApi(config.apiUrl, auth);
     const user = await auth.currentUser();
     root.render(
       <StrictMode>
-        <App auth={auth} initialUser={user} />
+        <QueryClientProvider client={queryClient}>
+          <App auth={auth} api={api} initialUser={user} />
+        </QueryClientProvider>
       </StrictMode>,
     );
   } catch (error) {
