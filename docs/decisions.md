@@ -137,7 +137,8 @@ Deliberately postponed, with the trigger that would justify each:
 
 | Item | Do it when |
 |---|---|
-| Reserved concurrency per Lambda and a lower stage throttle | Before the API is shared with anyone |
+| Reserved concurrency per Lambda and a lower stage throttle. The account allows only 10 concurrent executions, and Lambda keeps 10 unreserved, so the limit must be raised first in Service Quotas (free, may take a day) | Before the API is shared with anyone |
+| Duration and distance on sets, so cardio is logged as time or kilometers rather than a count | Logging cardio becomes common |
 | Deploying the web app from CI, with an AWS role assumed through GitHub OIDC instead of stored keys, running the same `deploy.sh` | Deploying by hand becomes a chore, or someone else contributes |
 | A custom domain, which also allows TLS 1.2 as the minimum | The app is shared beyond a link on a profile |
 | `gymName` read from the catalog instead of trusting the client | The frontend shows gyms in the history |

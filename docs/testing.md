@@ -97,6 +97,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, unauthenticated requests, invalid `limit` and forged cursors.
 
-That is 37 requests locally and 33 against AWS, the difference being the four `local-only` tests.
+That is 39 requests locally and 35 against AWS, the difference being the four `local-only` tests.

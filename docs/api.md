@@ -99,6 +99,7 @@ Workouts always belong to the authenticated caller. A workout owned by somebody 
 * `id` is optional and makes the request **safe to retry**. A client that may send the same workout twice, like the app's offline queue, generates a [ULID](https://github.com/ulid/spec) once and sends it on every attempt. The first attempt gets `201`; any later one gets **`200` with the workout already stored**, and nothing is written again. Without `id`, the server generates one and every request creates a new workout. Anything that is not a ULID is a `400`.
 * The stored `id` is not the one sent: the server keeps its random part and replaces its time part with `startedAt`, see [the data model](data-model.md#workout-ids-are-ulids). The same `id` and `startedAt` always give the same stored `id`.
 * `gymId` is optional, but when present it must exist in the catalog, otherwise `404 GYM_NOT_FOUND`. The same applies to `exerciseCatalogItemId`.
+* Each set has its own `unit`: `KG`, `LB`, or `NONE` for sets without a weight, like pull-ups, which require `weight` to be `0`. See [the data model](data-model.md#sets-carry-their-own-unit).
 * Time rules live in [the data model](data-model.md#workout-times).
 
 ### `GET /me/workouts?limit=20&cursor=<cursor>`
