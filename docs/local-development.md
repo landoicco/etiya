@@ -10,7 +10,10 @@ Start the environment (this builds the app with the `local` Maven profile, which
 ```bash
 docker compose up --build
 ```
-The API is then available at `http://localhost:8080/`.
+The API is then available at `http://localhost:8080/`. The database starts empty; to fill the exercise catalog with the same common exercises a deployed stack gets:
+```bash
+node scripts/seed-catalog.mjs --local
+```
 
 To stop the containers and wipe the temporary in-memory database:
 ```bash

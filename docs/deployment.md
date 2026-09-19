@@ -101,6 +101,16 @@ aws cognito-idp admin-get-user --user-pool-id <POOL_ID> --username you@example.c
   --query 'UserAttributes[?Name==`sub`].Value' --output text
 ```
 
+## Seeding the exercise catalog
+
+A new stack starts with an empty catalog. [`scripts/seed-catalog.mjs`](../scripts/seed-catalog.mjs) registers the common exercises listed in [`scripts/exercises.json`](../scripts/exercises.json), each with its muscle group and category, through the API:
+```bash
+node scripts/seed-catalog.mjs
+```
+It signs in as the user in `.env.dev` (see [testing](testing.md)) and reads the stack outputs, so it needs AWS credentials; set `STACK` for a stack other than `EtiyaDev`. It is safe to run again: an exercise that already exists gets `409` and is skipped, and nothing stored is changed. To add exercises for everyone, add them to the JSON and run it again.
+
+Gyms are not seeded: users add their own from the app, and the catalog is shared, see [decisions](decisions.md#server-generated-ids-and-409-on-duplicates).
+
 ## Tearing it down
 
 CloudFormation only deletes empty buckets, so empty the web bucket first:
