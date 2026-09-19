@@ -62,6 +62,8 @@ Both `startedAt` and `endedAt` are required because **the database only stores c
 
 ## Server-generated IDs and 409 on duplicates
 
+**The catalog is shared, and every user adds to it.** Gyms and exercises are not owned by anyone: a user who does not find theirs registers it, and everybody else finds it from then on. Two users typing the same name land on the same slug and the second gets `409`, which the app treats as "select the existing one". Names that differ more than that, like "Bench Press" and "Press de banca", become two entries: detecting synonyms would need curated aliases or fuzzy matching, and fuzzy matching gets "Pull-up" and "Chin-up" wrong. The app makes searching easier than creating instead, and the muscle groups and categories come from fixed lists so at least those cannot drift.
+
 Catalog IDs are slugs derived from the payload, and any `id` in the request is ignored. Creation uses a conditional write, so registering the same gym twice returns `409` instead of silently overwriting the stored one. Workouts use the same conditional write, but a repeat is a retry rather than a conflict, so it returns the stored workout, [see above](#workout-ids-are-ulids-times-are-utc-instants).
 
 For gyms, the slug includes the optional branch and the city, so two locations of the same chain coexist. The city is part of the ID because branches of one chain can share a name across cities.
@@ -137,12 +139,15 @@ Deliberately postponed, with the trigger that would justify each:
 
 | Item | Do it when |
 |---|---|
-| Reserved concurrency per Lambda and a lower stage throttle | Before the API is shared with anyone |
+| Reserved concurrency per Lambda and a lower stage throttle. The account allows only 10 concurrent executions, and Lambda keeps 10 unreserved, so the limit must be raised first in Service Quotas (free, may take a day) | Before the API is shared with anyone |
+| Duration and distance on sets, so cardio is logged as time or kilometers rather than a count | Logging cardio becomes common |
 | Deploying the web app from CI, with an AWS role assumed through GitHub OIDC instead of stored keys, running the same `deploy.sh` | Deploying by hand becomes a chore, or someone else contributes |
 | A custom domain, which also allows TLS 1.2 as the minimum | The app is shared beyond a link on a profile |
 | `gymName` read from the catalog instead of trusting the client | The frontend shows gyms in the history |
 | `PUT` / `DELETE` for workouts | The app can edit or delete |
-| A Cognito `admin` group gating catalog writes, and MFA | There are users other than the owner |
+| Moderating the shared catalog (reporting, merging or hiding entries) and MFA | There are users other than the owner |
+| Aliases on catalog exercises ("also known as"), so a search for one name finds the other | Near-duplicate exercises start to get in the way |
+| A workout's split ("Push day") derived from its exercises' categories and shown in the history | The history screen exists |
 | Narrower IAM: per-item-type conditions instead of `grantReadWriteData`, and an inline logs policy instead of the managed one | Tightening dev into something production-shaped |
 | Java 25: Lambda runtime, flake JDK, Docker images and compiler release together | Spring or a dependency needs it, or Java 21 nears end of support on Lambda |
 | Measuring the real cold start in CloudWatch | Latency becomes a complaint |

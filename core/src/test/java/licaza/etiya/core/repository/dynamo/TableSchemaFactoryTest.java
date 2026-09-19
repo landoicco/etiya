@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 import licaza.etiya.core.model.ExerciseCatalogItem;
+import licaza.etiya.core.model.ExerciseCategory;
 import licaza.etiya.core.model.Gym;
+import licaza.etiya.core.model.MuscleGroup;
 import licaza.etiya.core.model.Workout;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -39,13 +41,27 @@ class TableSchemaFactoryTest {
   @Test
   void exercisesShareOnePartition() {
     ExerciseCatalogItem exercise =
-        new ExerciseCatalogItem("barbell-bench-press", "Barbell Bench Press", "Chest");
+        new ExerciseCatalogItem(
+            "barbell-bench-press", "Barbell Bench Press", MuscleGroup.CHEST, ExerciseCategory.PUSH);
 
     Map<String, AttributeValue> item =
         TableSchemaFactory.createExerciseCatalogItemSchema().itemToMap(exercise, true);
 
     assertThat(item.get("PK").s()).isEqualTo("EXERCISE");
     assertThat(item.get("SK").s()).isEqualTo("EXERCISE#barbell-bench-press");
+  }
+
+  // Enums are stored by name, so the stored value is what the API returns
+  @Test
+  void exerciseCategoryAndMuscleGroupAreStoredByName() {
+    ExerciseCatalogItem exercise =
+        new ExerciseCatalogItem("pull-ups", "Pull-ups", MuscleGroup.BACK, ExerciseCategory.PULL);
+
+    Map<String, AttributeValue> item =
+        TableSchemaFactory.createExerciseCatalogItemSchema().itemToMap(exercise, true);
+
+    assertThat(item.get("category").s()).isEqualTo("PULL");
+    assertThat(item.get("muscleGroup").s()).isEqualTo("BACK");
   }
 
   // A missing part leaves the key out, so DynamoDB rejects the item instead of storing

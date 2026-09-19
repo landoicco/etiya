@@ -1,6 +1,7 @@
 package licaza.etiya.core.model;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +17,12 @@ public class ExerciseCatalogItem {
   @Size(min = 2, max = 50, message = "Exercise name must be between 2 and 50 characters")
   private String name;
 
-  @NotBlank(message = "Muscle group cannot be blank")
-  private String muscleGroup;
+  @NotNull(
+      message =
+          "Muscle group cannot be blank: use CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, FOREARMS,"
+              + " QUADS, HAMSTRINGS, GLUTES, CALVES, CORE or FULL_BODY")
+  private MuscleGroup muscleGroup;
+
+  @NotNull(message = "Exercise category (PUSH, PULL, LEGS, CORE, CARDIO or OTHER) is required")
+  private ExerciseCategory category;
 }

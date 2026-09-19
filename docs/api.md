@@ -59,10 +59,18 @@ Returns one gym, or `404`.
 ## Exercises — `exercisesApi` Lambda
 
 ### `POST /exercises`
-Registers an exercise in the master catalog. The ID is the slug of the name.
+Registers an exercise in the catalog, which every user shares. The ID is the slug of the name.
 ```json
-{ "name": "Barbell Bench Press", "muscleGroup": "Chest" }
+{ "name": "Barbell Bench Press", "muscleGroup": "CHEST", "category": "PUSH" }
 ```
+Both lists are fixed, so the shared catalog stays consistent. A value outside them is a `400` that names the accepted ones:
+
+| Field | Values |
+|---|---|
+| `muscleGroup` | `CHEST` `BACK` `SHOULDERS` `BICEPS` `TRICEPS` `FOREARMS` `QUADS` `HAMSTRINGS` `GLUTES` `CALVES` `CORE` `FULL_BODY` |
+| `category` | `PUSH` `PULL` `LEGS` `CORE` `CARDIO` `OTHER` |
+
+`category` groups exercises after the push/pull/legs split, so the app can filter the catalog with one tap. It is stored rather than derived from the muscle group, which is ambiguous: shoulders cover both presses (push) and rear delt flyes (pull).
 
 ### `GET /exercises?q=bench&muscleGroup=chest`
 Both filters are optional. `q` matches a name prefix; `muscleGroup` matches exactly, ignoring case.
@@ -99,6 +107,7 @@ Workouts always belong to the authenticated caller. A workout owned by somebody 
 * `id` is optional and makes the request **safe to retry**. A client that may send the same workout twice, like the app's offline queue, generates a [ULID](https://github.com/ulid/spec) once and sends it on every attempt. The first attempt gets `201`; any later one gets **`200` with the workout already stored**, and nothing is written again. Without `id`, the server generates one and every request creates a new workout. Anything that is not a ULID is a `400`.
 * The stored `id` is not the one sent: the server keeps its random part and replaces its time part with `startedAt`, see [the data model](data-model.md#workout-ids-are-ulids). The same `id` and `startedAt` always give the same stored `id`.
 * `gymId` is optional, but when present it must exist in the catalog, otherwise `404 GYM_NOT_FOUND`. The same applies to `exerciseCatalogItemId`.
+* Each set has its own `unit`: `KG`, `LB`, or `NONE` for sets without a weight, like pull-ups, which require `weight` to be `0`. See [the data model](data-model.md#sets-carry-their-own-unit).
 * Time rules live in [the data model](data-model.md#workout-times).
 
 ### `GET /me/workouts?limit=20&cursor=<cursor>`

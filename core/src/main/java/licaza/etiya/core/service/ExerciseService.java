@@ -43,7 +43,8 @@ public class ExerciseService {
     return input;
   }
 
-  // Both filters are optional; the catalog is small, so the muscle group is filtered in memory
+  // Both filters are optional; the catalog is small, so the muscle group is filtered in memory.
+  // The group is matched by name ignoring case, so ?muscleGroup=chest finds CHEST
   public List<ExerciseCatalogItem> searchExercises(String query, String muscleGroup) {
     log.info(
         "🔍 Querying database for exercises matching name: '{}' and muscle group: '{}'",
@@ -58,7 +59,10 @@ public class ExerciseService {
       return candidates;
     }
     return candidates.stream()
-        .filter(e -> muscleGroup.equalsIgnoreCase(e.getMuscleGroup()))
+        .filter(
+            e ->
+                e.getMuscleGroup() != null
+                    && muscleGroup.equalsIgnoreCase(e.getMuscleGroup().name()))
         .toList();
   }
 

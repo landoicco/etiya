@@ -93,6 +93,7 @@ core/         the API (Spring Cloud Function, DynamoDB)
 web/          the web app, a PWA (Vite, React, TypeScript, Tailwind)
 infra/        infrastructure as code (AWS CDK in Java)
 bruno-tests/  integration tests (Bruno CLI)
+scripts/      the exercise catalog every new stack is seeded with
 docs/         guides and design decisions
 flake.nix     the whole toolchain
 ```
