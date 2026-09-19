@@ -46,6 +46,21 @@ Because a ULID begins with its timestamp, sorting IDs sorts by start time. One k
 
 Date ranges (a calendar view, "this week") remain efficient: the client resolves the range in its own timezone and the query uses `SK BETWEEN` the minimum and maximum ULID for that range.
 
+### Client IDs make retries safe
+
+A client may send its own ULID, generated once per workout, so that retrying a lost request never stores a second copy. The server keeps only its **random part** and stamps the **time part from `startedAt`**:
+
+```
+client sends   01KZ9X7Q2M  N761RDSJY0HMX246
+                   │              │
+stored         01KZ8BHKC0  N761RDSJY0HMX246
+               └ startedAt ┘ └ kept as sent ┘
+```
+
+* The history keeps sorting by start time, whatever the phone's clock said, or whenever the ID was generated.
+* Every attempt maps to the same key, and the write is conditional (`attribute_not_exists`), so a retry never overwrites anything: it reads back the stored workout instead. That read is strongly consistent, so it finds a first attempt written milliseconds earlier. It costs one read unit instead of half, which the provisioned capacity absorbs at no extra charge.
+* The key is scoped to the caller's partition, `USER#<sub>`, so a chosen ID can only ever collide with the caller's own workouts.
+
 ## Workout times
 
 `startedAt` and `endedAt` are both **required**: only completed workouts are stored. A workout in progress is expected to live on the client until it is finished.
