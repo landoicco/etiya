@@ -8,9 +8,11 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "config": "scripts/config.sh public/config.json",
     "deploy": "scripts/deploy.sh"
   },
   "dependencies": {
+    "aws-amplify": "^6.20.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
