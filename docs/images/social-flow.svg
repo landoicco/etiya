@@ -16,60 +16,95 @@
   <rect width="1600" height="900" fill="url(#bg)"/>
 
   <!-- Header -->
-  <text x="80" y="108" fill="#F8FAFC" font-size="52" font-weight="700">Etiya — serverless gym tracker API</text>
-  <text x="80" y="156" fill="#94A3B8" font-size="26">Java 21 · Spring Cloud Function on AWS Lambda · DynamoDB single table · AWS CDK</text>
-  <text x="1520" y="112" fill="#64748B" font-size="21" text-anchor="end">github.com/landoicco/etiya</text>
-  <rect x="80" y="186" width="120" height="5" rx="2" fill="#F59E0B"/>
+  <text x="80" y="100" fill="#F8FAFC" font-size="50" font-weight="700">Etiya — serverless gym tracker</text>
+  <text x="80" y="146" fill="#94A3B8" font-size="24">React PWA · Java 21 on AWS Lambda · DynamoDB single table · Cognito · AWS CDK</text>
+  <text x="1520" y="104" fill="#64748B" font-size="21" text-anchor="end">github.com/landoicco/etiya</text>
+  <rect x="80" y="172" width="120" height="5" rx="2" fill="#F97316"/>
 
-  <!-- Client -->
-  <rect x="80" y="380" width="200" height="120" rx="16" fill="#1E293B" stroke="#334155" stroke-width="2"/>
-  <text x="180" y="432" fill="#F8FAFC" font-size="26" font-weight="600" text-anchor="middle">Client</text>
-  <text x="180" y="466" fill="#94A3B8" font-size="19" text-anchor="middle">Bearer token</text>
+  <!-- Phone running the PWA -->
+  <rect x="90" y="290" width="180" height="330" rx="30" fill="#0b0f14" stroke="#475569" stroke-width="3"/>
+  <rect x="152" y="302" width="56" height="10" rx="5" fill="#1E293B"/>
+  <text x="112" y="350" fill="#F8FAFC" font-size="20" font-weight="700">Etiya</text>
+  <rect x="110" y="366" width="140" height="44" rx="10" fill="#151b23" stroke="#2a323d"/>
+  <rect x="120" y="378" width="70" height="7" rx="3" fill="#E2E8F0"/>
+  <rect x="120" y="392" width="100" height="6" rx="3" fill="#64748B"/>
+  <rect x="110" y="418" width="140" height="44" rx="10" fill="#151b23" stroke="#2a323d"/>
+  <rect x="120" y="430" width="70" height="7" rx="3" fill="#E2E8F0"/>
+  <rect x="120" y="444" width="90" height="6" rx="3" fill="#64748B"/>
+  <rect x="110" y="470" width="140" height="44" rx="10" fill="#151b23" stroke="#2a323d"/>
+  <rect x="120" y="482" width="70" height="7" rx="3" fill="#E2E8F0"/>
+  <rect x="120" y="496" width="110" height="6" rx="3" fill="#64748B"/>
+  <rect x="110" y="560" width="140" height="40" rx="12" fill="#F97316"/>
+  <text x="180" y="586" fill="#0b0f14" font-size="15" font-weight="700" text-anchor="middle">Start workout</text>
+  <text x="180" y="662" fill="#F8FAFC" font-size="22" font-weight="600" text-anchor="middle">PWA</text>
+  <text x="180" y="690" fill="#94A3B8" font-size="17" text-anchor="middle">installable,</text>
+  <text x="180" y="712" fill="#94A3B8" font-size="17" text-anchor="middle">opens offline</text>
 
-  <!-- Arrow client -> api -->
-  <line x1="290" y1="440" x2="378" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <!-- Phone -> CloudFront, API, Cognito -->
+  <line x1="282" y1="330" x2="372" y2="272" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="282" y1="455" x2="372" y2="455" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="282" y1="580" x2="372" y2="636" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
 
-  <!-- API Gateway -->
-  <rect x="390" y="340" width="270" height="200" rx="16" fill="#1E293B" stroke="#7C3AED" stroke-width="2.5"/>
-  <text x="525" y="398" fill="#F8FAFC" font-size="27" font-weight="600" text-anchor="middle">HTTP API</text>
-  <text x="525" y="436" fill="#C4B5FD" font-size="20" text-anchor="middle">Cognito JWT authorizer</text>
-  <text x="525" y="478" fill="#94A3B8" font-size="18" text-anchor="middle">rejects 401 before</text>
-  <text x="525" y="504" fill="#94A3B8" font-size="18" text-anchor="middle">any code runs</text>
+  <!-- CloudFront -> S3: the app itself -->
+  <rect x="385" y="215" width="270" height="95" rx="16" fill="#1E293B" stroke="#8B5CF6" stroke-width="2.5"/>
+  <text x="520" y="256" fill="#F8FAFC" font-size="25" font-weight="600" text-anchor="middle">CloudFront</text>
+  <text x="520" y="288" fill="#C4B5FD" font-size="18" text-anchor="middle">HTTPS · cache rules</text>
+  <line x1="665" y1="262" x2="778" y2="262" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <rect x="790" y="215" width="290" height="95" rx="16" fill="#1E293B" stroke="#22C55E" stroke-width="2.5"/>
+  <text x="935" y="256" fill="#F8FAFC" font-size="25" font-weight="600" text-anchor="middle">S3, private</text>
+  <text x="935" y="288" fill="#86EFAC" font-size="18" text-anchor="middle">app files, read via OAC</text>
 
-  <!-- Arrows api -> lambdas -->
-  <line x1="670" y1="400" x2="778" y2="330" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
-  <line x1="670" y1="440" x2="778" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
-  <line x1="670" y1="480" x2="778" y2="550" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <!-- HTTP API -->
+  <rect x="385" y="375" width="270" height="160" rx="16" fill="#1E293B" stroke="#7C3AED" stroke-width="2.5"/>
+  <text x="520" y="420" fill="#F8FAFC" font-size="26" font-weight="600" text-anchor="middle">HTTP API</text>
+  <text x="520" y="454" fill="#C4B5FD" font-size="19" text-anchor="middle">Cognito JWT authorizer</text>
+  <text x="520" y="490" fill="#94A3B8" font-size="17" text-anchor="middle">rejects 401 before</text>
+  <text x="520" y="514" fill="#94A3B8" font-size="17" text-anchor="middle">any code runs</text>
+
+  <!-- Cognito -->
+  <rect x="385" y="600" width="270" height="105" rx="16" fill="#1E293B" stroke="#F43F5E" stroke-width="2.5"/>
+  <text x="520" y="640" fill="#F8FAFC" font-size="25" font-weight="600" text-anchor="middle">Cognito</text>
+  <text x="520" y="670" fill="#FDA4AF" font-size="18" text-anchor="middle">SRP sign-in: the password</text>
+  <text x="520" y="692" fill="#FDA4AF" font-size="18" text-anchor="middle">never leaves the phone</text>
+  <line x1="520" y1="545" x2="520" y2="590" stroke="#64748B" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
+
+  <!-- API -> Lambdas -->
+  <line x1="665" y1="420" x2="778" y2="382" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="665" y1="455" x2="778" y2="455" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="665" y1="490" x2="778" y2="528" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
 
   <!-- Lambdas -->
-  <rect x="790" y="270" width="290" height="110" rx="14" fill="url(#lambda)"/>
-  <text x="935" y="318" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">gymsApi</text>
-  <text x="935" y="350" fill="#3F2A06" font-size="19" text-anchor="middle">/gyms</text>
+  <rect x="790" y="345" width="290" height="70" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="377" fill="#1F2937" font-size="23" font-weight="700" text-anchor="middle">gymsApi</text>
+  <text x="935" y="402" fill="#3F2A06" font-size="17" text-anchor="middle">/gyms</text>
+  <rect x="790" y="420" width="290" height="70" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="452" fill="#1F2937" font-size="23" font-weight="700" text-anchor="middle">exercisesApi</text>
+  <text x="935" y="477" fill="#3F2A06" font-size="17" text-anchor="middle">/exercises</text>
+  <rect x="790" y="495" width="290" height="70" rx="14" fill="url(#lambda)"/>
+  <text x="935" y="527" fill="#1F2937" font-size="23" font-weight="700" text-anchor="middle">workoutsApi</text>
+  <text x="935" y="552" fill="#3F2A06" font-size="17" text-anchor="middle">/me/workouts</text>
+  <text x="935" y="600" fill="#FBBF24" font-size="19" font-weight="700" text-anchor="middle">SnapStart · ~400 ms warm</text>
 
-  <rect x="790" y="385" width="290" height="110" rx="14" fill="url(#lambda)"/>
-  <text x="935" y="433" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">exercisesApi</text>
-  <text x="935" y="465" fill="#3F2A06" font-size="19" text-anchor="middle">/exercises</text>
-
-  <rect x="790" y="500" width="290" height="110" rx="14" fill="url(#lambda)"/>
-  <text x="935" y="548" fill="#1F2937" font-size="25" font-weight="700" text-anchor="middle">workoutsApi</text>
-  <text x="935" y="580" fill="#3F2A06" font-size="19" text-anchor="middle">/me/workouts</text>
-
-  <text x="935" y="655" fill="#FBBF24" font-size="20" font-weight="600" text-anchor="middle">SnapStart · ~400 ms warm</text>
-
-  <!-- Arrows lambdas -> ddb -->
-  <line x1="1090" y1="325" x2="1198" y2="400" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
-  <line x1="1090" y1="440" x2="1198" y2="440" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
-  <line x1="1090" y1="555" x2="1198" y2="480" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <!-- Lambdas -> DynamoDB -->
+  <line x1="1090" y1="382" x2="1198" y2="420" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1090" y1="455" x2="1198" y2="455" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1090" y1="528" x2="1198" y2="490" stroke="#64748B" stroke-width="3" marker-end="url(#arrow)"/>
 
   <!-- DynamoDB -->
-  <rect x="1210" y="340" width="300" height="200" rx="16" fill="#1E293B" stroke="#2563EB" stroke-width="2.5"/>
-  <text x="1360" y="396" fill="#F8FAFC" font-size="27" font-weight="600" text-anchor="middle">DynamoDB</text>
-  <text x="1360" y="434" fill="#93C5FD" font-size="20" text-anchor="middle">single table</text>
-  <text x="1360" y="476" fill="#94A3B8" font-size="18" text-anchor="middle">GYM# · EXERCISE#</text>
-  <text x="1360" y="502" fill="#94A3B8" font-size="18" text-anchor="middle">USER#&#8203;id / WORKOUT#&#8203;ulid</text>
+  <rect x="1210" y="375" width="300" height="160" rx="16" fill="#1E293B" stroke="#3B82F6" stroke-width="2.5"/>
+  <text x="1360" y="420" fill="#F8FAFC" font-size="26" font-weight="600" text-anchor="middle">DynamoDB</text>
+  <text x="1360" y="454" fill="#93C5FD" font-size="19" text-anchor="middle">single table</text>
+  <text x="1360" y="490" fill="#94A3B8" font-size="16" text-anchor="middle">GYM# · EXERCISE#</text>
+  <text x="1360" y="514" fill="#94A3B8" font-size="16" text-anchor="middle">USER#id / WORKOUT#ulid</text>
 
-  <!-- Footer highlights -->
-  <rect x="80" y="726" width="1440" height="96" rx="14" fill="#0F1A2E" stroke="#1E293B" stroke-width="2"/>
-  <text x="112" y="768" fill="#E2E8F0" font-size="21">Same handlers run locally — a bridge builds the same API Gateway events, so one test suite covers both environments.</text>
-  <text x="112" y="800" fill="#94A3B8" font-size="21">ULID sort keys order workouts by start time · every design decision documented · runs inside the AWS free tier.</text>
+  <!-- Retry-safe writes, next to the path they protect -->
+  <rect x="1210" y="600" width="300" height="105" rx="16" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <text x="1360" y="638" fill="#F8FAFC" font-size="20" font-weight="600" text-anchor="middle">Retry-safe writes</text>
+  <text x="1360" y="666" fill="#94A3B8" font-size="16" text-anchor="middle">the phone picks the ID, so a</text>
+  <text x="1360" y="688" fill="#94A3B8" font-size="16" text-anchor="middle">lost response never duplicates</text>
+
+  <!-- Footer -->
+  <rect x="80" y="752" width="1440" height="96" rx="14" fill="#0F172A" stroke="#1E293B" stroke-width="2"/>
+  <text x="112" y="792" fill="#E2E8F0" font-size="21">Same handlers run locally — a bridge builds the same API Gateway events, so one test suite covers both environments.</text>
+  <text x="112" y="826" fill="#94A3B8" font-size="21">ULID keys sort by start time · infrastructure in CDK, checked by cdk-nag · every decision documented · AWS free tier.</text>
 </svg>

@@ -44,12 +44,18 @@ public class WorkoutRoutes implements ApiRoutes {
         workoutInput.getGymId(),
         exerciseCount);
 
-    Workout savedWorkout = service.registerWorkout(userId, workoutInput);
+    WorkoutService.Registration registration = service.registerWorkout(userId, workoutInput);
+
+    // A retry gets the stored workout with 200, so the client can drop it from its queue either way
+    if (!registration.created()) {
+      return ApiResponse.ok(registration.workout());
+    }
 
     log.info(
-        "🏋️‍♂️ Workout successfully registered and persisted with ID: {}", savedWorkout.getId());
+        "🏋️‍♂️ Workout successfully registered and persisted with ID: {}",
+        registration.workout().getId());
 
-    return ApiResponse.created(savedWorkout);
+    return ApiResponse.created(registration.workout());
   }
 
   private ApiResponse getMyWorkouts(ApiRequest request) {

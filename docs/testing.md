@@ -16,7 +16,7 @@ cd core && mvn test
 | Test | What it pins down |
 |---|---|
 | `SlugsTest` | Accents, apostrophes and symbols, and that a partial search is a prefix of the full ID |
-| `WorkoutServiceTest` | Time normalization to UTC, the 12 hour and future limits, ULIDs sorting by start time, the owner coming from the token, page size limits |
+| `WorkoutServiceTest` | Time normalization to UTC, the 12 hour and future limits, ULIDs sorting by start time, client IDs keeping their random part and landing on the same ID when retried, the owner coming from the token, page size limits |
 | `TableSchemaFactoryTest` | `PK`/`SK` for each item type, and no key at all when a part is missing |
 | `WorkoutCursorsTest` | Cursors are URL-safe, and anything the API did not issue is rejected |
 
@@ -97,6 +97,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), unauthenticated requests, invalid `limit` and forged cursors.
 
-That is 34 requests locally and 30 against AWS, the difference being the four `local-only` tests.
+That is 37 requests locally and 33 against AWS, the difference being the four `local-only` tests.

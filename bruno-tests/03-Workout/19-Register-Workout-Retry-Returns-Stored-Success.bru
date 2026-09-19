@@ -1,0 +1,42 @@
+meta {
+  name: Register Workout Retry Returns Stored Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "id": "{{clientWorkoutId}}",
+    "startedAt": "2026-08-02T12:00:00-06:00",
+    "endedAt": "2026-08-02T13:00:00-06:00",
+    "exercises": [
+      {
+        "name": "Pull-ups",
+        "sets": [
+          { "count": 8, "weight": 0.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  // The same workout as the previous request, sent again as a phone would after losing the
+  // response. The times are written in another zone but are the same instants
+  test("Should return the stored workout instead of creating a second one", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.id).to.equal(bru.getVar("clientRegisteredWorkoutId"));
+    expect(body.startedAt).to.equal("2026-08-02T18:00:00Z");
+  });
+}

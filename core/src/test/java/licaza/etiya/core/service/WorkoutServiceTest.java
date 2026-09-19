@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
 import jakarta.validation.Validation;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +28,7 @@ import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.repository.WorkoutRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -47,6 +49,12 @@ class WorkoutServiceTest {
           gymRepository,
           exerciseRepository,
           workoutRepository);
+
+  // Every write succeeds unless a test says otherwise
+  @BeforeEach
+  void newWorkoutsAreWritten() {
+    when(workoutRepository.create(any())).thenReturn(true);
+  }
 
   // --- Times ---
 
@@ -129,12 +137,64 @@ class WorkoutServiceTest {
     assertThat(earlier.getId()).isLessThan(later.getId());
   }
 
-  @Test
-  void ignoresTheIdSentByTheClient() {
-    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
-    input.setId("chosen-by-client");
+  // --- Client IDs, for retries ---
 
-    assertThat(register(input).getId()).isNotEqualTo("chosen-by-client");
+  // The client's clock and the moment it generated the ID do not matter: the stored ID still
+  // sorts by startedAt
+  @Test
+  void keepsTheRandomPartOfTheClientIdAndTakesTheTimeFromTheStart() {
+    Ulid clientId = UlidCreator.getUlid(Instant.parse("2030-01-01T00:00:00Z").toEpochMilli());
+    Workout input = workout("2026-07-31T18:30:00Z", "2026-07-31T19:30:00Z");
+    input.setId(clientId.toString());
+
+    Ulid stored = Ulid.from(register(input).getId());
+
+    assertThat(stored.getRandom()).isEqualTo(clientId.getRandom());
+    assertThat(stored.getInstant()).isEqualTo(Instant.parse("2026-07-31T18:30:00Z"));
+  }
+
+  // What makes a retry land on the same item instead of creating a second one
+  @Test
+  void sameClientIdAndStartGiveTheSameId() {
+    String clientId = UlidCreator.getUlid().toString();
+
+    Workout first = workout("2026-07-31T18:30:00Z", "2026-07-31T19:30:00Z");
+    first.setId(clientId);
+    Workout retry = workout("2026-07-31T12:30:00-06:00", "2026-07-31T13:30:00-06:00");
+    retry.setId(clientId);
+
+    assertThat(register(retry).getId()).isEqualTo(register(first).getId());
+  }
+
+  @Test
+  void returnsTheStoredWorkoutOnRetry() {
+    Workout stored = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    when(workoutRepository.create(any())).thenReturn(false);
+    when(workoutRepository.findById(any(), any())).thenReturn(Optional.of(stored));
+
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.setId(UlidCreator.getUlid().toString());
+    WorkoutService.Registration registration = service.registerWorkout(USER_ID, input);
+
+    assertThat(registration.created()).isFalse();
+    assertThat(registration.workout()).isSameAs(stored);
+    verify(workoutRepository).findById(USER_ID, input.getId());
+  }
+
+  @Test
+  void reportsANewWorkoutAsCreated() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+
+    assertThat(service.registerWorkout(USER_ID, input).created()).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"chosen-by-client", "", "01KZ8BHKC0N761RDSJY0HMX24"})
+  void rejectsAnIdThatIsNotAUlid(String id) {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.setId(id);
+
+    assertRejected(input, "id must be a ULID");
   }
 
   // --- Ownership ---
@@ -146,7 +206,7 @@ class WorkoutServiceTest {
 
     service.registerWorkout(USER_ID, input);
 
-    verify(workoutRepository).save(argThat(saved -> USER_ID.equals(saved.getUserId())));
+    verify(workoutRepository).create(argThat(saved -> USER_ID.equals(saved.getUserId())));
   }
 
   // --- Catalog references ---
@@ -159,7 +219,7 @@ class WorkoutServiceTest {
 
     assertThatThrownBy(() -> service.registerWorkout(USER_ID, input))
         .isInstanceOf(GymNotFoundException.class);
-    verify(workoutRepository, never()).save(any());
+    verify(workoutRepository, never()).create(any());
   }
 
   @Test
@@ -180,7 +240,7 @@ class WorkoutServiceTest {
 
     assertThatThrownBy(() -> service.registerWorkout(USER_ID, input))
         .isInstanceOf(ExerciseCatalogItemNotFoundException.class);
-    verify(workoutRepository, never()).save(any());
+    verify(workoutRepository, never()).create(any());
   }
 
   // --- Pagination ---
@@ -222,13 +282,13 @@ class WorkoutServiceTest {
   }
 
   private Workout register(Workout input) {
-    return service.registerWorkout(USER_ID, input);
+    return service.registerWorkout(USER_ID, input).workout();
   }
 
   private void assertRejected(Workout input, String message) {
     assertThatThrownBy(() -> service.registerWorkout(USER_ID, input))
         .isInstanceOf(InputValidationException.class)
         .hasMessageContaining(message);
-    verify(workoutRepository, never()).save(any());
+    verify(workoutRepository, never()).create(any());
   }
 }

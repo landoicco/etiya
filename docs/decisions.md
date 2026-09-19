@@ -52,11 +52,17 @@ An earlier `aws/` package at the root was renamed: naming by provider broke the 
 
 See [the data model](data-model.md#workout-ids-are-ulids) for the mechanics. The short version: the ID is derived from `startedAt`, so one sort key serves both "get by ID" and "list by date", with no GSI and no timezone ambiguity.
 
+**Retries are made safe by the ID itself.** The app's offline queue sends a finished workout until it gets an answer, and a lost response would otherwise store it twice. The client generates a ULID once per workout and sends it on every attempt; the server keeps its random part, stamps the time from `startedAt`, and writes conditionally. A repeat gets `200` with the stored workout. Rejected alternatives:
+
+* **An `Idempotency-Key` header**, the Stripe approach: it needs a second item per request, with a TTL, to remember responses, when the workout's own ID can already be the key.
+* **`PUT /me/workouts/{id}`**, idempotent by HTTP semantics: a new route in `core` and `infra`, and the ID in the path would have to agree with `startedAt` in the body. Stamping the time on the server removes that coupling.
+* **Comparing the body on a repeat and answering `409` when it differs**: it only happens if the client reuses an ID for another workout, which is a bug in the client. The stored workout is returned as is.
+
 Both `startedAt` and `endedAt` are required because **the database only stores completed workouts**. A session in progress belongs on the client (localStorage or IndexedDB), which also makes the app usable in a gym with bad signal.
 
 ## Server-generated IDs and 409 on duplicates
 
-Catalog IDs are slugs derived from the payload, and any `id` in the request is ignored. Creation uses a conditional write, so registering the same gym twice returns `409` instead of silently overwriting the stored one.
+Catalog IDs are slugs derived from the payload, and any `id` in the request is ignored. Creation uses a conditional write, so registering the same gym twice returns `409` instead of silently overwriting the stored one. Workouts use the same conditional write, but a repeat is a retry rather than a conflict, so it returns the stored workout, [see above](#workout-ids-are-ulids-times-are-utc-instants).
 
 For gyms, the slug includes the optional branch and the city, so two locations of the same chain coexist. The city is part of the ID because branches of one chain can share a name across cities.
 
@@ -131,7 +137,6 @@ Deliberately postponed, with the trigger that would justify each:
 
 | Item | Do it when |
 |---|---|
-| Idempotency for workout writes (client-generated ULID, re-stamped with `startedAt`) | The frontend retries failed uploads |
 | Reserved concurrency per Lambda and a lower stage throttle | Before the API is shared with anyone |
 | Deploying the web app from CI, with an AWS role assumed through GitHub OIDC instead of stored keys, running the same `deploy.sh` | Deploying by hand becomes a chore, or someone else contributes |
 | A custom domain, which also allows TLS 1.2 as the minimum | The app is shared beyond a link on a profile |

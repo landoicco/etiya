@@ -1,0 +1,40 @@
+meta {
+  name: Register Workout Invalid Id Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "id": "not-a-ulid",
+    "startedAt": "2026-08-02T18:00:00Z",
+    "endedAt": "2026-08-02T19:00:00Z",
+    "exercises": [
+      {
+        "name": "Pull-ups",
+        "sets": [
+          { "count": 8, "weight": 0.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should reject an id that is not a ULID", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("id must be a ULID");
+  });
+}

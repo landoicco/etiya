@@ -1,0 +1,65 @@
+meta {
+  name: Register Workout With Client Id Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "id": "{{clientWorkoutId}}",
+    "startedAt": "2026-08-02T18:00:00Z",
+    "endedAt": "2026-08-02T19:00:00Z",
+    "exercises": [
+      {
+        "name": "Pull-ups",
+        "sets": [
+          { "count": 8, "weight": 0.0, "unit": "KG" }
+        ]
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  // A new ULID on every run, so the suite can run again against a table that keeps its data.
+  // Only its random part matters: the server replaces the time part with startedAt
+  const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  let id = "0";
+  for (let i = 1; i < 26; i++) {
+    id += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  bru.setVar("clientWorkoutId", id);
+}
+
+script:post-response {
+  test("Should keep the client's random part and take the time part from startedAt", function() {
+    expect(res.getStatus()).to.equal(201);
+
+    // A ULID is 10 characters of time and 16 of randomness, in Crockford base32
+    const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+    let time = Date.parse("2026-08-02T18:00:00Z");
+    let timePart = "";
+    for (let i = 0; i < 10; i++) {
+      timePart = alphabet[time % 32] + timePart;
+      time = Math.floor(time / 32);
+    }
+
+    const body = res.getBody();
+    expect(body.id.slice(0, 10)).to.equal(timePart);
+    expect(body.id.slice(10)).to.equal(bru.getVar("clientWorkoutId").slice(10));
+  });
+
+  const body = res.getBody();
+  if (body && body.id) {
+    bru.setVar("clientRegisteredWorkoutId", body.id);
+  }
+}
