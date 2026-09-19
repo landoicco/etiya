@@ -12,6 +12,10 @@ Gyms, exercises and workouts live in the **same table**, keyed by a partition ke
 
 Keys are defined in three places that must stay in sync: `TableSchemaFactory` (how items are written), `DynamoDbLocalInitializer` (the local table) and the `Database` construct in `infra/` (the real table).
 
+Fixed lists, like an exercise's `muscleGroup` and `category` or a set's `unit`, are stored as the **enum's name** (`CHEST`, `PUSH`, `KG`). Reading an item whose stored value is not in the enum fails, so renaming or removing a value needs a migration of the stored items. Adding one does not.
+
+> Before the fixed lists, `muscleGroup` was free text such as `Chest`. The dev table only held the exercises Bruno registers, which are deleted and registered again before each run against AWS, so no migration was written. A table with real data would need one.
+
 ## Catalog IDs are slugs
 
 Slugs drop accents, apostrophes and symbols, which is what makes prefix search by name work:

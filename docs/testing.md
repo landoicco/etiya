@@ -17,8 +17,9 @@ cd core && mvn test
 |---|---|
 | `SlugsTest` | Accents, apostrophes and symbols, and that a partial search is a prefix of the full ID |
 | `WorkoutServiceTest` | Time normalization to UTC, the 12 hour and future limits, ULIDs sorting by start time, client IDs keeping their random part and landing on the same ID when retried, the owner coming from the token, page size limits |
-| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, and no key at all when a part is missing |
+| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, enums stored by name, and no key at all when a part is missing |
 | `WorkoutCursorsTest` | Cursors are URL-safe, and anything the API did not issue is rejected |
+| `RequestBodyReaderTest` | A value outside a fixed list names the field and the accepted values, however deeply nested |
 
 `SlugsTest` also records a known limitation: letters outside the Latin alphabet are dropped, so `Жим лёжа` produces an empty slug. See [still open](decisions.md#still-open).
 
@@ -97,6 +98,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit` and forged cursors.
 
-That is 39 requests locally and 35 against AWS, the difference being the four `local-only` tests.
+That is 40 requests locally and 36 against AWS, the difference being the four `local-only` tests.

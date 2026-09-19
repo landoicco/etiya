@@ -59,10 +59,18 @@ Returns one gym, or `404`.
 ## Exercises — `exercisesApi` Lambda
 
 ### `POST /exercises`
-Registers an exercise in the master catalog. The ID is the slug of the name.
+Registers an exercise in the catalog, which every user shares. The ID is the slug of the name.
 ```json
-{ "name": "Barbell Bench Press", "muscleGroup": "Chest" }
+{ "name": "Barbell Bench Press", "muscleGroup": "CHEST", "category": "PUSH" }
 ```
+Both lists are fixed, so the shared catalog stays consistent. A value outside them is a `400` that names the accepted ones:
+
+| Field | Values |
+|---|---|
+| `muscleGroup` | `CHEST` `BACK` `SHOULDERS` `BICEPS` `TRICEPS` `FOREARMS` `QUADS` `HAMSTRINGS` `GLUTES` `CALVES` `CORE` `FULL_BODY` |
+| `category` | `PUSH` `PULL` `LEGS` `CORE` `CARDIO` `OTHER` |
+
+`category` groups exercises after the push/pull/legs split, so the app can filter the catalog with one tap. It is stored rather than derived from the muscle group, which is ambiguous: shoulders cover both presses (push) and rear delt flyes (pull).
 
 ### `GET /exercises?q=bench&muscleGroup=chest`
 Both filters are optional. `q` matches a name prefix; `muscleGroup` matches exactly, ignoring case.
