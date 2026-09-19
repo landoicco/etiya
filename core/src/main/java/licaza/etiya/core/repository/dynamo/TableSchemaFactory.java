@@ -74,6 +74,12 @@ public class TableSchemaFactory {
                 a.name("muscleGroup")
                     .getter(ExerciseCatalogItem::getMuscleGroup)
                     .setter(ExerciseCatalogItem::setMuscleGroup))
+        .addAttribute(
+            ExerciseCategory.class,
+            a ->
+                a.name("category")
+                    .getter(ExerciseCatalogItem::getCategory)
+                    .setter(ExerciseCatalogItem::setCategory))
         .build();
   }
 

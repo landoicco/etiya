@@ -12,7 +12,8 @@ post {
 body:json {
   {
     "name": "Barbell Bench Press",
-    "muscleGroup": "Chest"
+    "muscleGroup": "Chest",
+    "category": "PUSH"
   }
 }
 
@@ -23,5 +24,6 @@ script:post-response {
     const body = res.getBody();
     expect(body.id).to.equal("barbell-bench-press");
     expect(body.name).to.equal("Barbell Bench Press");
+    expect(body.category).to.equal("PUSH");
   });
 }
