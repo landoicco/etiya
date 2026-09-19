@@ -69,7 +69,7 @@ public class TableSchemaFactory {
                     .getter(ExerciseCatalogItem::getName)
                     .setter(ExerciseCatalogItem::setName))
         .addAttribute(
-            String.class,
+            MuscleGroup.class,
             a ->
                 a.name("muscleGroup")
                     .getter(ExerciseCatalogItem::getMuscleGroup)
