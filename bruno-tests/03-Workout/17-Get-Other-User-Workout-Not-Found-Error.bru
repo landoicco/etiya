@@ -1,9 +1,6 @@
 meta {
   name: Get Other User Workout Not Found Error
   type: http
-  tags: [
-    local-only
-  ]
 }
 
 get {
@@ -14,9 +11,11 @@ get {
 
 headers {
   X-User-Id: user-without-workouts
+  Authorization: Bearer {{otherAuthToken}}
 }
 
 script:post-response {
+  // A second identity, as above: X-User-Id locally, the token on AWS
   // The workout exists, but belongs to another user
   test("Should not expose another user's workout", function() {
     expect(res.getStatus()).to.equal(404);

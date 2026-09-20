@@ -67,21 +67,31 @@ cd bruno-tests && bru run --env Local
 
 The same tests run against the deployed API with the `Dev` environment. Every request needs a Cognito token, which the collection sends as `Authorization: Bearer {{authToken}}`.
 
-The login of the dev user lives in `.env.dev` at the repository root, which git ignores. That is a shortcut accepted for a throwaway dev user only:
+The logins of the two dev users live in `.env.dev` at the repository root, which git ignores. That is a shortcut accepted for throwaway dev users only, and never for a real account:
 ```bash
 ETIYA_DEV_USERNAME=you@example.com
 ETIYA_DEV_PASSWORD='<PASSWORD>'
+ETIYA_DEV2_USERNAME=you+second@example.com
+ETIYA_DEV2_PASSWORD='<PASSWORD>'
 ```
 
-The token is requested on the spot and passed on the command line, so it is never written to a file:
+The second user exists only to prove that one user cannot reach another's workouts. It never registers anything, so it stays empty run after run.
+
+Both tokens are requested on the spot and passed on the command line, so neither is ever written to a file:
 ```bash
 source .env.dev
-TOKEN=$(aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
-  --client-id <CLIENT_ID> \
-  --auth-parameters USERNAME="$ETIYA_DEV_USERNAME",PASSWORD="$ETIYA_DEV_PASSWORD" \
-  --query 'AuthenticationResult.AccessToken' --output text)
+token_for() {
+  aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
+    --client-id <CLIENT_ID> \
+    --auth-parameters USERNAME="$1",PASSWORD="$2" \
+    --query 'AuthenticationResult.AccessToken' --output text
+}
+TOKEN=$(token_for "$ETIYA_DEV_USERNAME" "$ETIYA_DEV_PASSWORD")
+OTHER_TOKEN=$(token_for "$ETIYA_DEV2_USERNAME" "$ETIYA_DEV2_PASSWORD")
 
-cd bruno-tests && bru run --env Dev --env-var authToken="$TOKEN" --exclude-tags local-only
+cd bruno-tests && bru run --env Dev \
+  --env-var authToken="$TOKEN" --env-var otherAuthToken="$OTHER_TOKEN" \
+  --exclude-tags local-only
 ```
 
 Tokens last one hour; when one expires, request another. If the password is lost, set a new one with `aws cognito-idp admin-set-user-password ... --permanent`; it needs uppercase, lowercase, a digit and a symbol.
@@ -105,10 +115,16 @@ The workouts the suite registers stay in the dev user's history, since the API c
 
 ## The `local-only` tag
 
-Four tests are tagged `local-only` and excluded when running against AWS, because they depend on how the local bridge fakes identity:
+Two tests are tagged `local-only` and excluded when running against AWS: the ones that expect `401` without a user. On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
 
-* Two expect `401` without a user. On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
-* Two check that a user cannot see another user's workouts, using the `X-User-Id` header. On AWS the identity comes from the token, so verifying this would need a second Cognito user.
+## Two users, two identities
+
+The two tests that prove one user cannot reach another's workouts run **in both environments**, because a second identity can be expressed in a way each understands. They send an `X-User-Id` header *and* their own `Authorization`, overriding the collection's:
+
+* **Locally** the bridge fakes the Cognito `sub` from `X-User-Id` and never looks at the token, so the empty `otherAuthToken` is ignored.
+* **On AWS** the token is the identity and `X-User-Id` is inert, exactly as it already is for every other request in the suite.
+
+This matters more than it looks. Until the second user existed, the only evidence that a user's workouts are private came from the local bridge, where identity is a header anyone could set. On AWS it comes from a Cognito token, which is the mechanism that actually protects the data, and that path had never been exercised.
 
 ## In CI
 
@@ -126,6 +142,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit`, forged cursors, and one user being unable to list or open another's workouts.
 
-That is 40 requests locally and 36 against AWS, the difference being the four `local-only` tests.
+That is 40 requests locally and 38 against AWS, the difference being the two `local-only` tests.
