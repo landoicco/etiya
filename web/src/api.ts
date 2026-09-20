@@ -1,8 +1,49 @@
 import type { Auth } from "./auth";
+import type { WorkoutRequest } from "./workout";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra
-export type WeightUnit = "KG" | "LB";
+// NONE is a set logged without weight, like pull-ups, and forces weight to 0
+export type WeightUnit = "KG" | "LB" | "NONE";
+
+// Both lists are fixed by the API, which answers a value outside them with a 400 naming the
+// accepted ones. They are written in the same order the API documents them
+export type MuscleGroup =
+  | "CHEST"
+  | "BACK"
+  | "SHOULDERS"
+  | "BICEPS"
+  | "TRICEPS"
+  | "FOREARMS"
+  | "QUADS"
+  | "HAMSTRINGS"
+  | "GLUTES"
+  | "CALVES"
+  | "CORE"
+  | "FULL_BODY";
+
+export type ExerciseCategory = "PUSH" | "PULL" | "LEGS" | "CORE" | "CARDIO" | "OTHER";
+
+// An exercise in the catalog every user shares. Its id is the slug of its name
+export interface CatalogExercise {
+  id: string;
+  name: string;
+  muscleGroup: MuscleGroup;
+  category: ExerciseCategory;
+}
+
+export type NewCatalogExercise = Omit<CatalogExercise, "id">;
+
+// A gym in the catalog every user shares. Its id is the slug of the three fields together,
+// so a chain's branches all start with the chain's name. branch is null for an independent gym
+export interface Gym {
+  id: string;
+  name: string;
+  branch: string | null;
+  city: string;
+}
+
+export type NewGym = Omit<Gym, "id">;
 
 export interface GymSet {
   count: number;
@@ -59,7 +100,50 @@ export function createApi(apiUrl: string, auth: Auth) {
     return (await response.json()) as T;
   }
 
+  async function post<T>(path: string, body: unknown): Promise<T> {
+    const response = await fetch(apiUrl + path, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${await auth.getAccessToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw await toApiError(response);
+    }
+    return (await response.json()) as T;
+  }
+
   return {
+    // The whole catalog in one response: neither route takes a limit nor sends a cursor, so
+    // the app downloads each once and searches it on the phone
+    listExercises(): Promise<Page<CatalogExercise>> {
+      return get("/exercises");
+    },
+
+    listGyms(): Promise<Page<Gym>> {
+      return get("/gyms");
+    },
+
+    // 409 when a gym with the same slug is already there, which is not an error for the app:
+    // it means somebody else added it first
+    registerGym(gym: NewGym): Promise<Gym> {
+      return post("/gyms", gym);
+    },
+
+    // 409 when an exercise with the same slug is already there, which is not an error for
+    // the app: it means somebody else added it first
+    registerExercise(exercise: NewCatalogExercise): Promise<CatalogExercise> {
+      return post("/exercises", exercise);
+    },
+
+    // Safe to retry: the request carries a client ULID, so sending the same workout again
+    // answers 200 with the one already stored instead of creating a second one
+    saveWorkout(workout: WorkoutRequest): Promise<Workout> {
+      return post("/me/workouts", workout);
+    },
+
     // Newest first
     listWorkouts(limit: number, cursor?: string): Promise<Page<Workout>> {
       const params = new URLSearchParams({ limit: String(limit) });
@@ -67,6 +151,11 @@ export function createApi(apiUrl: string, auth: Auth) {
         params.set("cursor", cursor);
       }
       return get(`/me/workouts?${params}`);
+    },
+
+    // 404 for a workout that belongs to somebody else, so ids cannot be probed
+    getWorkout(id: string): Promise<Workout> {
+      return get(`/me/workouts/${id}`);
     },
   };
 }

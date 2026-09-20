@@ -197,6 +197,41 @@ class WorkoutServiceTest {
     assertRejected(input, "id must be a ULID");
   }
 
+  // --- Weight units ---
+
+  @Test
+  void acceptsASetWithoutWeight() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.getExercises().getFirst().setSets(List.of(new GymSet(8, 0, WeightUnit.NONE)));
+
+    assertThat(register(input).getExercises().getFirst().getSets().getFirst().getUnit())
+        .isEqualTo(WeightUnit.NONE);
+  }
+
+  @Test
+  void rejectsAWeightOnASetWithoutWeight() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.getExercises().getFirst().setSets(List.of(new GymSet(8, 10, WeightUnit.NONE)));
+
+    assertRejected(input, "Weight must be 0 when the unit is NONE");
+  }
+
+  // One gym mixes machines in kilos and in pounds, so the unit belongs to each set
+  @Test
+  void acceptsDifferentUnitsInOneExercise() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input
+        .getExercises()
+        .getFirst()
+        .setSets(
+            List.of(
+                new GymSet(10, 60, WeightUnit.KG),
+                new GymSet(10, 135, WeightUnit.LB),
+                new GymSet(10, 0, WeightUnit.NONE)));
+
+    assertThat(register(input).getExercises().getFirst().getSets()).hasSize(3);
+  }
+
   // --- Ownership ---
 
   @Test

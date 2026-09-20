@@ -1,0 +1,46 @@
+meta {
+  name: Register Workout Without Weight Success
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/me/workouts
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Id: {{userId}}
+}
+
+body:json {
+  {
+    "startedAt": "2026-08-03T18:00:00Z",
+    "endedAt": "2026-08-03T19:00:00Z",
+    "exercises": [
+      {
+        "name": "Pull-ups",
+        "sets": [
+          { "count": 8, "weight": 0, "unit": "NONE" },
+          { "count": 6, "weight": 0, "unit": "NONE" }
+        ]
+      },
+      {
+        "name": "Chest Press Machine",
+        "sets": [
+          { "count": 10, "weight": 110, "unit": "LB" }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  test("Should store sets without weight next to sets in pounds", function() {
+    expect(res.getStatus()).to.equal(201);
+
+    const exercises = res.getBody().exercises;
+    expect(exercises[0].sets[0]).to.deep.equal({ count: 8, weight: 0, unit: "NONE" });
+    expect(exercises[1].sets[0].unit).to.equal("LB");
+  });
+}

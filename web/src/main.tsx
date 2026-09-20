@@ -1,11 +1,21 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { loadActiveWorkout } from "./activeWorkout";
 import { type Api, ApiError, createApi } from "./api";
 import { type Auth, cognitoAuth, type User } from "./auth";
 import { loadConfig } from "./config";
+import { HistoryScreen } from "./HistoryScreen";
 import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
+import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
+import { GYMS_KEY, loadCachedGyms } from "./gyms";
+import { HOME, useRouter } from "./router";
+import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
+import { useActiveWorkout } from "./useActiveWorkout";
+import type { ActiveWorkout } from "./workout";
+import { WorkoutDetail } from "./WorkoutDetail";
+import { WorkoutScreen } from "./WorkoutScreen";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -18,8 +28,32 @@ const queryClient = new QueryClient({
   },
 });
 
-function App({ auth, api, initialUser }: { auth: Auth; api: Api; initialUser: User | null }) {
+interface AppProps {
+  auth: Auth;
+  api: Api;
+  initialUser: User | null;
+  initialWorkout: ActiveWorkout | null;
+  initialPending: PendingWorkout[];
+}
+
+function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProps) {
   const [user, setUser] = useState(initialUser);
+  // Renamed, because start() below is what mounts the app
+  const { workout, start: startWorkout, update, clear } = useActiveWorkout(initialWorkout);
+  const queue = useSendQueue(api, initialPending);
+  const router = useRouter();
+
+  // A workout in progress owns the screens under /workout, and nothing else may claim them.
+  // Replacing rather than opening keeps the back gesture out of a screen that is now gone,
+  // which is what a link to /workout/finish after the workout was saved would otherwise be
+  const inWorkout = UNDER_WORKOUT.has(router.route.name);
+  useEffect(() => {
+    if (inWorkout && workout === null) {
+      router.replace(HOME);
+    } else if (!inWorkout && workout !== null) {
+      router.replace({ name: "logging" });
+    }
+  }, [inWorkout, workout, router]);
 
   if (!user) {
     return <LoginScreen auth={auth} onSignedIn={setUser} />;
@@ -32,8 +66,53 @@ function App({ auth, api, initialUser }: { auth: Auth; api: Api; initialUser: Us
     setUser(null);
   }
 
-  return <HomeScreen api={api} user={user} onSignOut={signOut} />;
+  if (workout && inWorkout) {
+    return (
+      <WorkoutScreen
+        api={api}
+        workout={workout}
+        router={router}
+        onChange={update}
+        onFinish={(request) => {
+          // Queued first, then forgotten: the send is the queue's problem from here, and
+          // the gym is where a phone is least likely to have a connection
+          void queue.add(request);
+          clear();
+          router.replace(HOME);
+        }}
+        onDiscard={() => {
+          clear();
+          router.replace(HOME);
+        }}
+      />
+    );
+  }
+
+  if (router.route.name === "history") {
+    return <HistoryScreen api={api} router={router} />;
+  }
+
+  if (router.route.name === "workout") {
+    return <WorkoutDetail api={api} id={router.route.id} router={router} />;
+  }
+
+  return (
+    <HomeScreen
+      api={api}
+      user={user}
+      queue={queue}
+      router={router}
+      onStarted={(gym) => {
+        startWorkout(gym);
+        router.replace({ name: "logging" });
+      }}
+      onSignOut={signOut}
+    />
+  );
 }
+
+// The routes that only mean anything while a workout is being logged
+const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "finish"]);
 
 function StartupError({ message }: { message: string }) {
   return (
@@ -44,19 +123,40 @@ function StartupError({ message }: { message: string }) {
   );
 }
 
-// The session is read before the first render, so a signed-in user never sees the login
-// form flash by. Until then the page shows the app's background color
+// The session and the workout in progress are read before the first render, so a signed-in
+// user never sees the login form flash by, and the app opens straight back into the workout
+// that a killed PWA left behind. Until then the page shows the app's background color
 async function start(container: HTMLElement) {
   const root = createRoot(container);
   try {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const user = await auth.currentUser();
+    const [user, workout, catalog, gyms, pending] = await Promise.all([
+      auth.currentUser(),
+      loadActiveWorkout(),
+      loadCachedCatalog(),
+      loadCachedGyms(),
+      loadPending(),
+    ]);
+    // The pickers then open on the copies this phone already has, and fresh ones replace them
+    // once they arrive, instead of showing an empty list on every launch
+    if (catalog) {
+      queryClient.setQueryData(CATALOG_KEY, catalog);
+    }
+    if (gyms) {
+      queryClient.setQueryData(GYMS_KEY, gyms);
+    }
     root.render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
-          <App auth={auth} api={api} initialUser={user} />
+          <App
+            auth={auth}
+            api={api}
+            initialUser={user}
+            initialWorkout={workout}
+            initialPending={pending}
+          />
         </QueryClientProvider>
       </StrictMode>,
     );

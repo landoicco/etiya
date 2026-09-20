@@ -1,0 +1,29 @@
+meta {
+  name: Register Exercise Unknown Muscle Group Error
+  type: http
+}
+
+post {
+  url: {{baseUrl}}/exercises
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Press de banca",
+    "muscleGroup": "Pecho",
+    "category": "PUSH"
+  }
+}
+
+script:post-response {
+  // The catalog is shared, so groups come from a fixed list and anything else is rejected
+  test("Should reject a muscle group outside the list and name the accepted ones", function() {
+    expect(res.getStatus()).to.equal(400);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("VALIDATION_ERROR");
+    expect(body.message).to.contain("muscleGroup must be one of CHEST, BACK");
+  });
+}

@@ -82,7 +82,7 @@ jobs:
         run: cd infra && cdk synth --no-notices > /dev/null
 
   web:
-    name: Web app type check and build
+    name: Web app checks, tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -99,6 +99,13 @@ jobs:
       # ci installs exactly what package-lock.json says, and fails if it disagrees with package.json
       - name: Install dependencies
         run: cd web && npm ci
+
+      # Cheapest check first, so an unused import fails before anything is compiled
+      - name: Lint
+        run: cd web && npm run lint
+
+      - name: Unit tests
+        run: cd web && npm test
 
       # TypeScript first, then the Vite build, which also generates the service worker and icons
       - name: Type check and build

@@ -2,12 +2,12 @@
 
 *For running the suite against either environment, and knowing what it covers.*
 
-Two layers:
+Three layers:
 
-* **Unit tests** for the logic with the most edge cases. Plain JUnit, no Spring context and no database, so they run in milliseconds.
+* **Unit tests** for the logic with the most edge cases, on both sides. Plain JUnit for the API, no Spring context and no database; **Vitest** for the web app. Both run in milliseconds.
 * **An integration suite** of plain-text requests written for **Bruno**, run against the local stack or the deployed API. No graphical client is needed; the Nix shell bundles the CLI (`bru`).
 
-## Unit tests
+## API unit tests
 
 ```bash
 cd core && mvn test
@@ -17,10 +17,39 @@ cd core && mvn test
 |---|---|
 | `SlugsTest` | Accents, apostrophes and symbols, and that a partial search is a prefix of the full ID |
 | `WorkoutServiceTest` | Time normalization to UTC, the 12 hour and future limits, ULIDs sorting by start time, client IDs keeping their random part and landing on the same ID when retried, the owner coming from the token, page size limits |
-| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, and no key at all when a part is missing |
+| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, enums stored by name, and no key at all when a part is missing |
 | `WorkoutCursorsTest` | Cursors are URL-safe, and anything the API did not issue is rejected |
+| `RequestBodyReaderTest` | A value outside a fixed list names the field and the accepted values, however deeply nested |
 
 `SlugsTest` also records a known limitation: letters outside the Latin alphabet are dropped, so `Жим лёжа` produces an empty slug. See [still open](decisions.md#still-open).
+
+## Web app unit tests
+
+```bash
+cd web && npm test          # once
+cd web && npm run test:watch # re-runs on save
+```
+
+The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout.ts` so it needs neither a browser nor a rendered component.
+
+| Test | What it pins down |
+|---|---|
+| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
+| `workouts.test.ts` | How a saved workout reads: minutes rounded, hours split out past the hour, and the summary line naming the gym, the length and the exercises, singular included |
+| `router.test.ts` | That every route survives a round trip through its path, that a new exercise's typed name rides in the history entry and a reload without it still opens the screen, and that an unknown path goes home rather than nowhere |
+| `sendQueue.test.ts` | What the send queue does with each answer: an empty queue when everything goes through, stopping at the first workout it cannot reach the API with so the order survives, another go after a `401` or a `429`, and a `4xx` marked as refused for good without holding up the ones behind it |
+| `catalog.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic, and the catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
+
+Two more commands run over the whole app:
+
+```bash
+cd web && npm run lint      # oxlint
+cd web && npm run typecheck # tsc --noEmit, also part of npm run build
+```
+
+`oxlint` needs no configuration beyond [`.oxlintrc.json`](../web/.oxlintrc.json) and no TypeScript plugin, which is why it is here instead of ESLint: `typescript-eslint` still asks for TypeScript below 6.1, and this app is on 7.
+
+Storage is not unit tested. `web/src/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
 
 ## Against the local stack
 
@@ -89,7 +118,7 @@ Four tests are tagged `local-only` and excluded when running against AWS, becaus
 |---|---|
 | API tests | Starts the Docker Compose stack and runs the suite with `--env Local` |
 | Build | Spotless formatting, the unit tests while building the `prod` Lambda jar, and `cdk synth` with its security checks |
-| Web | Type check and production build of the PWA |
+| Web | oxlint, the Vitest suite, the type check and the production build of the PWA |
 
 The workflow has **no AWS credentials** and a read-only token, so it never deploys and never runs against the `Dev` environment. That keeps the repo safe to have public: pull requests from forks run the exact same checks with nothing to steal.
 
@@ -97,6 +126,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit` and forged cursors.
 
-That is 37 requests locally and 33 against AWS, the difference being the four `local-only` tests.
+That is 40 requests locally and 36 against AWS, the difference being the four `local-only` tests.

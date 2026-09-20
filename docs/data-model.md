@@ -12,6 +12,10 @@ Gyms, exercises and workouts live in the **same table**, keyed by a partition ke
 
 Keys are defined in three places that must stay in sync: `TableSchemaFactory` (how items are written), `DynamoDbLocalInitializer` (the local table) and the `Database` construct in `infra/` (the real table).
 
+Fixed lists, like an exercise's `muscleGroup` and `category` or a set's `unit`, are stored as the **enum's name** (`CHEST`, `PUSH`, `KG`). Reading an item whose stored value is not in the enum fails, so renaming or removing a value needs a migration of the stored items. Adding one does not.
+
+> Before the fixed lists, `muscleGroup` was free text such as `Chest`. The dev table only held the exercises Bruno registers, which are deleted and registered again before each run against AWS, so no migration was written. A table with real data would need one.
+
 ## Catalog IDs are slugs
 
 Slugs drop accents, apostrophes and symbols, which is what makes prefix search by name work:
@@ -70,3 +74,17 @@ stored         01KZ8BHKC0  N761RDSJY0HMX246
 * `endedAt` must be after `startedAt`, at most 12 hours later, and no more than 5 minutes in the future (a tolerance for client clocks).
 
 Two full timestamps are stored instead of a date plus two times, because a session can cross midnight, because a time without a zone is ambiguous, and because duration is then a subtraction.
+
+## Sets carry their own unit
+
+A set is a `count`, a `weight` and a `unit`, and the unit belongs to **each set**, not to the exercise or the user: one gym mixes machines in kilos and in pounds, sometimes within the same exercise.
+
+| `unit` | `weight` | For |
+|---|---|---|
+| `KG` | 0 or more | Plates and machines in kilos |
+| `LB` | 0 or more | Plates and machines in pounds |
+| `NONE` | must be `0` | Sets without a weight, like pull-ups: only the count matters |
+
+`NONE` is its own value rather than `KG` with a weight of zero, because "0 kg" and "no weight" are different sets: a weighted pull-up with +10 kg is `KG`, a plain one is `NONE`. A weight sent with `NONE` is a `400`, not silently dropped.
+
+Duration and distance, for cardio, do not fit this shape yet: a run can only be logged as a count, see [still open](decisions.md#still-open).

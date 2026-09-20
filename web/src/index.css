@@ -31,3 +31,17 @@ body {
   padding: max(1.5rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
     max(1.5rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
 }
+
+/* The same gaps one side at a time, for a screen whose parts scroll separately */
+@utility safe-top {
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+}
+
+@utility safe-bottom {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+@utility safe-x {
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+}

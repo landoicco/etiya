@@ -1,20 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import type { Api, Workout } from "./api";
+import type { Api } from "./api";
 import type { User } from "./auth";
-
-// Enough to fill a phone screen; the full history gets its own paginated screen later
-const RECENT_WORKOUTS = 10;
+import { GymPicker } from "./GymPicker";
+import { WorkoutCard } from "./HistoryScreen";
+import type { Router } from "./router";
+import type { useSendQueue } from "./sendQueue";
+import { useRecentWorkouts } from "./workouts";
+import type { WorkoutGym } from "./workout";
 
 interface Props {
   api: Api;
   user: User;
+  queue: SendQueue;
+  router: Router;
   onSignOut: () => void;
+  onStarted: (gym: WorkoutGym | null) => void;
 }
+
+type SendQueue = ReturnType<typeof useSendQueue>;
 
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
-export function HomeScreen({ api, user, onSignOut }: Props) {
+export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: Props) {
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
       <header className="flex items-start justify-between gap-4">
@@ -27,27 +34,71 @@ export function HomeScreen({ api, user, onSignOut }: Props) {
         </button>
       </header>
 
-      <RecentWorkouts api={api} />
+      <SendQueueNotice queue={queue} />
+      <RecentWorkouts api={api} router={router} />
 
       <footer className="mt-auto pt-6">
         <button
           type="button"
-          disabled
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+          onClick={() => router.open({ name: "start" })}
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
         >
           Start workout
         </button>
-        <p className="mt-2 text-center text-xs text-muted">Coming soon</p>
       </footer>
+
+      {/* Starting asks where first, which is the one thing about a workout that is known
+          before it begins and awkward to remember after it ends */}
+      {router.route.name === "start" && (
+        <GymPicker api={api} onStart={onStarted} onCancel={router.close} />
+      )}
     </main>
   );
 }
 
-function RecentWorkouts({ api }: { api: Api }) {
-  const { data, error, isPending, fetchStatus, refetch } = useQuery({
-    queryKey: ["workouts", "recent"],
-    queryFn: () => api.listWorkouts(RECENT_WORKOUTS),
-  });
+// A finished workout that has not reached the API yet is not lost, and saying so is the
+// point: the app is trusted with an hour of training and has to show where it went
+function SendQueueNotice({ queue }: { queue: SendQueue }) {
+  const refused = queue.pending.filter((item) => item.refusal !== null);
+  const waiting = queue.pending.length - refused.length;
+
+  if (queue.pending.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-line bg-raised p-5 text-sm">
+      {waiting > 0 && (
+        <p className="text-muted">
+          {waiting === 1 ? "One workout is" : `${waiting} workouts are`} saved on this phone and
+          {queue.sending ? " being sent now." : " waiting for a connection."}
+        </p>
+      )}
+
+      {refused.map((item) => (
+        <div key={item.request.id} className={waiting > 0 ? "mt-3" : undefined}>
+          <p className="text-red-300">The API refused a workout: {item.refusal}</p>
+          <button
+            type="button"
+            onClick={() => void queue.drop(item.request.id)}
+            className="mt-2 h-11 text-muted"
+          >
+            Discard it
+          </button>
+        </div>
+      ))}
+
+      {waiting > 0 && !queue.sending && (
+        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent">
+          Try again now
+        </button>
+      )}
+    </section>
+  );
+}
+
+function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
+  const { data, error, isPending, fetchStatus, refetch } = useRecentWorkouts(api);
 
   if (isPending) {
     // Offline, TanStack Query pauses the request instead of failing it, and sends it when
@@ -72,29 +123,30 @@ function RecentWorkouts({ api }: { api: Api }) {
 
   return (
     <section className="mt-8">
-      <h2 className="text-sm font-semibold text-muted">Recent workouts</h2>
-      <ul className="mt-3 space-y-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-sm font-semibold text-muted">Recent workouts</h2>
+        {/* Only worth offering once there is more than what fits here */}
+        {data.nextCursor !== null && (
+          <button
+            type="button"
+            onClick={() => router.open({ name: "history" })}
+            className="h-11 text-sm text-accent"
+          >
+            See all
+          </button>
+        )}
+      </div>
+      <ul className="mt-1 space-y-3">
         {data.items.map((workout) => (
-          <WorkoutItem key={workout.id} workout={workout} />
+          <li key={workout.id}>
+            <WorkoutCard
+              workout={workout}
+              onOpen={() => router.open({ name: "workout", id: workout.id })}
+            />
+          </li>
         ))}
       </ul>
     </section>
-  );
-}
-
-function WorkoutItem({ workout }: { workout: Workout }) {
-  const started = new Date(workout.startedAt);
-  const minutes = Math.round((Date.parse(workout.endedAt) - started.getTime()) / 60_000);
-  const exercises = workout.exercises.length;
-
-  return (
-    <li className="rounded-2xl border border-line bg-raised p-4">
-      <p className="font-semibold">{DAY.format(started)}</p>
-      <p className="mt-1 text-sm text-muted">
-        {workout.gymName ?? "No gym"} · {minutes} min · {exercises}{" "}
-        {exercises === 1 ? "exercise" : "exercises"}
-      </p>
-    </li>
   );
 }
 
@@ -105,12 +157,3 @@ function Notice({ children }: { children: ReactNode }) {
     </section>
   );
 }
-
-// In the phone's language and time zone, e.g. "Tue, Sep 16, 6:30 PM"
-const DAY = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});

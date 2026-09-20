@@ -24,8 +24,10 @@ import software.constructs.Construct;
 // because each handler dispatches on the routeKey the API sends
 public class Api extends Construct {
 
-  // Where the frontend runs during development, besides the deployed one. CORS only affects
-  // browsers
+  // Where the frontend runs during development, besides the deployed one: npm run dev on the
+  // first, npm run preview on the second. They are kept apart because a preview registers a
+  // service worker, which would otherwise keep serving its build to the dev server. CORS only
+  // affects browsers
   private static final List<String> DEV_ORIGINS =
       List.of("http://localhost:5173", "http://localhost:3000");
 
