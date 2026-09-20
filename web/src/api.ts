@@ -2,7 +2,8 @@ import type { Auth } from "./auth";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra
-export type WeightUnit = "KG" | "LB";
+// NONE is a set logged without weight, like pull-ups, and forces weight to 0
+export type WeightUnit = "KG" | "LB" | "NONE";
 
 export interface GymSet {
   count: number;

@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "unicorn", "vitest"],
+  "env": { "browser": true, "es2024": true },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "rules": {
+    // Vite compiles JSX with the automatic runtime, so React is never in scope by hand
+    "react/react-in-jsx-scope": "off"
+  },
+  "ignorePatterns": ["dist"]
+}

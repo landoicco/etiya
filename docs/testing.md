@@ -2,12 +2,12 @@
 
 *For running the suite against either environment, and knowing what it covers.*
 
-Two layers:
+Three layers:
 
-* **Unit tests** for the logic with the most edge cases. Plain JUnit, no Spring context and no database, so they run in milliseconds.
+* **Unit tests** for the logic with the most edge cases, on both sides. Plain JUnit for the API, no Spring context and no database; **Vitest** for the web app. Both run in milliseconds.
 * **An integration suite** of plain-text requests written for **Bruno**, run against the local stack or the deployed API. No graphical client is needed; the Nix shell bundles the CLI (`bru`).
 
-## Unit tests
+## API unit tests
 
 ```bash
 cd core && mvn test
@@ -22,6 +22,30 @@ cd core && mvn test
 | `RequestBodyReaderTest` | A value outside a fixed list names the field and the accepted values, however deeply nested |
 
 `SlugsTest` also records a known limitation: letters outside the Latin alphabet are dropped, so `Жим лёжа` produces an empty slug. See [still open](decisions.md#still-open).
+
+## Web app unit tests
+
+```bash
+cd web && npm test          # once
+cd web && npm run test:watch # re-runs on save
+```
+
+The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout.ts` so it needs neither a browser nor a rendered component.
+
+| Test | What it pins down |
+|---|---|
+| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and their limits, and the elapsed clock |
+
+Two more commands run over the whole app:
+
+```bash
+cd web && npm run lint      # oxlint
+cd web && npm run typecheck # tsc --noEmit, also part of npm run build
+```
+
+`oxlint` needs no configuration beyond [`.oxlintrc.json`](../web/.oxlintrc.json) and no TypeScript plugin, which is why it is here instead of ESLint: `typescript-eslint` still asks for TypeScript below 6.1, and this app is on 7.
+
+Storage is not unit tested. `web/src/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
 
 ## Against the local stack
 
@@ -90,7 +114,7 @@ Four tests are tagged `local-only` and excluded when running against AWS, becaus
 |---|---|
 | API tests | Starts the Docker Compose stack and runs the suite with `--env Local` |
 | Build | Spotless formatting, the unit tests while building the `prod` Lambda jar, and `cdk synth` with its security checks |
-| Web | Type check and production build of the PWA |
+| Web | oxlint, the Vitest suite, the type check and the production build of the PWA |
 
 The workflow has **no AWS credentials** and a read-only token, so it never deploys and never runs against the `Dev` environment. That keeps the repo safe to have public: pull requests from forks run the exact same checks with nothing to steal.
 
