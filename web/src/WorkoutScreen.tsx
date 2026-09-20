@@ -1,5 +1,6 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
-import type { GymSet, WeightUnit } from "./api";
+import { type ReactNode, useEffect, useState } from "react";
+import type { Api, GymSet, WeightUnit } from "./api";
+import { ExercisePicker } from "./ExercisePicker";
 import { useWakeLock } from "./useWakeLock";
 import {
   type ActiveWorkout,
@@ -25,6 +26,7 @@ import {
 type Change = (workout: ActiveWorkout) => ActiveWorkout;
 
 interface Props {
+  api: Api;
   workout: ActiveWorkout;
   onChange: (change: Change) => void;
   onDiscard: () => void;
@@ -32,8 +34,9 @@ interface Props {
 
 // The workout scrolls above and the set logger stays at the bottom, where the thumb is:
 // logging a set never asks for a second hand, and never moves the button it just tapped
-export function WorkoutScreen({ workout, onChange, onDiscard }: Props) {
+export function WorkoutScreen({ api, workout, onChange, onDiscard }: Props) {
   useWakeLock();
+  const [picking, setPicking] = useState(false);
   const exercise = currentExercise(workout);
 
   return (
@@ -44,11 +47,13 @@ export function WorkoutScreen({ workout, onChange, onDiscard }: Props) {
           workout={workout}
           onSelect={(index) => onChange((current) => selectExercise(current, index))}
         />
-        <AddExercise
-          onAdd={(name) =>
-            onChange((current) => addExercise(current, { exerciseCatalogItemId: null, name }))
-          }
-        />
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="mt-4 h-14 w-full rounded-2xl border border-line font-semibold"
+        >
+          + Add exercise
+        </button>
       </div>
 
       {exercise && (
@@ -60,6 +65,17 @@ export function WorkoutScreen({ workout, onChange, onDiscard }: Props) {
           draft={nextSet(workout)}
           onLog={(set) => onChange((current) => logSet(current, set))}
           onUndo={() => onChange(undoLastSet)}
+        />
+      )}
+
+      {picking && (
+        <ExercisePicker
+          api={api}
+          onPick={(choice) => {
+            onChange((current) => addExercise(current, choice));
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
         />
       )}
     </main>
@@ -160,43 +176,6 @@ function ExerciseRow({
         {exercise.sets.length === 0 ? "No sets yet" : exercise.sets.map(setLabel).join(" · ")}
       </p>
     </button>
-  );
-}
-
-// A plain text box until the catalog picker takes its place, so the screen already works
-// end to end. What it adds is an exercise with no catalog id, exactly like one typed offline
-function AddExercise({ onAdd }: { onAdd: (name: string) => void }) {
-  const [name, setName] = useState("");
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed !== "") {
-      onAdd(trimmed);
-      setName("");
-    }
-  }
-
-  return (
-    <form onSubmit={submit} className="mt-4 flex gap-2">
-      <input
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        placeholder="Add exercise"
-        aria-label="Add exercise"
-        enterKeyHint="done"
-        autoCapitalize="words"
-        autoCorrect="off"
-        className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-raised px-4 placeholder:text-muted"
-      />
-      <button
-        type="submit"
-        disabled={name.trim() === ""}
-        className="h-14 shrink-0 rounded-2xl border border-line px-5 font-semibold disabled:opacity-40"
-      >
-        Add
-      </button>
-    </form>
   );
 }
 

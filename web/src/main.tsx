@@ -7,6 +7,7 @@ import { type Auth, cognitoAuth, type User } from "./auth";
 import { loadConfig } from "./config";
 import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
+import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
 import { WorkoutScreen } from "./WorkoutScreen";
@@ -47,7 +48,7 @@ function App({ auth, api, initialUser, initialWorkout }: AppProps) {
 
   // A workout in progress is the whole app until it is finished or discarded
   if (workout) {
-    return <WorkoutScreen workout={workout} onChange={update} onDiscard={discard} />;
+    return <WorkoutScreen api={api} workout={workout} onChange={update} onDiscard={discard} />;
   }
 
   return <HomeScreen api={api} user={user} onSignOut={signOut} onStart={startWorkout} />;
@@ -71,7 +72,16 @@ async function start(container: HTMLElement) {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const [user, workout] = await Promise.all([auth.currentUser(), loadActiveWorkout()]);
+    const [user, workout, catalog] = await Promise.all([
+      auth.currentUser(),
+      loadActiveWorkout(),
+      loadCachedCatalog(),
+    ]);
+    // The picker then opens on the copy this phone already has, and a fresh one replaces it
+    // once it arrives, instead of showing an empty list on every launch
+    if (catalog) {
+      queryClient.setQueryData(CATALOG_KEY, catalog);
+    }
     root.render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
