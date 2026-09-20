@@ -76,4 +76,53 @@ class TableSchemaFactoryTest {
     assertThat(TableSchemaFactory.createWorkoutSchema().itemToMap(workout, true))
         .doesNotContainKey("PK");
   }
+
+  // Every item says which shape it was written with, so a later change can tell them apart.
+  // The three types evolve on their own, which is why each carries its own number
+  @Test
+  void everyItemIsStampedWithItsSchemaVersion() {
+    Gym gym = new Gym("golds-gym-los-angeles", "Golds Gym", null, "Los Angeles");
+    ExerciseCatalogItem exercise =
+        new ExerciseCatalogItem("pull-ups", "Pull-ups", MuscleGroup.BACK, ExerciseCategory.PULL);
+    Workout workout = new Workout();
+    workout.setUserId("user-123");
+    workout.setId("01K1H3ZC8R0000000000000000");
+
+    assertThat(TableSchemaFactory.createGymSchema().itemToMap(gym, true).get("schemaVersion").n())
+        .isEqualTo(String.valueOf(TableSchemaFactory.GYM_SCHEMA_VERSION));
+    assertThat(
+            TableSchemaFactory.createExerciseCatalogItemSchema()
+                .itemToMap(exercise, true)
+                .get("schemaVersion")
+                .n())
+        .isEqualTo(String.valueOf(TableSchemaFactory.EXERCISE_SCHEMA_VERSION));
+    assertThat(
+            TableSchemaFactory.createWorkoutSchema()
+                .itemToMap(workout, true)
+                .get("schemaVersion")
+                .n())
+        .isEqualTo(String.valueOf(TableSchemaFactory.WORKOUT_SCHEMA_VERSION));
+  }
+
+  // The version is storage-only: it is never read back onto the model, which is what keeps it
+  // out of API responses and out of reach of anything a client sends
+  @Test
+  void theStoredVersionNeverReachesTheModel() {
+    Gym gym = new Gym("golds-gym-los-angeles", "Golds Gym", null, "Los Angeles");
+    Map<String, AttributeValue> item = TableSchemaFactory.createGymSchema().itemToMap(gym, true);
+
+    assertThat(TableSchemaFactory.createGymSchema().mapToItem(item)).isEqualTo(gym);
+  }
+
+  // What a migration will face: an item written before this attribute existed reads back
+  // exactly like any other, so nothing has to be backfilled just to keep the app working
+  @Test
+  void anItemStoredWithoutAVersionStillReads() {
+    Gym gym = new Gym("golds-gym-los-angeles", "Golds Gym", null, "Los Angeles");
+    Map<String, AttributeValue> stored =
+        new java.util.HashMap<>(TableSchemaFactory.createGymSchema().itemToMap(gym, true));
+    stored.remove("schemaVersion");
+
+    assertThat(TableSchemaFactory.createGymSchema().mapToItem(stored)).isEqualTo(gym);
+  }
 }

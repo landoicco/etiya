@@ -145,6 +145,17 @@ The app is meant to be used with one hand, between sets, on a phone. A progressi
 * **Stack values reach the app at runtime**, through a `config.json` written next to the build. One build works for any stack, and changing the API does not mean rebuilding the app.
 * **Development runs against the dev API on AWS**, not the Docker stack, so the real login is exercised from day one. The alternative needed a mode without login that would exist only for development.
 
+## Changing the stored shape later
+
+Stored data outlives the code that wrote it, and this project expects plenty of changes. The plan, cheapest first:
+
+* **Add, do not change.** `StaticTableSchema` ignores attributes it does not recognize and leaves absent ones `null`, so a new field is readable next to items written before it existed. Most changes can be designed this way, and those need no migration at all.
+* **Upgrade an item when it is read** when a change cannot be additive: the old shape is mapped to the new one in memory, and written back on the next save. No downtime, no separate job.
+* **A one-off script** when a backfill really is needed: scan the table, rewrite the items, with an on-demand backup taken first. At a few MB and a few thousand items this runs in seconds for pennies — [`scripts/seed-catalog.mjs`](../scripts/seed-catalog.mjs) is the same pattern. Migrations are cheap here and only stop being cheap at millions of items.
+* **[`schemaVersion`](data-model.md#every-item-says-which-shape-it-was-written-with) tells the three apart**, which is why it is stamped from the first production write.
+
+**AWS Glue was considered and rejected.** It is Spark-based ETL for data lakes: billed per DPU-hour with a per-run minimum, which for a table this size costs more than everything else in the project combined, and it brings a crawler, a catalog and job scripts to solve a problem a `for` loop solves. It is also the wrong shape, since migrating in place means reading DynamoDB and writing back to it. Glue's moment would be **analytics** — trends across workouts — and even then DynamoDB's native S3 export with Athena is serverless and cheaper; Glue only earns its place once the transformation itself is complex.
+
 ## Still open
 
 Deliberately postponed, with the trigger that would justify each:

@@ -88,3 +88,21 @@ A set is a `count`, a `weight` and a `unit`, and the unit belongs to **each set*
 `NONE` is its own value rather than `KG` with a weight of zero, because "0 kg" and "no weight" are different sets: a weighted pull-up with +10 kg is `KG`, a plain one is `NONE`. A weight sent with `NONE` is a `400`, not silently dropped.
 
 Duration and distance, for cardio, do not fit this shape yet: a run can only be logged as a count, see [still open](decisions.md#still-open).
+
+## Every item says which shape it was written with
+
+Each stored item carries a `schemaVersion`, a number stamped on every write. All three are at `1` today.
+
+| Item | Version | Covers |
+|---|---|---|
+| Gym | `GYM_SCHEMA_VERSION` | the gym item |
+| Exercise | `EXERCISE_SCHEMA_VERSION` | the catalog item |
+| Workout | `WORKOUT_SCHEMA_VERSION` | the workout and the exercises and sets nested inside it |
+
+One number per item type, because the three shapes evolve independently: changing how a workout is stored should not renumber every gym.
+
+**Nothing reads it yet**, and that is the point. It exists so that a later change can tell an old item from a new one — either a migration script reading items raw from a scan, or a setter added to the schema to upgrade an item as it is read. Adding a field never needs this: `StaticTableSchema` ignores attributes it does not know and leaves missing ones `null`, so old items keep reading correctly. What needs it is the case inspection cannot solve — **a field whose meaning changes while its name and type stay the same**, which no amount of looking at the stored attributes can detect.
+
+It is stamped in [`TableSchemaFactory`](../core/src/main/java/licaza/etiya/core/repository/dynamo/TableSchemaFactory.java) and is deliberately **not** a field on the model classes. Those are serialized straight into API responses and read straight from request bodies, so a field there would publish a storage detail as part of the API and let a client send its own version. It is written from a constant and ignored on read, the same way `PK` and `SK` are.
+
+The reason to do this before production rather than when it is needed: data cannot be versioned retroactively. An item written without the attribute never gains one, and the first migration would have to treat "no version" as an implicit version 0.

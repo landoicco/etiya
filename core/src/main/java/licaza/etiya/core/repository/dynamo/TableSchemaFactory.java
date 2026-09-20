@@ -20,6 +20,21 @@ public class TableSchemaFactory {
   public static final String USER_PK_PREFIX = "USER#";
   public static final String WORKOUT_SK_PREFIX = "WORKOUT#";
 
+  // Stamped on every item written, and never read back: it says which shape an item was stored
+  // with, so a later change can tell old items from new ones and migrate them. Attributes alone
+  // cannot always answer that — a field whose meaning changes while its name and type stay the
+  // same is invisible to any inspection. Nothing reads these yet; the day a version 2 exists,
+  // the migration reads them raw from a scan, or a setter is added here to upgrade on read.
+  //
+  // One per item type, because the three shapes evolve independently. Deliberately not a model
+  // field: models are serialized straight into API responses and read straight from request
+  // bodies, so a field here would leak into the API and let a client claim its own version
+  public static final String SCHEMA_VERSION = "schemaVersion";
+
+  public static final int GYM_SCHEMA_VERSION = 1;
+  public static final int EXERCISE_SCHEMA_VERSION = 1;
+  public static final int WORKOUT_SCHEMA_VERSION = 1;
+
   // Keys are derived from model fields, so the setters intentionally do nothing
   public static TableSchema<Gym> createGymSchema() {
     return StaticTableSchema.builder(Gym.class)
@@ -39,6 +54,9 @@ public class TableSchemaFactory {
         .addAttribute(
             String.class, a -> a.name("branch").getter(Gym::getBranch).setter(Gym::setBranch))
         .addAttribute(String.class, a -> a.name("city").getter(Gym::getCity).setter(Gym::setCity))
+        .addAttribute(
+            Integer.class,
+            a -> a.name(SCHEMA_VERSION).getter(g -> GYM_SCHEMA_VERSION).setter((g, v) -> {}))
         .build();
   }
 
@@ -80,6 +98,9 @@ public class TableSchemaFactory {
                 a.name("category")
                     .getter(ExerciseCatalogItem::getCategory)
                     .setter(ExerciseCatalogItem::setCategory))
+        .addAttribute(
+            Integer.class,
+            a -> a.name(SCHEMA_VERSION).getter(e -> EXERCISE_SCHEMA_VERSION).setter((e, v) -> {}))
         .build();
   }
 
@@ -149,6 +170,10 @@ public class TableSchemaFactory {
         .addAttribute(
             EnhancedType.listOf(EnhancedType.documentOf(Exercise.class, exerciseSchema)),
             a -> a.name("exercises").getter(Workout::getExercises).setter(Workout::setExercises))
+        // Covers the nested exercises and sets too: they are stored inside the workout item
+        .addAttribute(
+            Integer.class,
+            a -> a.name(SCHEMA_VERSION).getter(w -> WORKOUT_SCHEMA_VERSION).setter((w, v) -> {}))
         .build();
   }
 
