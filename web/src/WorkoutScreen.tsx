@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import type { Api, GymSet, WeightUnit } from "./api";
 import { ExercisePicker } from "./ExercisePicker";
+import type { Router } from "./router";
 import { useWakeLock } from "./useWakeLock";
 import {
   type ActiveWorkout,
@@ -32,6 +33,7 @@ type Change = (workout: ActiveWorkout) => ActiveWorkout;
 interface Props {
   api: Api;
   workout: ActiveWorkout;
+  router: Router;
   onChange: (change: Change) => void;
   onFinish: (request: WorkoutRequest) => void;
   onDiscard: () => void;
@@ -39,23 +41,22 @@ interface Props {
 
 // The workout scrolls above and the set logger stays at the bottom, where the thumb is:
 // logging a set never asks for a second hand, and never moves the button it just tapped
-export function WorkoutScreen({ api, workout, onChange, onFinish, onDiscard }: Props) {
+export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDiscard }: Props) {
   useWakeLock();
-  const [picking, setPicking] = useState(false);
-  const [finishing, setFinishing] = useState(false);
   const exercise = currentExercise(workout);
+  const sheet = router.route.name;
 
   return (
     <main className="flex h-dvh flex-col">
       <div className="safe-x safe-top min-h-0 flex-1 overflow-y-auto pb-6">
-        <Header workout={workout} onFinish={() => setFinishing(true)} />
+        <Header workout={workout} onFinish={() => router.open({ name: "finish" })} />
         <ExerciseList
           workout={workout}
           onSelect={(index) => onChange((current) => selectExercise(current, index))}
         />
         <button
           type="button"
-          onClick={() => setPicking(true)}
+          onClick={() => router.open({ name: "exercises" })}
           className="mt-4 h-14 w-full rounded-2xl border border-line font-semibold"
         >
           + Add exercise
@@ -74,23 +75,25 @@ export function WorkoutScreen({ api, workout, onChange, onFinish, onDiscard }: P
         />
       )}
 
-      {picking && (
+      {(sheet === "exercises" || sheet === "newExercise") && (
         <ExercisePicker
           api={api}
+          router={router}
           onPick={(choice) => {
             onChange((current) => addExercise(current, choice));
-            setPicking(false);
+            // Leaves the same way the back gesture would, so picking an exercise does not
+            // leave a spent entry for the next back press to land on
+            router.close();
           }}
-          onClose={() => setPicking(false)}
         />
       )}
 
-      {finishing && (
+      {sheet === "finish" && (
         <FinishSheet
           workout={workout}
           onSave={onFinish}
           onDiscard={onDiscard}
-          onBack={() => setFinishing(false)}
+          onBack={router.close}
         />
       )}
     </main>

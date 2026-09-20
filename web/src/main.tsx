@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { loadActiveWorkout } from "./activeWorkout";
 import { type Api, ApiError, createApi } from "./api";
@@ -9,6 +9,7 @@ import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
 import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "./gyms";
+import { HOME, useRouter } from "./router";
 import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
@@ -38,6 +39,19 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
   // Renamed, because start() below is what mounts the app
   const { workout, start: startWorkout, update, clear } = useActiveWorkout(initialWorkout);
   const queue = useSendQueue(api, initialPending);
+  const router = useRouter();
+
+  // A workout in progress owns the screens under /workout, and nothing else may claim them.
+  // Replacing rather than opening keeps the back gesture out of a screen that is now gone,
+  // which is what a link to /workout/finish after the workout was saved would otherwise be
+  const inWorkout = UNDER_WORKOUT.has(router.route.name);
+  useEffect(() => {
+    if (inWorkout && workout === null) {
+      router.replace(HOME);
+    } else if (!inWorkout && workout !== null) {
+      router.replace({ name: "logging" });
+    }
+  }, [inWorkout, workout, router]);
 
   if (!user) {
     return <LoginScreen auth={auth} onSignedIn={setUser} />;
@@ -50,20 +64,24 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
     setUser(null);
   }
 
-  // A workout in progress is the whole app until it is finished or discarded
-  if (workout) {
+  if (workout && inWorkout) {
     return (
       <WorkoutScreen
         api={api}
         workout={workout}
+        router={router}
         onChange={update}
         onFinish={(request) => {
           // Queued first, then forgotten: the send is the queue's problem from here, and
           // the gym is where a phone is least likely to have a connection
           void queue.add(request);
           clear();
+          router.replace(HOME);
         }}
-        onDiscard={clear}
+        onDiscard={() => {
+          clear();
+          router.replace(HOME);
+        }}
       />
     );
   }
@@ -73,11 +91,18 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
       api={api}
       user={user}
       queue={queue}
+      router={router}
+      onStarted={(gym) => {
+        startWorkout(gym);
+        router.replace({ name: "logging" });
+      }}
       onSignOut={signOut}
-      onStart={startWorkout}
     />
   );
 }
+
+// The routes that only mean anything while a workout is being logged
+const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "finish"]);
 
 function StartupError({ message }: { message: string }) {
   return (

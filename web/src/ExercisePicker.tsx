@@ -16,12 +16,13 @@ import {
   searchCatalog,
 } from "./catalog";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
+import type { Router } from "./router";
 import type { ExerciseChoice } from "./workout";
 
 interface Props {
   api: Api;
+  router: Router;
   onPick: (choice: ExerciseChoice) => void;
-  onClose: () => void;
 }
 
 // The API refuses a name shorter than this, so there is no point offering to add one
@@ -29,25 +30,26 @@ const MIN_NAME = 2;
 
 // Covers the workout while it is open. Searching is the common case and adding is the rare
 // one, so the search is what the screen opens on, with the keyboard already up
-export function ExercisePicker({ api, onPick, onClose }: Props) {
+export function ExercisePicker({ api, router, onPick }: Props) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ExerciseCategory | null>(null);
-  const [adding, setAdding] = useState(false);
 
   const { data, error, fetchStatus } = useExerciseCatalog(api);
   const catalog = data ?? [];
   const typed = query.trim();
   const results = searchCatalog(catalog, { query, category });
 
-  if (adding) {
+  // Adding is its own entry, so the back gesture returns to the search rather than closing
+  // the picker. The name travels in the entry, since a reload has nothing else to go on
+  if (router.route.name === "newExercise") {
     return (
       <Sheet>
         <NewExercise
           api={api}
-          name={typed}
+          name={router.route.exerciseName}
           catalog={catalog}
           onCreated={onPick}
-          onCancel={() => setAdding(false)}
+          onCancel={router.close}
         />
       </Sheet>
     );
@@ -70,7 +72,11 @@ export function ExercisePicker({ api, onPick, onClose }: Props) {
           autoFocus
           className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-raised px-4 placeholder:text-muted"
         />
-        <button type="button" onClick={onClose} className="h-14 shrink-0 px-2 text-sm text-muted">
+        <button
+          type="button"
+          onClick={router.close}
+          className="h-14 shrink-0 px-2 text-sm text-muted"
+        >
           Cancel
         </button>
       </div>
@@ -108,7 +114,7 @@ export function ExercisePicker({ api, onPick, onClose }: Props) {
         <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={() => router.open({ name: "newExercise", exerciseName: typed })}
             className="h-14 w-full truncate rounded-2xl border border-accent px-4 font-semibold text-accent"
           >
             + Add “{typed}”

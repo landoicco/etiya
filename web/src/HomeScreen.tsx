@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import type { Api, Workout } from "./api";
 import type { User } from "./auth";
 import { GymPicker } from "./GymPicker";
+import type { Router } from "./router";
 import type { useSendQueue } from "./sendQueue";
 import type { WorkoutGym } from "./workout";
 
@@ -13,19 +14,16 @@ interface Props {
   api: Api;
   user: User;
   queue: SendQueue;
+  router: Router;
   onSignOut: () => void;
-  onStart: (gym: WorkoutGym | null) => void;
+  onStarted: (gym: WorkoutGym | null) => void;
 }
 
 type SendQueue = ReturnType<typeof useSendQueue>;
 
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
-export function HomeScreen({ api, user, queue, onSignOut, onStart }: Props) {
-  // Starting asks where first, which is the one thing about a workout that is known before
-  // it begins and awkward to remember after it ends
-  const [choosingGym, setChoosingGym] = useState(false);
-
+export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: Props) {
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
       <header className="flex items-start justify-between gap-4">
@@ -44,15 +42,17 @@ export function HomeScreen({ api, user, queue, onSignOut, onStart }: Props) {
       <footer className="mt-auto pt-6">
         <button
           type="button"
-          onClick={() => setChoosingGym(true)}
+          onClick={() => router.open({ name: "start" })}
           className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
         >
           Start workout
         </button>
       </footer>
 
-      {choosingGym && (
-        <GymPicker api={api} onStart={onStart} onCancel={() => setChoosingGym(false)} />
+      {/* Starting asks where first, which is the one thing about a workout that is known
+          before it begins and awkward to remember after it ends */}
+      {router.route.name === "start" && (
+        <GymPicker api={api} onStart={onStarted} onCancel={router.close} />
       )}
     </main>
   );
