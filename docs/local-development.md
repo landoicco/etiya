@@ -44,8 +44,11 @@ The web app is developed against the dev API on AWS with a real Cognito login, n
 
 `npm run build` checks the types and writes `web/dist`, including the service worker and every icon size, generated from `public/icon.svg`. The service worker only runs in a production build, so test installation and offline behavior with:
 ```bash
-npm run build && npm run preview     # also on http://localhost:5173, the origin CORS allows
+npm run build && npm run preview     # http://localhost:3000, the other origin CORS allows
 ```
+
+> **The preview runs on a different port on purpose.** It registers a service worker, which precaches the build it was serving. On the dev server's port that worker would keep answering with that build, and it cannot update itself there, because `/sw.js` in development is not JavaScript. If the dev server ever shows an old version, an unregister and a clear of the site data in the browser's developer tools is the way out.
+
 Service workers require HTTPS everywhere except `localhost`, so installing the app on a phone needs the deployed version: `npm run deploy`, see [deployment](deployment.md#deploying-the-web-app).
 
 ## Nix Flake

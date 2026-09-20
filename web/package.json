@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 5173 --strictPort",
+    "preview": "vite preview --port 3000 --strictPort",
     "config": "scripts/config.sh public/config.json",
     "deploy": "scripts/deploy.sh"
   },
