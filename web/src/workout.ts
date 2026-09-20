@@ -35,6 +35,21 @@ export interface WorkoutGym {
   name: string;
 }
 
+// The body of POST /me/workouts. A finished workout is the active one plus an end time,
+// which is why the two shapes are this close
+export interface WorkoutRequest {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  gymId: string | null;
+  gymName: string | null;
+  exercises: LoggedExercise[];
+}
+
+// The API refuses anything longer, and refuses it forever: a workout over the limit would
+// sit in the send queue for good
+const MAX_DURATION_MS = 12 * 60 * 60 * 1000;
+
 // What the first set of a workout suggests, before there is anything to inherit from
 const FIRST_SET: GymSet = { count: 10, weight: 0, unit: "KG" };
 
@@ -116,6 +131,34 @@ export function nextSet(workout: ActiveWorkout): GymSet {
   return previous ? { ...previous } : { ...FIRST_SET, unit: lastWeightedUnit(workout) };
 }
 
+// Exercises nobody logged a set on are dropped: they are the ones added and then thought
+// better of, and the API refuses an exercise without sets anyway. A workout with nothing
+// left is not a workout, which is what null means here
+export function finishWorkout(workout: ActiveWorkout, now: Date): WorkoutRequest | null {
+  const exercises = workout.exercises.filter((exercise) => exercise.sets.length > 0);
+  if (exercises.length === 0) {
+    return null;
+  }
+
+  return {
+    id: workout.id,
+    startedAt: workout.startedAt,
+    endedAt: endTime(workout, now),
+    gymId: workout.gymId,
+    gymName: workout.gymName,
+    exercises,
+  };
+}
+
+// Whether there is anything worth saving, which is what the finish button waits for
+export function loggedSets(workout: ActiveWorkout): number {
+  return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
+}
+
+export function loggedExercises(workout: ActiveWorkout): number {
+  return workout.exercises.filter((exercise) => exercise.sets.length > 0).length;
+}
+
 export function stepCount(set: GymSet, taps: number): GymSet {
   return withCount(set, set.count + taps);
 }
@@ -189,6 +232,15 @@ function lastWeightedUnit(workout: ActiveWorkout): WeightUnit {
     }
   }
   return FIRST_SET.unit;
+}
+
+// Forgetting to finish a workout is easy: the phone dies, or it is put away and opened the
+// next morning. Capping the end at the limit saves it with an absurd duration rather than
+// losing it, and the summary shows that duration before anything is sent
+function endTime(workout: ActiveWorkout, now: Date): string {
+  const started = Date.parse(workout.startedAt);
+  const ended = clamp(now.getTime(), started + 1000, started + MAX_DURATION_MS);
+  return new Date(ended).toISOString();
 }
 
 function clamp(value: number, min: number, max: number): number {

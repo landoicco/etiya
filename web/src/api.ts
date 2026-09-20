@@ -1,4 +1,5 @@
 import type { Auth } from "./auth";
+import type { WorkoutRequest } from "./workout";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra
@@ -135,6 +136,12 @@ export function createApi(apiUrl: string, auth: Auth) {
     // the app: it means somebody else added it first
     registerExercise(exercise: NewCatalogExercise): Promise<CatalogExercise> {
       return post("/exercises", exercise);
+    },
+
+    // Safe to retry: the request carries a client ULID, so sending the same workout again
+    // answers 200 with the one already stored instead of creating a second one
+    saveWorkout(workout: WorkoutRequest): Promise<Workout> {
+      return post("/me/workouts", workout);
     },
 
     // Newest first

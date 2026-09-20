@@ -3,6 +3,7 @@ import { type ReactNode, useState } from "react";
 import type { Api, Workout } from "./api";
 import type { User } from "./auth";
 import { GymPicker } from "./GymPicker";
+import type { useSendQueue } from "./sendQueue";
 import type { WorkoutGym } from "./workout";
 
 // Enough to fill a phone screen; the full history gets its own paginated screen later
@@ -11,13 +12,16 @@ const RECENT_WORKOUTS = 10;
 interface Props {
   api: Api;
   user: User;
+  queue: SendQueue;
   onSignOut: () => void;
   onStart: (gym: WorkoutGym | null) => void;
 }
 
+type SendQueue = ReturnType<typeof useSendQueue>;
+
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
-export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
+export function HomeScreen({ api, user, queue, onSignOut, onStart }: Props) {
   // Starting asks where first, which is the one thing about a workout that is known before
   // it begins and awkward to remember after it ends
   const [choosingGym, setChoosingGym] = useState(false);
@@ -34,6 +38,7 @@ export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
         </button>
       </header>
 
+      <SendQueueNotice queue={queue} />
       <RecentWorkouts api={api} />
 
       <footer className="mt-auto pt-6">
@@ -50,6 +55,47 @@ export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
         <GymPicker api={api} onStart={onStart} onCancel={() => setChoosingGym(false)} />
       )}
     </main>
+  );
+}
+
+// A finished workout that has not reached the API yet is not lost, and saying so is the
+// point: the app is trusted with an hour of training and has to show where it went
+function SendQueueNotice({ queue }: { queue: SendQueue }) {
+  const refused = queue.pending.filter((item) => item.refusal !== null);
+  const waiting = queue.pending.length - refused.length;
+
+  if (queue.pending.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-line bg-raised p-5 text-sm">
+      {waiting > 0 && (
+        <p className="text-muted">
+          {waiting === 1 ? "One workout is" : `${waiting} workouts are`} saved on this phone and
+          {queue.sending ? " being sent now." : " waiting for a connection."}
+        </p>
+      )}
+
+      {refused.map((item) => (
+        <div key={item.request.id} className={waiting > 0 ? "mt-3" : undefined}>
+          <p className="text-red-300">The API refused a workout: {item.refusal}</p>
+          <button
+            type="button"
+            onClick={() => void queue.drop(item.request.id)}
+            className="mt-2 h-11 text-muted"
+          >
+            Discard it
+          </button>
+        </div>
+      ))}
+
+      {waiting > 0 && !queue.sending && (
+        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent">
+          Try again now
+        </button>
+      )}
+    </section>
   );
 }
 

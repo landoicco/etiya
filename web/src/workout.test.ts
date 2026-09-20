@@ -4,6 +4,9 @@ import {
   addExercise,
   currentExercise,
   elapsedLabel,
+  finishWorkout,
+  loggedExercises,
+  loggedSets,
   logSet,
   nextSet,
   selectExercise,
@@ -224,6 +227,63 @@ describe("steppers", () => {
   it("clears the weight when the set stops having one, and keeps the reps", () => {
     expect(setUnit(kg(12, 60), "NONE")).toEqual({ count: 12, weight: 0, unit: "NONE" });
     expect(setUnit(kg(12, 60), "LB")).toEqual({ count: 12, weight: 60, unit: "LB" });
+  });
+});
+
+describe("finishWorkout", () => {
+  const AN_HOUR_IN = new Date(START.getTime() + 60 * 60 * 1000);
+
+  it("carries the id, the start and the gym into the request", () => {
+    const gym = { id: "smart-fit-monterrey", name: "Smart Fit" };
+    const workout = logSet(addExercise(startWorkout(START, gym), BENCH), kg(10, 60));
+
+    expect(finishWorkout(workout, AN_HOUR_IN)).toMatchObject({
+      id: workout.id,
+      startedAt: "2026-09-19T18:30:00.000Z",
+      endedAt: "2026-09-19T19:30:00.000Z",
+      gymId: "smart-fit-monterrey",
+      gymName: "Smart Fit",
+    });
+  });
+
+  it("drops the exercises nobody logged a set on, which the API would refuse", () => {
+    const withEmpty = addExercise(workoutWith(kg(12, 60)), SQUAT);
+
+    expect(finishWorkout(withEmpty, AN_HOUR_IN)?.exercises.map((one) => one.name)).toEqual([
+      "Barbell Bench Press",
+    ]);
+  });
+
+  it("is nothing to save when no set was logged at all", () => {
+    expect(finishWorkout(addExercise(startWorkout(START, null), BENCH), AN_HOUR_IN)).toBeNull();
+    expect(finishWorkout(startWorkout(START, null), AN_HOUR_IN)).toBeNull();
+  });
+
+  // Forgetting to finish is easy, and a workout over twelve hours is one the API refuses
+  // forever, so it would sit in the send queue for good
+  it("caps the end at twelve hours after the start", () => {
+    const nextMorning = new Date(START.getTime() + 20 * 60 * 60 * 1000);
+
+    expect(finishWorkout(workoutWith(kg(12, 60)), nextMorning)?.endedAt).toBe(
+      "2026-09-20T06:30:00.000Z",
+    );
+  });
+
+  it("ends after it starts even when the phone's clock goes backwards", () => {
+    const before = new Date(START.getTime() - 60_000);
+    const ended = finishWorkout(workoutWith(kg(12, 60)), before)?.endedAt ?? "";
+
+    expect(Date.parse(ended)).toBeGreaterThan(START.getTime());
+  });
+});
+
+describe("loggedSets and loggedExercises", () => {
+  it("count what is there, and exercises only when they have sets", () => {
+    const workout = logSet(addExercise(workoutWith(kg(12, 60), kg(10, 80)), SQUAT), kg(5, 100));
+
+    expect(loggedSets(workout)).toBe(3);
+    expect(loggedExercises(workout)).toBe(2);
+    expect(loggedExercises(addExercise(workout, PULL_UP))).toBe(2);
   });
 });
 

@@ -9,6 +9,7 @@ import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
 import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "./gyms";
+import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
 import { WorkoutScreen } from "./WorkoutScreen";
@@ -29,12 +30,14 @@ interface AppProps {
   api: Api;
   initialUser: User | null;
   initialWorkout: ActiveWorkout | null;
+  initialPending: PendingWorkout[];
 }
 
-function App({ auth, api, initialUser, initialWorkout }: AppProps) {
+function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProps) {
   const [user, setUser] = useState(initialUser);
   // Renamed, because start() below is what mounts the app
-  const { workout, start: startWorkout, update, discard } = useActiveWorkout(initialWorkout);
+  const { workout, start: startWorkout, update, clear } = useActiveWorkout(initialWorkout);
+  const queue = useSendQueue(api, initialPending);
 
   if (!user) {
     return <LoginScreen auth={auth} onSignedIn={setUser} />;
@@ -49,10 +52,31 @@ function App({ auth, api, initialUser, initialWorkout }: AppProps) {
 
   // A workout in progress is the whole app until it is finished or discarded
   if (workout) {
-    return <WorkoutScreen api={api} workout={workout} onChange={update} onDiscard={discard} />;
+    return (
+      <WorkoutScreen
+        api={api}
+        workout={workout}
+        onChange={update}
+        onFinish={(request) => {
+          // Queued first, then forgotten: the send is the queue's problem from here, and
+          // the gym is where a phone is least likely to have a connection
+          void queue.add(request);
+          clear();
+        }}
+        onDiscard={clear}
+      />
+    );
   }
 
-  return <HomeScreen api={api} user={user} onSignOut={signOut} onStart={startWorkout} />;
+  return (
+    <HomeScreen
+      api={api}
+      user={user}
+      queue={queue}
+      onSignOut={signOut}
+      onStart={startWorkout}
+    />
+  );
 }
 
 function StartupError({ message }: { message: string }) {
@@ -73,11 +97,12 @@ async function start(container: HTMLElement) {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const [user, workout, catalog, gyms] = await Promise.all([
+    const [user, workout, catalog, gyms, pending] = await Promise.all([
       auth.currentUser(),
       loadActiveWorkout(),
       loadCachedCatalog(),
       loadCachedGyms(),
+      loadPending(),
     ]);
     // The pickers then open on the copies this phone already has, and fresh ones replace them
     // once they arrive, instead of showing an empty list on every launch
@@ -90,7 +115,13 @@ async function start(container: HTMLElement) {
     root.render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
-          <App auth={auth} api={api} initialUser={user} initialWorkout={workout} />
+          <App
+            auth={auth}
+            api={api}
+            initialUser={user}
+            initialWorkout={workout}
+            initialPending={pending}
+          />
         </QueryClientProvider>
       </StrictMode>,
     );

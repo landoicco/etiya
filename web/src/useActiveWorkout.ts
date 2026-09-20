@@ -24,10 +24,11 @@ export function useActiveWorkout(initial: ActiveWorkout | null) {
     setWorkout((current) => (current === null ? current : change(current)));
   }, []);
 
-  const discard = useCallback(() => {
+  // Both endings, finished and discarded, leave the same way: nothing in progress any more
+  const clear = useCallback(() => {
     setWorkout(null);
     void clearActiveWorkout();
   }, []);
 
-  return { workout, start, update, discard };
+  return { workout, start, update, clear };
 }
