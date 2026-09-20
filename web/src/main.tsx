@@ -11,6 +11,7 @@ import { LoginScreen } from "./LoginScreen";
 import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "./gyms";
 import { HOME, useRouter } from "./router";
+import { usePersistence } from "./storage";
 import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
@@ -42,6 +43,9 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
   const { workout, start: startWorkout, update, clear } = useActiveWorkout(initialWorkout);
   const queue = useSendQueue(api, initialPending);
   const router = useRouter();
+  // Asked for once here rather than per screen: what it protects is the queue, which outlives
+  // any of them
+  const persisted = usePersistence();
 
   // A workout in progress owns the screens under /workout, and nothing else may claim them.
   // Replacing rather than opening keeps the back gesture out of a screen that is now gone,
@@ -101,6 +105,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
       api={api}
       user={user}
       queue={queue}
+      persisted={persisted}
       router={router}
       onStarted={(gym) => {
         startWorkout(gym);
