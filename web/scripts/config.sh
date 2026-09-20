@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Writes the config.json the app reads at startup, with the values of a deployed stack.
 # Usage, from web/: npm run config    (writes public/config.json, which npm run dev serves)
-# deploy.sh calls it too, for the build. STACK defaults to EtiyaDev
+# deploy.sh calls it too, for the build. STACK defaults to EtiyaProd; use STACK=EtiyaDev for dev
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

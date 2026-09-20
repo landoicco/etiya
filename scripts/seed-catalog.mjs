@@ -3,7 +3,7 @@
 // is skipped, and nothing stored is ever changed.
 //
 // Usage, from the repository root:
-//   node scripts/seed-catalog.mjs            the deployed stack (STACK, default EtiyaDev)
+//   node scripts/seed-catalog.mjs            the deployed stack (STACK, default EtiyaProd)
 //   node scripts/seed-catalog.mjs --local    the Docker stack on localhost:8080
 //
 // Against AWS it signs in as the user in .env.dev (ETIYA_DEV_USERNAME, ETIYA_DEV_PASSWORD), the

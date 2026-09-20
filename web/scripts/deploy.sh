@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the web app and uploads it to the bucket of a deployed stack.
-# Usage, from web/: npm run deploy          (stack EtiyaDev)
-#                   STACK=Other npm run deploy
+# Usage, from web/: npm run deploy          (stack EtiyaProd)
+#                   STACK=EtiyaDev npm run deploy   (only if dev was given a Web construct)
 # Needs AWS credentials (aws login) and a stack already deployed with cdk deploy
 set -euo pipefail
 cd "$(dirname "$0")/.."
