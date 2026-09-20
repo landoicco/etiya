@@ -1,11 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { loadActiveWorkout } from "./activeWorkout";
 import { type Api, ApiError, createApi } from "./api";
 import { type Auth, cognitoAuth, type User } from "./auth";
 import { loadConfig } from "./config";
 import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
+import { useActiveWorkout } from "./useActiveWorkout";
+import type { ActiveWorkout } from "./workout";
+import { WorkoutScreen } from "./WorkoutScreen";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -18,8 +22,17 @@ const queryClient = new QueryClient({
   },
 });
 
-function App({ auth, api, initialUser }: { auth: Auth; api: Api; initialUser: User | null }) {
+interface AppProps {
+  auth: Auth;
+  api: Api;
+  initialUser: User | null;
+  initialWorkout: ActiveWorkout | null;
+}
+
+function App({ auth, api, initialUser, initialWorkout }: AppProps) {
   const [user, setUser] = useState(initialUser);
+  // Renamed, because start() below is what mounts the app
+  const { workout, start: startWorkout, update, discard } = useActiveWorkout(initialWorkout);
 
   if (!user) {
     return <LoginScreen auth={auth} onSignedIn={setUser} />;
@@ -32,7 +45,12 @@ function App({ auth, api, initialUser }: { auth: Auth; api: Api; initialUser: Us
     setUser(null);
   }
 
-  return <HomeScreen api={api} user={user} onSignOut={signOut} />;
+  // A workout in progress is the whole app until it is finished or discarded
+  if (workout) {
+    return <WorkoutScreen workout={workout} onChange={update} onDiscard={discard} />;
+  }
+
+  return <HomeScreen api={api} user={user} onSignOut={signOut} onStart={startWorkout} />;
 }
 
 function StartupError({ message }: { message: string }) {
@@ -44,19 +62,20 @@ function StartupError({ message }: { message: string }) {
   );
 }
 
-// The session is read before the first render, so a signed-in user never sees the login
-// form flash by. Until then the page shows the app's background color
+// The session and the workout in progress are read before the first render, so a signed-in
+// user never sees the login form flash by, and the app opens straight back into the workout
+// that a killed PWA left behind. Until then the page shows the app's background color
 async function start(container: HTMLElement) {
   const root = createRoot(container);
   try {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const user = await auth.currentUser();
+    const [user, workout] = await Promise.all([auth.currentUser(), loadActiveWorkout()]);
     root.render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
-          <App auth={auth} api={api} initialUser={user} />
+          <App auth={auth} api={api} initialUser={user} initialWorkout={workout} />
         </QueryClientProvider>
       </StrictMode>,
     );

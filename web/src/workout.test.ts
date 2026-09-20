@@ -7,11 +7,14 @@ import {
   logSet,
   nextSet,
   selectExercise,
+  setLabel,
   setUnit,
   startWorkout,
   stepCount,
   stepWeight,
   undoLastSet,
+  withCount,
+  withWeight,
   type ActiveWorkout,
 } from "./workout";
 
@@ -184,9 +187,38 @@ describe("steppers", () => {
     expect(stepWeight(set, 5)).toEqual(set);
   });
 
+  it("puts a typed number through the same limits", () => {
+    expect(withCount(kg(10, 60), 12)).toEqual(kg(12, 60));
+    expect(withWeight(kg(10, 60), 102.5)).toEqual(kg(10, 102.5));
+  });
+
+  it("rounds a typed number to whole reps and two decimals of weight", () => {
+    expect(withCount(kg(10, 60), 12.6).count).toBe(13);
+    expect(withWeight(kg(10, 60), 60.129).weight).toBe(60.13);
+  });
+
+  it("clamps a typed number that is out of range or negative", () => {
+    expect(withCount(kg(10, 60), 0).count).toBe(1);
+    expect(withCount(kg(10, 60), 4000).count).toBe(999);
+    expect(withWeight(kg(10, 60), -20).weight).toBe(0);
+    expect(withWeight(kg(10, 60), 50_000).weight).toBe(9999);
+  });
+
+  it("refuses a typed weight on a set logged without one", () => {
+    expect(withWeight({ count: 8, weight: 0, unit: "NONE" }, 60).weight).toBe(0);
+  });
+
   it("clears the weight when the set stops having one, and keeps the reps", () => {
     expect(setUnit(kg(12, 60), "NONE")).toEqual({ count: 12, weight: 0, unit: "NONE" });
     expect(setUnit(kg(12, 60), "LB")).toEqual({ count: 12, weight: 60, unit: "LB" });
+  });
+});
+
+describe("setLabel", () => {
+  it("reads as reps by weight, and drops the weight when there is none", () => {
+    expect(setLabel(kg(12, 62.5))).toBe("12 × 62.5 kg");
+    expect(setLabel({ count: 10, weight: 135, unit: "LB" })).toBe("10 × 135 lb");
+    expect(setLabel({ count: 8, weight: 0, unit: "NONE" })).toBe("8 reps");
   });
 });
 

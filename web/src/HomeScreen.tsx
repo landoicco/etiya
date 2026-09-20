@@ -10,11 +10,12 @@ interface Props {
   api: Api;
   user: User;
   onSignOut: () => void;
+  onStart: () => void;
 }
 
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
-export function HomeScreen({ api, user, onSignOut }: Props) {
+export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
       <header className="flex items-start justify-between gap-4">
@@ -32,12 +33,11 @@ export function HomeScreen({ api, user, onSignOut }: Props) {
       <footer className="mt-auto pt-6">
         <button
           type="button"
-          disabled
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+          onClick={onStart}
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
         >
           Start workout
         </button>
-        <p className="mt-2 text-center text-xs text-muted">Coming soon</p>
       </footer>
     </main>
   );

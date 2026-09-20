@@ -34,7 +34,9 @@ const FIRST_SET: GymSet = { count: 10, weight: 0, unit: "KG" };
 // One tap on the stepper moves the weight by the smallest pair of plates in a gym
 const WEIGHT_STEP: Record<WeightUnit, number> = { KG: 2.5, LB: 5, NONE: 0 };
 
-// What the unit toggle shows: a set with no weight counts reps and nothing else
+// What the unit toggle shows, in the order it shows them: a set with no weight counts reps
+// and nothing else
+export const WEIGHT_UNITS: WeightUnit[] = ["KG", "LB", "NONE"];
 export const UNIT_LABELS: Record<WeightUnit, string> = { KG: "kg", LB: "lb", NONE: "reps" };
 
 // Nobody logs 1000 reps or lifts 10 tonnes; a stepper held down should still stop somewhere
@@ -105,12 +107,23 @@ export function nextSet(workout: ActiveWorkout): GymSet {
 }
 
 export function stepCount(set: GymSet, taps: number): GymSet {
-  return { ...set, count: clamp(set.count + taps, 1, MAX_COUNT) };
+  return withCount(set, set.count + taps);
 }
 
 export function stepWeight(set: GymSet, taps: number): GymSet {
-  const weight = set.weight + taps * WEIGHT_STEP[set.unit];
-  return { ...set, weight: clamp(weight, 0, MAX_WEIGHT) };
+  return withWeight(set, set.weight + taps * WEIGHT_STEP[set.unit]);
+}
+
+// What a number typed on the keypad becomes, put through the same limits as the steppers
+// so the two ways of setting a set cannot disagree
+export function withCount(set: GymSet, count: number): GymSet {
+  return { ...set, count: clamp(Math.round(count), 1, MAX_COUNT) };
+}
+
+export function withWeight(set: GymSet, weight: number): GymSet {
+  // Two decimals: the smallest plate in a gym is 1.25 kg, and nothing finer is worth storing
+  const rounded = Math.round(weight * 100) / 100;
+  return normalize({ ...set, weight: clamp(rounded, 0, MAX_WEIGHT) });
 }
 
 export function setUnit(set: GymSet, unit: WeightUnit): GymSet {
@@ -119,6 +132,12 @@ export function setUnit(set: GymSet, unit: WeightUnit): GymSet {
 
 export function hasWeight(unit: WeightUnit): boolean {
   return unit !== "NONE";
+}
+
+// How a logged set reads in the exercise list: "12 × 60 kg", or "8 reps" without weight
+export function setLabel(set: GymSet): string {
+  const unit = UNIT_LABELS[set.unit];
+  return hasWeight(set.unit) ? `${set.count} × ${set.weight} ${unit}` : `${set.count} ${unit}`;
 }
 
 // The elapsed time on the workout screen: h:mm:ss once past the hour, m:ss before it
