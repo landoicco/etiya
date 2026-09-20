@@ -28,6 +28,13 @@ export interface ExerciseChoice {
   name: string;
 }
 
+// The gym a workout happens at, as the workout carries it: the catalog id, and the name to
+// show without having to look it up again
+export interface WorkoutGym {
+  id: string;
+  name: string;
+}
+
 // What the first set of a workout suggests, before there is anything to inherit from
 const FIRST_SET: GymSet = { count: 10, weight: 0, unit: "KG" };
 
@@ -43,14 +50,17 @@ export const UNIT_LABELS: Record<WeightUnit, string> = { KG: "kg", LB: "lb", NON
 const MAX_COUNT = 999;
 const MAX_WEIGHT = 9999;
 
-export function startWorkout(now: Date): ActiveWorkout {
+// The gym is chosen before the workout starts, because that is when it is known: at the end
+// nobody wants anything between them and the finish button. It is optional, for training
+// somewhere that is not in the catalog, or at home
+export function startWorkout(now: Date, gym: WorkoutGym | null): ActiveWorkout {
   return {
     // The server keeps the random part and re-stamps the time from startedAt, so a retry
     // of this same workout always lands on the same stored id
     id: ulid(now.getTime()),
     startedAt: now.toISOString(),
-    gymId: null,
-    gymName: null,
+    gymId: gym?.id ?? null,
+    gymName: gym?.name ?? null,
     exercises: [],
     currentExerciseIndex: -1,
   };

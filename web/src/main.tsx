@@ -8,6 +8,7 @@ import { loadConfig } from "./config";
 import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
 import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
+import { GYMS_KEY, loadCachedGyms } from "./gyms";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
 import { WorkoutScreen } from "./WorkoutScreen";
@@ -72,15 +73,19 @@ async function start(container: HTMLElement) {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const [user, workout, catalog] = await Promise.all([
+    const [user, workout, catalog, gyms] = await Promise.all([
       auth.currentUser(),
       loadActiveWorkout(),
       loadCachedCatalog(),
+      loadCachedGyms(),
     ]);
-    // The picker then opens on the copy this phone already has, and a fresh one replaces it
-    // once it arrives, instead of showing an empty list on every launch
+    // The pickers then open on the copies this phone already has, and fresh ones replace them
+    // once they arrive, instead of showing an empty list on every launch
     if (catalog) {
       queryClient.setQueryData(CATALOG_KEY, catalog);
+    }
+    if (gyms) {
+      queryClient.setQueryData(GYMS_KEY, gyms);
     }
     root.render(
       <StrictMode>

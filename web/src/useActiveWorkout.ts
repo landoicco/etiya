@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { clearActiveWorkout, saveActiveWorkout } from "./activeWorkout";
-import { type ActiveWorkout, startWorkout } from "./workout";
+import { type ActiveWorkout, startWorkout, type WorkoutGym } from "./workout";
 
 // The workout in progress lives in React state and in IndexedDB at the same time. Every
 // change is written as soon as it is rendered, so a phone that kills the app between two
@@ -14,7 +14,10 @@ export function useActiveWorkout(initial: ActiveWorkout | null) {
     }
   }, [workout]);
 
-  const start = useCallback(() => setWorkout(startWorkout(new Date())), []);
+  const start = useCallback(
+    (gym: WorkoutGym | null) => setWorkout(startWorkout(new Date(), gym)),
+    [],
+  );
 
   // Takes one of the functions in workout.ts, so this hook knows nothing about what changed
   const update = useCallback((change: (workout: ActiveWorkout) => ActiveWorkout) => {

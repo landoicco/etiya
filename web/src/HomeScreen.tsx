@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import type { Api, Workout } from "./api";
 import type { User } from "./auth";
+import { GymPicker } from "./GymPicker";
+import type { WorkoutGym } from "./workout";
 
 // Enough to fill a phone screen; the full history gets its own paginated screen later
 const RECENT_WORKOUTS = 10;
@@ -10,12 +12,16 @@ interface Props {
   api: Api;
   user: User;
   onSignOut: () => void;
-  onStart: () => void;
+  onStart: (gym: WorkoutGym | null) => void;
 }
 
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
 export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
+  // Starting asks where first, which is the one thing about a workout that is known before
+  // it begins and awkward to remember after it ends
+  const [choosingGym, setChoosingGym] = useState(false);
+
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
       <header className="flex items-start justify-between gap-4">
@@ -33,12 +39,16 @@ export function HomeScreen({ api, user, onSignOut, onStart }: Props) {
       <footer className="mt-auto pt-6">
         <button
           type="button"
-          onClick={onStart}
+          onClick={() => setChoosingGym(true)}
           className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
         >
           Start workout
         </button>
       </footer>
+
+      {choosingGym && (
+        <GymPicker api={api} onStart={onStart} onCancel={() => setChoosingGym(false)} />
+      )}
     </main>
   );
 }

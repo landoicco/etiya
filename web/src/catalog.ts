@@ -62,6 +62,12 @@ export function normalize(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
+// The same from several parts, which is how a gym's id is built out of its name, branch and
+// city. Parts that are missing or blank are skipped, exactly as the API skips them
+export function slugOf(...parts: (string | null | undefined)[]): string {
+  return normalize(parts.filter((part) => part != null && part.trim() !== "").join(" "));
+}
+
 // Anywhere in the name, not just the start: "press" should find the incline bench press,
 // which is the part of the name somebody remembers. Names that do start with what was typed
 // come first, and the rest are alphabetical

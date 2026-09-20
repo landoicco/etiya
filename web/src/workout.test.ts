@@ -30,21 +30,31 @@ function kg(count: number, weight: number): GymSet {
 
 // A workout with the given sets logged on the given exercise, left as the current one
 function workoutWith(...sets: GymSet[]): ActiveWorkout {
-  const started = addExercise(startWorkout(START), BENCH);
+  const started = addExercise(startWorkout(START, null), BENCH);
   return sets.reduce(logSet, started);
 }
 
 describe("startWorkout", () => {
   it("stamps the id with the start time, so a retry lands on the same workout", () => {
-    const workout = startWorkout(START);
+    const workout = startWorkout(START, null);
 
     expect(workout.id).toHaveLength(26);
-    expect(workout.id.slice(0, 10)).toBe(startWorkout(START).id.slice(0, 10));
+    expect(workout.id.slice(0, 10)).toBe(startWorkout(START, null).id.slice(0, 10));
     expect(workout.startedAt).toBe("2026-09-19T18:30:00.000Z");
   });
 
+  it("carries the gym it was started at, and none when there is none", () => {
+    const gym = { id: "smart-fit-valle-oriente-monterrey", name: "Smart Fit Valle Oriente" };
+
+    expect(startWorkout(START, gym)).toMatchObject({
+      gymId: "smart-fit-valle-oriente-monterrey",
+      gymName: "Smart Fit Valle Oriente",
+    });
+    expect(startWorkout(START, null)).toMatchObject({ gymId: null, gymName: null });
+  });
+
   it("starts empty, with nothing to log sets on", () => {
-    const workout = startWorkout(START);
+    const workout = startWorkout(START, null);
 
     expect(workout.exercises).toEqual([]);
     expect(currentExercise(workout)).toBeNull();
@@ -55,7 +65,7 @@ describe("startWorkout", () => {
 
 describe("addExercise", () => {
   it("appends the exercise and makes it the current one", () => {
-    const workout = addExercise(addExercise(startWorkout(START), BENCH), SQUAT);
+    const workout = addExercise(addExercise(startWorkout(START, null), BENCH), SQUAT);
 
     expect(workout.exercises.map((exercise) => exercise.name)).toEqual([
       "Barbell Bench Press",
@@ -65,21 +75,24 @@ describe("addExercise", () => {
   });
 
   it("returns to an exercise already in the workout instead of adding it twice", () => {
-    const superset = addExercise(addExercise(addExercise(startWorkout(START), BENCH), SQUAT), BENCH);
+    const both = addExercise(addExercise(startWorkout(START, null), BENCH), SQUAT);
+    const superset = addExercise(both, BENCH);
 
     expect(superset.exercises).toHaveLength(2);
     expect(superset.currentExerciseIndex).toBe(0);
   });
 
   it("matches exercises typed offline by name, whatever the capitalization", () => {
-    const typed = addExercise(startWorkout(START), { exerciseCatalogItemId: null, name: "Row" });
+    const row = { exerciseCatalogItemId: null, name: "Row" };
+    const typed = addExercise(startWorkout(START, null), row);
     const again = addExercise(typed, { exerciseCatalogItemId: null, name: " row " });
 
     expect(again.exercises).toHaveLength(1);
   });
 
   it("keeps an exercise from the catalog apart from one typed with the same name", () => {
-    const typed = addExercise(startWorkout(START), { exerciseCatalogItemId: null, name: "Pull Up" });
+    const byName = { exerciseCatalogItemId: null, name: "Pull Up" };
+    const typed = addExercise(startWorkout(START, null), byName);
 
     expect(addExercise(typed, PULL_UP).exercises).toHaveLength(2);
   });
@@ -87,13 +100,13 @@ describe("addExercise", () => {
 
 describe("selectExercise", () => {
   it("moves the set logger to another exercise", () => {
-    const workout = addExercise(addExercise(startWorkout(START), BENCH), SQUAT);
+    const workout = addExercise(addExercise(startWorkout(START, null), BENCH), SQUAT);
 
     expect(currentExercise(selectExercise(workout, 0))?.name).toBe("Barbell Bench Press");
   });
 
   it("ignores an index the workout does not have", () => {
-    const workout = addExercise(startWorkout(START), BENCH);
+    const workout = addExercise(startWorkout(START, null), BENCH);
 
     expect(selectExercise(workout, 1)).toBe(workout);
     expect(selectExercise(workout, -1)).toBe(workout);
@@ -122,7 +135,7 @@ describe("logSet and undoLastSet", () => {
   });
 
   it("does nothing once the current exercise has no sets left", () => {
-    const empty = addExercise(startWorkout(START), BENCH);
+    const empty = addExercise(startWorkout(START, null), BENCH);
 
     expect(undoLastSet(empty)).toBe(empty);
   });
@@ -138,7 +151,7 @@ describe("logSet and undoLastSet", () => {
 
 describe("nextSet", () => {
   it("suggests ten reps of nothing for the very first set", () => {
-    expect(nextSet(addExercise(startWorkout(START), BENCH))).toEqual(kg(10, 0));
+    expect(nextSet(addExercise(startWorkout(START, null), BENCH))).toEqual(kg(10, 0));
   });
 
   it("repeats the previous set of the exercise", () => {
@@ -146,7 +159,7 @@ describe("nextSet", () => {
   });
 
   it("carries the unit already in use over to a new exercise", () => {
-    const pounds = logSet(addExercise(startWorkout(START), BENCH), {
+    const pounds = logSet(addExercise(startWorkout(START, null), BENCH), {
       count: 12,
       weight: 135,
       unit: "LB",
@@ -225,7 +238,7 @@ describe("setLabel", () => {
 describe("elapsedLabel", () => {
   it("counts minutes and seconds, and adds hours once past one", () => {
     const at = (minutes: number, seconds = 0) =>
-      elapsedLabel(startWorkout(START), new Date(START.getTime() + (minutes * 60 + seconds) * 1000));
+      elapsedLabel(startWorkout(START, null), new Date(START.getTime() + (minutes * 60 + seconds) * 1000));
 
     expect(at(0, 7)).toBe("0:07");
     expect(at(9, 5)).toBe("9:05");
@@ -233,6 +246,6 @@ describe("elapsedLabel", () => {
   });
 
   it("shows zero while the phone's clock catches up", () => {
-    expect(elapsedLabel(startWorkout(START), new Date(START.getTime() - 5000))).toBe("0:00");
+    expect(elapsedLabel(startWorkout(START, null), new Date(START.getTime() - 5000))).toBe("0:00");
   });
 });

@@ -33,6 +33,17 @@ export interface CatalogExercise {
 
 export type NewCatalogExercise = Omit<CatalogExercise, "id">;
 
+// A gym in the catalog every user shares. Its id is the slug of the three fields together,
+// so a chain's branches all start with the chain's name. branch is null for an independent gym
+export interface Gym {
+  id: string;
+  name: string;
+  branch: string | null;
+  city: string;
+}
+
+export type NewGym = Omit<Gym, "id">;
+
 export interface GymSet {
   count: number;
   weight: number;
@@ -104,10 +115,20 @@ export function createApi(apiUrl: string, auth: Auth) {
   }
 
   return {
-    // The whole catalog in one response: this route takes no limit and never sends a cursor,
-    // so the app downloads it once and searches it on the phone
+    // The whole catalog in one response: neither route takes a limit nor sends a cursor, so
+    // the app downloads each once and searches it on the phone
     listExercises(): Promise<Page<CatalogExercise>> {
       return get("/exercises");
+    },
+
+    listGyms(): Promise<Page<Gym>> {
+      return get("/gyms");
+    },
+
+    // 409 when a gym with the same slug is already there, which is not an error for the app:
+    // it means somebody else added it first
+    registerGym(gym: NewGym): Promise<Gym> {
+      return post("/gyms", gym);
     },
 
     // 409 when an exercise with the same slug is already there, which is not an error for

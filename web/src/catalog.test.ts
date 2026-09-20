@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogExercise } from "./api";
-import { findByName, normalize, searchCatalog } from "./catalog";
+import { findByName, normalize, searchCatalog, slugOf } from "./catalog";
 
 function exercise(id: string, name: string, category: CatalogExercise["category"]): CatalogExercise {
   return { id, name, muscleGroup: "CHEST", category };
@@ -41,6 +41,14 @@ describe("normalize", () => {
     ["!!!", ""],
   ])('drops what the API drops: "%s"', (name, slug) => {
     expect(normalize(name)).toBe(slug);
+  });
+
+  it("joins several parts and skips the ones that are missing or blank", () => {
+    expect(slugOf("Smart Fit", "Valle Oriente", "Monterrey")).toBe(
+      "smart-fit-valle-oriente-monterrey",
+    );
+    expect(slugOf("Smart Fit", null, "Monterrey")).toBe("smart-fit-monterrey");
+    expect(slugOf("Smart Fit", "  ", "Monterrey")).toBe("smart-fit-monterrey");
   });
 
   it("matches a prefix of the full id, which is how the API's own search works", () => {
