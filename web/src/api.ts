@@ -152,6 +152,11 @@ export function createApi(apiUrl: string, auth: Auth) {
       }
       return get(`/me/workouts?${params}`);
     },
+
+    // 404 for a workout that belongs to somebody else, so ids cannot be probed
+    getWorkout(id: string): Promise<Workout> {
+      return get(`/me/workouts/${id}`);
+    },
   };
 }
 

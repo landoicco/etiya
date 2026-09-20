@@ -66,22 +66,6 @@ export function routePath(route: Route): string {
   }
 }
 
-// Where a route goes back to when it is left by a button rather than by the back gesture,
-// so both ways out end up in the same place
-export function parentOf(route: Route): Route {
-  switch (route.name) {
-    case "newExercise":
-      return { name: "exercises" };
-    case "exercises":
-    case "finish":
-      return { name: "logging" };
-    case "workout":
-      return { name: "history" };
-    default:
-      return HOME;
-  }
-}
-
 export function useRouter() {
   const [route, setRoute] = useState(() => read());
 

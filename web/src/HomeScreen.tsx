@@ -1,14 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import type { Api, Workout } from "./api";
+import type { Api } from "./api";
 import type { User } from "./auth";
 import { GymPicker } from "./GymPicker";
+import { WorkoutCard } from "./HistoryScreen";
 import type { Router } from "./router";
 import type { useSendQueue } from "./sendQueue";
+import { useRecentWorkouts } from "./workouts";
 import type { WorkoutGym } from "./workout";
-
-// Enough to fill a phone screen; the full history gets its own paginated screen later
-const RECENT_WORKOUTS = 10;
 
 interface Props {
   api: Api;
@@ -37,7 +35,7 @@ export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: P
       </header>
 
       <SendQueueNotice queue={queue} />
-      <RecentWorkouts api={api} />
+      <RecentWorkouts api={api} router={router} />
 
       <footer className="mt-auto pt-6">
         <button
@@ -99,11 +97,8 @@ function SendQueueNotice({ queue }: { queue: SendQueue }) {
   );
 }
 
-function RecentWorkouts({ api }: { api: Api }) {
-  const { data, error, isPending, fetchStatus, refetch } = useQuery({
-    queryKey: ["workouts", "recent"],
-    queryFn: () => api.listWorkouts(RECENT_WORKOUTS),
-  });
+function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
+  const { data, error, isPending, fetchStatus, refetch } = useRecentWorkouts(api);
 
   if (isPending) {
     // Offline, TanStack Query pauses the request instead of failing it, and sends it when
@@ -128,29 +123,30 @@ function RecentWorkouts({ api }: { api: Api }) {
 
   return (
     <section className="mt-8">
-      <h2 className="text-sm font-semibold text-muted">Recent workouts</h2>
-      <ul className="mt-3 space-y-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-sm font-semibold text-muted">Recent workouts</h2>
+        {/* Only worth offering once there is more than what fits here */}
+        {data.nextCursor !== null && (
+          <button
+            type="button"
+            onClick={() => router.open({ name: "history" })}
+            className="h-11 text-sm text-accent"
+          >
+            See all
+          </button>
+        )}
+      </div>
+      <ul className="mt-1 space-y-3">
         {data.items.map((workout) => (
-          <WorkoutItem key={workout.id} workout={workout} />
+          <li key={workout.id}>
+            <WorkoutCard
+              workout={workout}
+              onOpen={() => router.open({ name: "workout", id: workout.id })}
+            />
+          </li>
         ))}
       </ul>
     </section>
-  );
-}
-
-function WorkoutItem({ workout }: { workout: Workout }) {
-  const started = new Date(workout.startedAt);
-  const minutes = Math.round((Date.parse(workout.endedAt) - started.getTime()) / 60_000);
-  const exercises = workout.exercises.length;
-
-  return (
-    <li className="rounded-2xl border border-line bg-raised p-4">
-      <p className="font-semibold">{DAY.format(started)}</p>
-      <p className="mt-1 text-sm text-muted">
-        {workout.gymName ?? "No gym"} · {minutes} min · {exercises}{" "}
-        {exercises === 1 ? "exercise" : "exercises"}
-      </p>
-    </li>
   );
 }
 
@@ -161,12 +157,3 @@ function Notice({ children }: { children: ReactNode }) {
     </section>
   );
 }
-
-// In the phone's language and time zone, e.g. "Tue, Sep 16, 6:30 PM"
-const DAY = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});

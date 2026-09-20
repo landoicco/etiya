@@ -5,6 +5,7 @@ import { loadActiveWorkout } from "./activeWorkout";
 import { type Api, ApiError, createApi } from "./api";
 import { type Auth, cognitoAuth, type User } from "./auth";
 import { loadConfig } from "./config";
+import { HistoryScreen } from "./HistoryScreen";
 import { HomeScreen } from "./HomeScreen";
 import { LoginScreen } from "./LoginScreen";
 import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
@@ -13,6 +14,7 @@ import { HOME, useRouter } from "./router";
 import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { ActiveWorkout } from "./workout";
+import { WorkoutDetail } from "./WorkoutDetail";
 import { WorkoutScreen } from "./WorkoutScreen";
 import "./index.css";
 
@@ -84,6 +86,14 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
         }}
       />
     );
+  }
+
+  if (router.route.name === "history") {
+    return <HistoryScreen api={api} router={router} />;
+  }
+
+  if (router.route.name === "workout") {
+    return <WorkoutDetail api={api} id={router.route.id} router={router} />;
   }
 
   return (

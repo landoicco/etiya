@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parentOf, parseRoute, type Route, routePath } from "./router";
+import { parseRoute, type Route, routePath } from "./router";
 
 const ROUTES: Route[] = [
   { name: "home" },
@@ -39,22 +39,5 @@ describe("parseRoute and routePath", () => {
     expect(parseRoute("/", null)).toEqual({ name: "home" });
     expect(parseRoute("/nonsense", null)).toEqual({ name: "home" });
     expect(parseRoute("/workouts", null)).toEqual({ name: "home" });
-  });
-});
-
-describe("parentOf", () => {
-  it("walks the sheets back one layer at a time", () => {
-    expect(parentOf({ name: "newExercise", exerciseName: "X" })).toEqual({ name: "exercises" });
-    expect(parentOf({ name: "exercises" })).toEqual({ name: "logging" });
-    expect(parentOf({ name: "finish" })).toEqual({ name: "logging" });
-  });
-
-  it("takes a saved workout back to the history it was opened from", () => {
-    expect(parentOf({ name: "workout", id: "abc" })).toEqual({ name: "history" });
-  });
-
-  it("sends the top-level screens home", () => {
-    expect(parentOf({ name: "start" })).toEqual({ name: "home" });
-    expect(parentOf({ name: "history" })).toEqual({ name: "home" });
   });
 });
