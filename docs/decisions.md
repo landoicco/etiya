@@ -28,6 +28,20 @@ Rejected: `spring-cloud-function-serverless-web`, which would keep portable `@Re
 
 This means local and AWS execute the same handlers, and the same Bruno tests validate both. The alternative — plain `@RestController`s for local use — would have defined every route twice and tested different code than production. The bridge lives in a source folder only the `local` profile compiles, so it cannot reach Lambda.
 
+### The local stack outlived the reason it was built
+
+It was added to approximate AWS on a laptop, including the frontend. That goal is dead and was partly abandoned on the way: Cognito cannot be imitated, so identity is a header; the frontend never joined the Compose file and is [developed against the dev API](#the-frontend-is-a-pwa) precisely so the real login is exercised.
+
+It is kept anyway, for a reason it was not designed for: **CI has no AWS credentials**, by design, so the local stack is the only way to run integration tests on every pull request without letting the workflow reach AWS. With `EtiyaDev` now [destroyed between uses](deployment.md#two-environments), it is also the only integration environment that exists most of the time. What it does and does not prove is written down in [local development](local-development.md#what-the-local-stack-is-for).
+
+### The two Maven profiles are about what ships, not about imitation
+
+`prod` exists because Lambda's packaging is non-negotiable: it cannot load Spring Boot's nested `BOOT-INF` layout, so the shade plugin builds a flat jar with `start-class` as its `Main-Class`, and it bundles the AWS adapter and the JSON log encoder. None of that depends on a local stack existing — it is simply how the deployable artifact is built.
+
+`local` does the opposite job: it adds `spring-boot-starter-web` and `src/local/java`, both of which **must never reach the Lambda jar**, which is already 54 MB. So the split is *what ships to Lambda versus what does not*, and it survives whatever happens to local development.
+
+The Spring profiles then pick the DynamoDB client at runtime. The one that matters is `@Profile("prod")` on `DynamoDbConfig`, which lives in `src/main` and is therefore in **both** jars: without it, the local build would raise an AWS client next to the local one and the beans would collide. On the other three components the annotation is belt and braces, since `src/local/java` is not compiled into the Lambda jar at all.
+
 ## Package layout: layer, then technology
 
 ```
@@ -173,6 +187,7 @@ Deliberately postponed, with the trigger that would justify each:
 | Moderating the shared catalog (reporting, merging or hiding entries) and MFA | There are users other than the owner |
 | Aliases on catalog exercises ("also known as"), so a search for one name finds the other | Near-duplicate exercises start to get in the way |
 | A workout's split ("Push day") derived from its exercises' categories and shown in the history | The history screen exists |
+| **Making `prod` the default Spring profile instead of `local`.** `application.properties` sets `spring.profiles.active=local`, so the production jar defaults to a profile whose beans it does not contain, and only works because `Functions.java` overrides it with `SPRING_PROFILES_ACTIVE=prod`. Inverting it — `prod` by default, `local` set by the Dockerfile and Compose — would make the safe value the default one | Any change to how the Lambdas get their environment. Today it works; the failure mode is what argues for it, since dropping that variable would leave a Lambda with no `DynamoDbClient` bean, failing at startup rather than at build time |
 | **The exercise picker opening on the category already being trained.** It always opens on "All" (`ExercisePicker.tsx:35`, `useState(null)`): the picker is a route, so closing it unmounts it and the chip resets. Someone logging a leg day picks Legs again for every exercise. The category would come from the last exercise added to the workout, which means a catalog lookup — `LoggedExercise` carries only `exerciseCatalogItemId` and `name`, not the category — and the whole catalog is already on the device, so it costs nothing and works offline. Falls back to "All" when that id is `null`, which is what an exercise typed while offline has | Whenever; it is small. Worth doing with the first change that touches the picker rather than on its own. Note it guesses: the chip must stay one tap away from All, and the guess has to be visible rather than silently hiding the rest of the catalog |
 | **Grouping the web app's files into directories.** `web/src/` is 28 files in one flat folder: screens, hooks, API clients, pure logic and their tests side by side, told apart only by naming convention. Something like `components/`, `hooks/` and `api/`, with each module's tests next to it, would say what a file is before it is opened | Reading the code starts costing more than changing it, or somebody else has to find their way around it. Nothing is broken today; flat was right at ten files and stopped being right somewhere past twenty, so this is paid off before the next feature lands on top of it |
 | Narrower IAM: per-item-type conditions instead of `grantReadWriteData`, and an inline logs policy instead of the managed one | Tightening dev into something production-shaped |

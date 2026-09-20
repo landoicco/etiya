@@ -1,6 +1,16 @@
 # Local Development
 
-*For working on the code: running the app, the toolchain, and how the local environment mirrors AWS. No AWS account needed.*
+*For working on the code: running the app, the toolchain, and what the local stack does and does not cover. No AWS account needed.*
+
+## What the local stack is for
+
+**It runs the business logic without AWS. It is not AWS on your machine**, and it does not try to be.
+
+It has no Cognito, no API Gateway, no Lambda runtime and no SnapStart, so it cannot tell you anything about token validation, a `401` from the authorizer, CORS, throttling or cold starts. Those are only answered by [running the suite against a deployed stack](testing.md). It does not even run the jar Lambda runs: the Docker image builds the `local` Maven profile, while the `prod` jar is built in CI and never executed there.
+
+What it does cover is where the bugs actually are: the handlers, the service layer, validation, the DynamoDB repository and its key design, slug generation, `409` conditional writes, idempotent retries and pagination cursors. Of the 44 Bruno requests, only two are tagged `local-only`, so the same suite validates both environments.
+
+That is also why it is load-bearing rather than a convenience. [CI runs it on every pull request](../.github/workflows/ci.yml) with **no AWS credentials at all**, which is what keeps the workflow unable to deploy or spend anything. And since `EtiyaDev` is [raised on demand and destroyed afterwards](deployment.md#two-environments), the local stack is usually the only integration environment that exists.
 
 ## Running the app
 
