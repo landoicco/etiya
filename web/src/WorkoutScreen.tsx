@@ -120,8 +120,9 @@ function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () =>
   );
 }
 
-// Both ways out of a workout live here, so neither is a stray tap away while training, and
-// what is about to be saved is on screen before it is
+// Both ways out of a workout live here, so neither is a stray tap away while training. It is
+// also the last point where a mistake can still be caught, which is what the summary is for:
+// there is no editing once a workout is saved, by choice
 function FinishSheet({
   workout,
   onSave,
@@ -154,6 +155,8 @@ function FinishSheet({
           <Line term="Sets" value={String(loggedSets(workout))} />
         </dl>
 
+        {request !== null && <Summary request={request} />}
+
         {dropped > 0 && (
           <p className="mt-3 text-sm text-muted">
             {dropped === 1 ? "One exercise has" : `${dropped} exercises have`} no sets and will not
@@ -178,6 +181,52 @@ function FinishSheet({
         <DiscardButton onDiscard={onDiscard} />
       </div>
     </div>
+  );
+}
+
+// The counts above say how much was trained; this says what. A wrong weight is the one mistake
+// the rest of the sheet cannot show, because it looks exactly like a right one from the outside.
+// Folded away by default: most workouts are fine, and nobody should have to scroll past their
+// own sets to reach Save. Save stays in the footer, so checking never means navigating away
+function Summary({ request }: { request: WorkoutRequest }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="mt-3 h-12 w-full rounded-2xl border border-line text-sm font-semibold"
+      >
+        {open ? "Hide summary" : "View summary"}
+      </button>
+
+      {open && (
+        <ul className="mt-3 space-y-3">
+          {request.exercises.map((exercise) => (
+            <li
+              key={exercise.exerciseCatalogItemId ?? exercise.name}
+              className="rounded-2xl border border-line bg-raised p-4"
+            >
+              <h3 className="font-semibold">{exercise.name}</h3>
+              <ol className="mt-2 space-y-1">
+                {exercise.sets.map((set, index) => (
+                  // Three sets of 12 × 60 kg are identical as data, so content cannot identify
+                  // them: the position is the identity. Safe here, where the list is read-only
+                  // and built from a request that is already fixed, and never reorders
+                  // oxlint-disable-next-line react/no-array-index-key
+                  <li key={index} className="flex justify-between gap-4 text-sm">
+                    <span className="text-muted tabular-nums">{index + 1}</span>
+                    <span className="font-semibold tabular-nums">{setLabel(set)}</span>
+                  </li>
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
