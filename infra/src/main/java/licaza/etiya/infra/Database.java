@@ -1,7 +1,10 @@
 package licaza.etiya.infra;
 
+import licaza.etiya.infra.EtiyaStack.Kind;
+import software.amazon.awscdk.Acknowledgment;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.Validations;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -23,8 +26,10 @@ public class Database extends Construct {
 
   private final Table workoutsTable;
 
-  public Database(final Construct scope, final String id) {
+  public Database(final Construct scope, final String id, final Kind kind) {
     super(scope, id);
+
+    boolean production = kind == Kind.PRODUCTION;
 
     this.workoutsTable =
         Table.Builder.create(this, "WorkoutsTable")
@@ -36,12 +41,30 @@ public class Database extends Construct {
             .readCapacity(READ_CAPACITY)
             .writeCapacity(WRITE_CAPACITY)
             // Restores the table to any second of the last 35 days. Billed per GB of table size,
-            // which for this data is a fraction of a cent. Deleting the table keeps a backup too
+            // which for this data is a fraction of a cent. Deleting the table keeps a backup too.
+            // A disposable environment holds nothing worth restoring, so it does not pay for it
             .pointInTimeRecoverySpecification(
-                PointInTimeRecoverySpecification.builder().pointInTimeRecoveryEnabled(true).build())
-            // Dev environment: cdk destroy must not leave the table behind
-            .removalPolicy(RemovalPolicy.DESTROY)
+                PointInTimeRecoverySpecification.builder()
+                    .pointInTimeRecoveryEnabled(production)
+                    .build())
+            // Refuses a DeleteTable call outright, whoever makes it, CloudFormation included
+            .deletionProtection(production)
+            // Production keeps the table even if the stack goes; a dev destroy leaves nothing
+            .removalPolicy(production ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY)
             .build();
+
+    // Only here: production keeps point-in-time recovery, and this check is what makes sure
+    // of it. Acknowledging it for the whole app would hide the day prod silently loses it
+    if (!production) {
+      Validations.of(workoutsTable)
+          .acknowledge(
+              Acknowledgment.builder()
+                  .id("AwsSolutions-DDB3")
+                  .reason(
+                      "A disposable environment is thrown away on purpose and holds only test"
+                          + " data, so paying to restore it to any second would buy nothing")
+                  .build());
+    }
   }
 
   public Table getWorkoutsTable() {

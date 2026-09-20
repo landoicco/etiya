@@ -58,7 +58,10 @@ public class Api extends Construct {
     super(scope, id);
 
     List<String> allowedOrigins = new ArrayList<>(DEV_ORIGINS);
-    allowedOrigins.add(webOrigin);
+    // Null where no web app is served: a disposable environment is used from localhost
+    if (webOrigin != null) {
+      allowedOrigins.add(webOrigin);
+    }
 
     // Applied to every route: API Gateway validates the Cognito token and rejects
     // unauthenticated requests with 401, before any Lambda is invoked
