@@ -4,9 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type Api, ApiError } from "./api";
 import type { WorkoutRequest } from "@/workout/workout";
 
-// A finished workout goes here first and is sent from here, so finishing never waits on a
-// connection: the gym is the one place a phone is guaranteed to have no signal. iOS has no
-// Background Sync, so the queue is emptied when the app is open and the connection is there
+// A finished workout goes here first, so finishing never waits on a connection
 export interface PendingWorkout {
   request: WorkoutRequest;
   // Why the API refused it for good. Set means it is no longer retried on its own
@@ -19,7 +17,6 @@ export async function loadPending(): Promise<PendingWorkout[]> {
   try {
     return (await get<PendingWorkout[]>(KEY)) ?? [];
   } catch {
-    // Storage unavailable
     return [];
   }
 }
@@ -28,7 +25,6 @@ async function savePending(pending: PendingWorkout[]): Promise<void> {
   try {
     await set(KEY, pending);
   } catch {
-    // Storage unavailable
   }
 }
 
@@ -61,8 +57,7 @@ export async function sendPending(
     }
 
     try {
-      // One at a time on purpose: the workouts keep the order they were finished in, and the
-      // first one that cannot reach the API stops the rest from trying
+      // One at a time, so the workouts keep the order they were finished in
       // oxlint-disable-next-line no-await-in-loop
       await api.saveWorkout(item.request);
       sent += 1;
@@ -70,8 +65,7 @@ export async function sendPending(
       if (isPermanent(thrown)) {
         left.push({ ...item, refusal: thrown.message });
       } else {
-        // No signal, or the API is having a bad day. Stop here so the workouts keep the
-        // order they were finished in
+        // Unreachable: stop, so the ones behind keep their place in the queue
         unreachable = true;
         left.push(item);
       }
@@ -109,8 +103,7 @@ export function useSendQueue(api: Api, initial: PendingWorkout[]) {
     }
   }, [api, queryClient]);
 
-  // On open and whenever the connection comes back, which together cover walking out of the
-  // gym and opening the app on the way home
+  // On open and whenever the connection returns; iOS has no Background Sync to do better
   useEffect(() => {
     void flush();
     window.addEventListener("online", flush);
