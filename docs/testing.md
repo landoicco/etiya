@@ -30,7 +30,7 @@ cd web && npm test          # once
 cd web && npm run test:watch # re-runs on save
 ```
 
-The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout.ts` so it needs neither a browser nor a rendered component.
+The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout/workout.ts` so it needs neither a browser nor a rendered component.
 
 | Test | What it pins down |
 |---|---|
@@ -49,7 +49,7 @@ cd web && npm run typecheck # tsc --noEmit, also part of npm run build
 
 `oxlint` needs no configuration beyond [`.oxlintrc.json`](../web/.oxlintrc.json) and no TypeScript plugin, which is why it is here instead of ESLint: `typescript-eslint` still asks for TypeScript below 6.1, and this app is on 7.
 
-Storage is not unit tested. `web/src/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
+Storage is not unit tested. `web/src/workout/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
 
 ## Against the local stack
 

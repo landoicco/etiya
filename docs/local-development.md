@@ -42,7 +42,7 @@ The bridge matches the request against the same route table the Lambdas use, so 
 
 ## Running the web app
 
-The PWA in `web/` uses Vite, React, TypeScript and Tailwind. The `dev` shell provides Node.js:
+The PWA in `web/` uses Vite, React, TypeScript and Tailwind, with `src/` [grouped by feature](decisions.md#the-web-app-is-grouped-by-feature-not-by-kind). The `dev` shell provides Node.js:
 ```bash
 cd web
 npm install
