@@ -120,7 +120,7 @@ export function GymPicker({ api, onStart, onCancel }: Props) {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="h-14 w-full truncate rounded-2xl border border-accent px-4 font-semibold text-accent"
+            className="h-14 w-full truncate rounded-2xl border border-accent-ink px-4 font-semibold text-accent-ink"
           >
             + Add “{typed}”
           </button>
@@ -158,7 +158,7 @@ function Row({
       type="button"
       onClick={onSelect}
       className={`w-full rounded-2xl border bg-raised p-4 text-left ${
-        highlighted ? "border-accent" : "border-line"
+        highlighted ? "border-accent-ink" : "border-line"
       }`}
     >
       <p className="font-semibold">{title}</p>
@@ -279,14 +279,14 @@ function NewGymForm({
           onChange={setBranch}
         />
         <Field label="City" hint="Required" value={city} onChange={setCity} />
-        {failure && <p className="text-sm text-red-300">{failure}</p>}
+        {failure && <p className="text-sm text-danger">{failure}</p>}
       </div>
 
       <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
         <button
           type="submit"
           disabled={input.city === "" || sending}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
         >
           {sending ? "Adding…" : "Add and start"}
         </button>

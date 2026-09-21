@@ -64,7 +64,7 @@ export function FinishSheet({
           type="button"
           onClick={() => request && onSave(request)}
           disabled={request === null}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
         >
           Save workout
         </button>

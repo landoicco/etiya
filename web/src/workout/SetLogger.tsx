@@ -65,7 +65,7 @@ export function SetLogger({
       <button
         type="button"
         onClick={() => onLog(set)}
-        className="mt-3 h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
+        className="mt-3 h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent"
       >
         Log set
       </button>
@@ -96,7 +96,7 @@ function UnitButton({
       onClick={onSelect}
       aria-pressed={selected}
       className={`h-11 flex-1 rounded-xl text-sm font-semibold ${
-        selected ? "bg-accent text-surface" : "border border-line text-muted"
+        selected ? "bg-accent text-on-accent" : "border border-line text-muted"
       }`}
     >
       {UNIT_LABELS[unit]}

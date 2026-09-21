@@ -102,7 +102,7 @@ function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () =>
         type="button"
         onClick={onFinish}
         disabled={loggedSets(workout) === 0}
-        className="h-11 shrink-0 rounded-xl border border-accent px-4 text-sm font-semibold text-accent disabled:border-line disabled:text-muted"
+        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink disabled:border-line disabled:text-muted"
       >
         Finish
       </button>

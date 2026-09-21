@@ -19,7 +19,7 @@ export function DiscardButton({ onDiscard }: { onDiscard: () => void }) {
       onClick={() => (armed ? onDiscard() : setArmed(true))}
       className={
         armed
-          ? "h-12 w-full rounded-xl bg-red-950 text-sm font-semibold text-red-200"
+          ? "h-12 w-full rounded-xl bg-danger text-sm font-semibold text-raised"
           : "h-12 w-full text-sm text-muted"
       }
     >

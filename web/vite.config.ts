@@ -4,8 +4,9 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Background of the app and of the splash screen while it opens
-const BACKGROUND = "#0b0f14";
+// Background of the app and of the splash screen while it opens. Must match --color-surface
+// in index.css, or opening the app flashes the wrong colour before the CSS lands
+const BACKGROUND = "#f4ece0";
 
 export default defineConfig({
   // "@/" is src. Declared here for the bundler, in tsconfig.json for the type checker and

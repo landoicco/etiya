@@ -45,7 +45,7 @@ export function NumberField({
           event.currentTarget.blur();
         }
       }}
-      className="min-w-0 flex-1 border-b border-dashed border-line bg-transparent text-center text-3xl font-bold tabular-nums focus:border-solid focus:border-accent focus:outline-none"
+      className="min-w-0 flex-1 border-b border-dashed border-line bg-transparent text-center text-3xl font-bold tabular-nums focus:border-solid focus:border-accent-ink focus:outline-none"
     />
   );
 }

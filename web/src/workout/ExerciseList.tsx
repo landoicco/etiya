@@ -47,7 +47,7 @@ function ExerciseRow({
       onClick={onSelect}
       aria-current={current}
       className={`w-full rounded-2xl border bg-raised p-4 text-left ${
-        current ? "border-accent" : "border-line"
+        current ? "border-accent-ink" : "border-line"
       }`}
     >
       <p className="font-semibold">{exercise.name}</p>

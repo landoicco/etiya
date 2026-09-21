@@ -43,7 +43,7 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
         <button
           type="button"
           onClick={() => router.open({ name: "start" })}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent"
         >
           Start workout
         </button>
@@ -79,7 +79,7 @@ function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: bo
 
       {refused.map((item) => (
         <div key={item.request.id} className={waiting > 0 ? "mt-3" : undefined}>
-          <p className="text-red-300">The API refused a workout: {item.refusal}</p>
+          <p className="text-danger">The API refused a workout: {item.refusal}</p>
           <button
             type="button"
             onClick={() => void queue.drop(item.request.id)}
@@ -91,7 +91,7 @@ function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: bo
       ))}
 
       {waiting > 0 && !queue.sending && (
-        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent">
+        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent-ink">
           Try again now
         </button>
       )}
@@ -121,7 +121,7 @@ function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
     return (
       <Notice>
         {error.message}
-        <button type="button" onClick={() => void refetch()} className="mt-3 block h-11 text-accent">
+        <button type="button" onClick={() => void refetch()} className="mt-3 block h-11 text-accent-ink">
           Try again
         </button>
       </Notice>
@@ -141,7 +141,7 @@ function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
           <button
             type="button"
             onClick={() => router.open({ name: "history" })}
-            className="h-11 text-sm text-accent"
+            className="h-11 text-sm text-accent-ink"
           >
             See all
           </button>

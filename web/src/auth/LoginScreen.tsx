@@ -68,7 +68,7 @@ export function LoginScreen({ auth, onSignedIn }: Props) {
         </label>
 
         {/* role=alert makes screen readers announce the error as soon as it appears */}
-        <p role="alert" className="mt-4 min-h-6 text-sm text-red-400">
+        <p role="alert" className="mt-4 min-h-6 text-sm text-danger">
           {error}
         </p>
 
@@ -76,7 +76,7 @@ export function LoginScreen({ auth, onSignedIn }: Props) {
           <button
             type="submit"
             disabled={submitting}
-            className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+            className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
           >
             {submitting ? "Signing in…" : "Sign in"}
           </button>
@@ -88,4 +88,4 @@ export function LoginScreen({ auth, onSignedIn }: Props) {
 
 // 16px text at least: iOS zooms into any smaller input when it gets focus
 const FIELD =
-  "mt-1 h-14 w-full rounded-xl border border-line bg-raised px-4 text-base outline-none focus:border-accent";
+  "mt-1 h-14 w-full rounded-xl border border-line bg-raised px-4 text-base outline-none focus:border-accent-ink";
