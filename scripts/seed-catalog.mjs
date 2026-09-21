@@ -6,14 +6,17 @@
 //   node scripts/seed-catalog.mjs            the deployed stack (STACK, default EtiyaProd)
 //   node scripts/seed-catalog.mjs --local    the Docker stack on localhost:8080
 //
-// Against AWS it signs in as the user in .env.dev (ETIYA_DEV_USERNAME, ETIYA_DEV_PASSWORD), the
-// same one Bruno uses, and needs AWS credentials to read the stack outputs
+// Against AWS it signs in as ETIYA_USERNAME / ETIYA_PASSWORD, read from .env.<stack> if that
+// file exists and from the environment otherwise, and needs AWS credentials to read the outputs
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // Paths are relative to the repository, wherever the script is run from
 const root = fileURLToPath(new URL("..", import.meta.url));
+// Resolved once and passed down to stack-output.sh, so the credentials, the API URL and the
+// client id a run uses can never come from two different stacks
+const stack = process.env.STACK ?? "EtiyaProd";
 const exercises = JSON.parse(readFileSync(`${root}scripts/exercises.json`, "utf8"));
 const target = process.argv.includes("--local") ? localTarget() : awsTarget();
 
@@ -47,12 +50,18 @@ function localTarget() {
 }
 
 function awsTarget() {
-  if (existsSync(`${root}.env.dev`)) {
-    process.loadEnvFile(`${root}.env.dev`);
+  // One file per stack, so the credentials of two environments can never be confused for each
+  // other. It is a convenience for throwaway dev users: production credentials do not go in a
+  // file, they are exported into the environment for the one command that needs them
+  const envFile = `${root}.env.${stack}`;
+  if (existsSync(envFile)) {
+    process.loadEnvFile(envFile);
   }
-  const { ETIYA_DEV_USERNAME: username, ETIYA_DEV_PASSWORD: password } = process.env;
+  const { ETIYA_USERNAME: username, ETIYA_PASSWORD: password } = process.env;
   if (!username || !password) {
-    throw new Error("Set ETIYA_DEV_USERNAME and ETIYA_DEV_PASSWORD, in .env.dev or the environment");
+    throw new Error(
+      `Set ETIYA_USERNAME and ETIYA_PASSWORD for ${stack}, in .env.${stack} or the environment`,
+    );
   }
 
   // The token is requested on the spot and only kept in memory, as in docs/testing.md
@@ -77,7 +86,11 @@ function awsTarget() {
 }
 
 function stackOutput(key) {
-  return run(`${root}web/scripts/stack-output.sh`, [key]).trim();
+  return execFileSync(`${root}web/scripts/stack-output.sh`, [key], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+    env: { ...process.env, STACK: stack },
+  }).trim();
 }
 
 function run(command, args) {

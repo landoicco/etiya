@@ -130,7 +130,17 @@ A new stack starts with an empty catalog. [`scripts/seed-catalog.mjs`](../script
 ```bash
 node scripts/seed-catalog.mjs
 ```
-It signs in as the user in `.env.dev` (see [testing](testing.md)) and reads the stack outputs, so it needs AWS credentials; `STACK` selects the stack and defaults to `EtiyaProd`. Every new environment needs this run once. It is safe to run again: an exercise that already exists gets `409` and is skipped, and nothing stored is changed. To add exercises for everyone, add them to the JSON and run it again.
+It signs in as `ETIYA_USERNAME` / `ETIYA_PASSWORD` and reads the stack outputs, so it needs AWS credentials; `STACK` selects the stack and defaults to `EtiyaProd`. Every new environment needs this run once. It is safe to run again: an exercise that already exists gets `409` and is skipped, and nothing stored is changed. To add exercises for everyone, add them to the JSON and run it again.
+
+The credentials come from `.env.<stack>` when that file exists, and from the environment otherwise. Dev keeps a file (`.env.EtiyaDev`, git-ignored, see [testing](testing.md)); **production does not**, because a real account's password does not belong in a file. Export it for the one command that needs it, without putting it in the shell's history:
+```bash
+read -rsp "Password: " ETIYA_PASSWORD && export ETIYA_PASSWORD
+export ETIYA_USERNAME=you@example.com
+node scripts/seed-catalog.mjs
+unset ETIYA_PASSWORD
+```
+
+Any account works: the catalog records nothing about who created an entry, and seeding registers no workouts, so using a real account leaves nothing behind in that account's history.
 
 Gyms are not seeded: users add their own from the app, and the catalog is shared, see [decisions](decisions.md#server-generated-ids-and-409-on-duplicates).
 

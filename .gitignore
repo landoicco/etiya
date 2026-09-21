@@ -1,6 +1,8 @@
 # Per-deployment values: the API URL and the Cognito user of whoever deployed it
 bruno-tests/environments/Dev.bru
 
-# Login for the dev Cognito user, sourced by the shell to request tokens.
-# Acceptable for a throwaway dev user; production credentials never go in a file
-.env.dev
+# Logins for the dev Cognito users, sourced by the shell to request tokens. One file per
+# stack, named after it: .env.EtiyaDev. Acceptable for throwaway dev users only —
+# production credentials never go in a file, they are exported for the command that needs them.
+# The pattern is deliberately wide: no .env of any name is ever meant to be committed
+.env*

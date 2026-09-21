@@ -63,31 +63,41 @@ cd bruno-tests && bru run --env Local
 > docker compose down -v && docker compose up --build
 > ```
 
+## The suite never runs against production
+
+It runs locally and against `EtiyaDev`, and that is the whole of it. Production receives **the same jar and the same constructs** that dev has already validated, so running the suite there would re-prove logic that did not change, while writing fake workouts into a table meant for real ones and leaving test accounts in the pool that can sign in forever.
+
+What dev genuinely cannot prove is the **wiring**: that production's authorizer is bound to production's user pool, that `TABLE_NAME` points at production's table, and that CORS allows the CloudFront origin — the last one being a branch dev never executes at all, since a disposable environment has no `Web` construct and passes `null` as the origin.
+
+All three are checked by opening the app on a phone and signing in. That exercises the pool, the authorizer, CORS and the table in one go, with a workout that is real instead of fixture data. A `curl` with no `Authorization` header confirms the `401`.
+
+Isolation between users gets the same treatment: it is confirmed the first time a second **real** person signs in, rather than with a pair of dummy accounts created to prove it. Two people who cannot see each other's workouts is the same evidence, and it leaves nothing behind.
+
 ## Against AWS
 
 The same tests run against the deployed API with the `Dev` environment. Every request needs a Cognito token, which the collection sends as `Authorization: Bearer {{authToken}}`.
 
-The logins of the two dev users live in `.env.dev` at the repository root, which git ignores. That is a shortcut accepted for throwaway dev users only, and never for a real account:
+The logins of the two dev users live in `.env.EtiyaDev` at the repository root, which git ignores. **One file per stack, named after it**, so two environments' credentials cannot be confused for each other. That is a shortcut accepted for throwaway dev users only, and never for a real account:
 ```bash
-ETIYA_DEV_USERNAME=you@example.com
-ETIYA_DEV_PASSWORD='<PASSWORD>'
-ETIYA_DEV2_USERNAME=you+second@example.com
-ETIYA_DEV2_PASSWORD='<PASSWORD>'
+ETIYA_USERNAME=you@example.com
+ETIYA_PASSWORD='<PASSWORD>'
+ETIYA2_USERNAME=you+second@example.com
+ETIYA2_PASSWORD='<PASSWORD>'
 ```
 
 The second user exists only to prove that one user cannot reach another's workouts. It never registers anything, so it stays empty run after run.
 
 Both tokens are requested on the spot and passed on the command line, so neither is ever written to a file:
 ```bash
-source .env.dev
+source .env.EtiyaDev
 token_for() {
   aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
     --client-id <CLIENT_ID> \
     --auth-parameters USERNAME="$1",PASSWORD="$2" \
     --query 'AuthenticationResult.AccessToken' --output text
 }
-TOKEN=$(token_for "$ETIYA_DEV_USERNAME" "$ETIYA_DEV_PASSWORD")
-OTHER_TOKEN=$(token_for "$ETIYA_DEV2_USERNAME" "$ETIYA_DEV2_PASSWORD")
+TOKEN=$(token_for "$ETIYA_USERNAME" "$ETIYA_PASSWORD")
+OTHER_TOKEN=$(token_for "$ETIYA2_USERNAME" "$ETIYA2_PASSWORD")
 
 cd bruno-tests && bru run --env Dev \
   --env-var authToken="$TOKEN" --env-var otherAuthToken="$OTHER_TOKEN" \
