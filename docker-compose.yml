@@ -7,10 +7,17 @@ services:
       - "8000:8000"
     command: "-jar DynamoDBLocal.jar -inMemory -sharedDb"
     healthcheck:
-      test: ["CMD-SHELL", "java -jar DynamoDBLocal.jar -port 8000 -help > /dev/null || exit 0"]
-      interval: 3s
-      timeout: 3s
-      retries: 3
+      # Unsigned, so it answers 400 — proof enough that the port is serving the API
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sS -o /dev/null -X POST http://127.0.0.1:8000/ -H 'X-Amz-Target: DynamoDB_20120810.ListTables' -H 'Content-Type: application/x-amz-json-1.0' -d '{}'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      # Without this, a slow boot burned the retries and the app refused to start
+      start_period: 10s
 
   # Etiya's core app - Spring Cloud Function
   core-spring:
