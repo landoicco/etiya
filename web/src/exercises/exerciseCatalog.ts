@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 import { useCallback } from "react";
-import type { Api, CatalogExercise, NewCatalogExercise } from "./api";
+import type { Api, CatalogExercise, NewCatalogExercise } from "@/platform/api";
 
 // The catalog is small, shared by everyone and changes rarely, so the app takes the whole
 // thing once and searches it on the phone. That is what makes the picker open instantly and

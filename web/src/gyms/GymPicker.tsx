@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
-import { type Api, ApiError, type Gym, type NewGym } from "./api";
-import { slugOf } from "./catalog";
+import { type Api, ApiError, type Gym, type NewGym } from "@/platform/api";
+import { slugOf } from "@/exercises/catalog";
 import {
   findGym,
   gymLabel,
@@ -11,7 +11,7 @@ import {
   useGymCatalog,
   useRegisterGym,
 } from "./gyms";
-import type { WorkoutGym } from "./workout";
+import type { WorkoutGym } from "@/workout/workout";
 
 interface Props {
   api: Api;

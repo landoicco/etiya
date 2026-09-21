@@ -1,4 +1,4 @@
-import type { CatalogExercise, ExerciseCategory, MuscleGroup } from "./api";
+import type { CatalogExercise, ExerciseCategory, MuscleGroup } from "@/platform/api";
 
 // The chips over the search box, in the order of the push/pull/legs split they come from
 export const CATEGORIES: ExerciseCategory[] = ["PUSH", "PULL", "LEGS", "CORE", "CARDIO", "OTHER"];

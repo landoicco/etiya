@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GymSet } from "./api";
+import type { GymSet } from "@/platform/api";
 import {
   addExercise,
   currentExercise,

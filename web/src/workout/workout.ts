@@ -1,5 +1,5 @@
 import { ulid } from "ulid";
-import type { GymSet, WeightUnit } from "./api";
+import type { GymSet, WeightUnit } from "@/platform/api";
 
 // The workout being logged, as it lives on the phone. Its shape follows the API's so that
 // finishing it is little more than adding endedAt, and it is what gets saved to IndexedDB

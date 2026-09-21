@@ -1,6 +1,6 @@
-import type { Api } from "./api";
-import type { Router } from "./router";
-import { setLabel } from "./workout";
+import type { Api } from "@/platform/api";
+import type { Router } from "@/app/router";
+import { setLabel } from "@/workout/workout";
 import { dayLabel, durationLabel, totalSets, useWorkout } from "./workouts";
 
 // One saved workout, set by set. It is the only screen reachable by a link, so it has to

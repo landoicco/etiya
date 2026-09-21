@@ -1,11 +1,11 @@
-import type { Api } from "./api";
+import type { Api } from "@/platform/api";
 import { ExerciseList } from "./ExerciseList";
-import { ExercisePicker } from "./ExercisePicker";
+import { ExercisePicker } from "@/exercises/ExercisePicker";
 import { FinishSheet } from "./FinishSheet";
-import type { Router } from "./router";
+import type { Router } from "@/app/router";
 import { SetLogger } from "./SetLogger";
-import { useNow } from "./useNow";
-import { useWakeLock } from "./useWakeLock";
+import { useNow } from "@/platform/useNow";
+import { useWakeLock } from "@/platform/useWakeLock";
 import {
   type ActiveWorkout,
   addExercise,

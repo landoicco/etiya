@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GymSet, WeightUnit } from "./api";
+import type { GymSet, WeightUnit } from "@/platform/api";
 import { Stepper } from "./Stepper";
 import {
   hasWeight,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Workout } from "./api";
+import type { Workout } from "@/platform/api";
 import { durationLabel, minutesOf, summaryLine, totalSets } from "./workouts";
 
 // Only the times, the gym and the sets are read here, so the rest stays out of the way

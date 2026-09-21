@@ -1,22 +1,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { loadActiveWorkout } from "./activeWorkout";
-import { type Api, ApiError, createApi } from "./api";
-import { type Auth, cognitoAuth, type User } from "./auth";
-import { loadConfig } from "./config";
-import { HistoryScreen } from "./HistoryScreen";
-import { HomeScreen } from "./HomeScreen";
-import { LoginScreen } from "./LoginScreen";
-import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
-import { GYMS_KEY, loadCachedGyms } from "./gyms";
-import { HOME, useRouter } from "./router";
-import { usePersistence } from "./storage";
-import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
-import { useActiveWorkout } from "./useActiveWorkout";
-import type { ActiveWorkout } from "./workout";
-import { WorkoutDetail } from "./WorkoutDetail";
-import { WorkoutScreen } from "./WorkoutScreen";
+import { loadActiveWorkout } from "@/workout/activeWorkout";
+import { type Api, ApiError, createApi } from "@/platform/api";
+import { type Auth, cognitoAuth, type User } from "@/auth/auth";
+import { loadConfig } from "@/platform/config";
+import { HistoryScreen } from "@/history/HistoryScreen";
+import { HomeScreen } from "@/app/HomeScreen";
+import { LoginScreen } from "@/auth/LoginScreen";
+import { CATALOG_KEY, loadCachedCatalog } from "@/exercises/exerciseCatalog";
+import { GYMS_KEY, loadCachedGyms } from "@/gyms/gyms";
+import { HOME, useRouter } from "@/app/router";
+import { usePersistence } from "@/platform/storage";
+import { loadPending, type PendingWorkout, useSendQueue } from "@/platform/sendQueue";
+import { useActiveWorkout } from "@/workout/useActiveWorkout";
+import type { ActiveWorkout } from "@/workout/workout";
+import { WorkoutDetail } from "@/history/WorkoutDetail";
+import { WorkoutScreen } from "@/workout/WorkoutScreen";
 import "./index.css";
 
 const queryClient = new QueryClient({

@@ -5,7 +5,7 @@ import {
   type CatalogExercise,
   type ExerciseCategory,
   type MuscleGroup,
-} from "./api";
+} from "@/platform/api";
 import {
   CATEGORIES,
   CATEGORY_LABELS,
@@ -16,8 +16,8 @@ import {
   searchCatalog,
 } from "./catalog";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
-import type { Router } from "./router";
-import type { ExerciseChoice } from "./workout";
+import type { Router } from "@/app/router";
+import type { ExerciseChoice } from "@/workout/workout";
 
 interface Props {
   api: Api;

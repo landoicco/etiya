@@ -1,6 +1,6 @@
 import { DiscardButton } from "./DiscardButton";
 import { Summary } from "./Summary";
-import { useNow } from "./useNow";
+import { useNow } from "@/platform/useNow";
 import {
   type ActiveWorkout,
   elapsedLabel,

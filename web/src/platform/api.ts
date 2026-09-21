@@ -1,5 +1,5 @@
-import type { Auth } from "./auth";
-import type { WorkoutRequest } from "./workout";
+import type { Auth } from "@/auth/auth";
+import type { WorkoutRequest } from "@/workout/workout";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra

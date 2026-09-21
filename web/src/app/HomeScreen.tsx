@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import type { Api } from "./api";
-import type { User } from "./auth";
-import { GymPicker } from "./GymPicker";
-import { WorkoutCard } from "./HistoryScreen";
+import type { Api } from "@/platform/api";
+import type { User } from "@/auth/auth";
+import { GymPicker } from "@/gyms/GymPicker";
+import { WorkoutCard } from "@/history/HistoryScreen";
 import type { Router } from "./router";
-import type { useSendQueue } from "./sendQueue";
-import { useRecentWorkouts } from "./workouts";
-import type { WorkoutGym } from "./workout";
+import type { useSendQueue } from "@/platform/sendQueue";
+import { useRecentWorkouts } from "@/history/workouts";
+import type { WorkoutGym } from "@/workout/workout";
 
 interface Props {
   api: Api;

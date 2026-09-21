@@ -1,6 +1,6 @@
 import { Amplify } from "aws-amplify";
 import { fetchAuthSession, getCurrentUser, signIn, signOut } from "aws-amplify/auth";
-import type { Config } from "./config";
+import type { Config } from "@/platform/config";
 
 export interface User {
   // Unknown when the app opens offline with an expired token: the session is still valid,

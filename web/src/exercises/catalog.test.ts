@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CatalogExercise } from "./api";
+import type { CatalogExercise } from "@/platform/api";
 import { findByName, normalize, searchCatalog, slugOf } from "./catalog";
 
 function exercise(id: string, name: string, category: CatalogExercise["category"]): CatalogExercise {

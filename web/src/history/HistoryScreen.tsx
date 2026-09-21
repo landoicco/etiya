@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { Api, Workout } from "./api";
-import type { Router } from "./router";
+import type { Api, Workout } from "@/platform/api";
+import type { Router } from "@/app/router";
 import { dayLabel, summaryLine, useWorkoutHistory } from "./workouts";
 
 // Pages are asked for one at a time, by a button rather than by scrolling: a tap is honest

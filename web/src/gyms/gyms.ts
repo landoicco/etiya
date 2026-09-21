@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 import { useCallback } from "react";
-import type { Api, Gym, NewGym } from "./api";
-import { normalize, slugOf } from "./catalog";
-import type { WorkoutGym } from "./workout";
+import type { Api, Gym, NewGym } from "@/platform/api";
+import { normalize, slugOf } from "@/exercises/catalog";
+import type { WorkoutGym } from "@/workout/workout";
 
 // Same deal as the exercise catalog: one request brings all of it, and the phone keeps a copy
 export const GYMS_KEY = ["gyms"];
