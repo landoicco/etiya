@@ -8,6 +8,11 @@ import { VitePWA } from "vite-plugin-pwa";
 const BACKGROUND = "#0b0f14";
 
 export default defineConfig({
+  // "@/" is src. Declared here for the bundler, in tsconfig.json for the type checker and
+  // in vitest.config.ts for the tests: all three have to say the same thing
+  resolve: {
+    alias: { "@": "/src" },
+  },
   plugins: [
     react(),
     tailwindcss(),
