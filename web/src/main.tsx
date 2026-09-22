@@ -145,12 +145,14 @@ async function start(container: HTMLElement) {
       loadPending(),
     ]);
     // The pickers then open on the copies this phone already has, and fresh ones replace them
-    // once they arrive, instead of showing an empty list on every launch
+    // once they arrive, instead of showing an empty list on every launch. updatedAt keeps them
+    // stale: without it setQueryData stamps them as just fetched, and staleTime cancels the
+    // refetch on every launch, so a phone holding a copy would never see a new catalog
     if (catalog) {
-      queryClient.setQueryData(CATALOG_KEY, catalog);
+      queryClient.setQueryData(CATALOG_KEY, catalog, { updatedAt: 0 });
     }
     if (gyms) {
-      queryClient.setQueryData(GYMS_KEY, gyms);
+      queryClient.setQueryData(GYMS_KEY, gyms, { updatedAt: 0 });
     }
     root.render(
       <StrictMode>
