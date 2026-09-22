@@ -32,13 +32,15 @@ Dev skips `Web` because it is developed against `npm run dev` on localhost, whic
 
 Every synth also runs [cdk-nag](decisions.md#security-rules-checked-on-every-synth) security checks, and fails if a finding is neither fixed nor acknowledged.
 
-![Resources created by the stack](images/architecture.png)
+![Resources created by EtiyaProd](images/architecture.png)
 
-That diagram is generated from the CDK code itself, so it cannot drift from what is deployed. Regenerate it after changing the infrastructure:
+That diagram is generated from the CDK code rather than drawn, so it is right by construction — but only as of the last time somebody regenerated it, which belongs with any change to `infra/`:
 ```bash
 cd infra && cdk synth >/dev/null
-npx cdk-dia --target-path "$(git rev-parse --show-toplevel)/docs/images/architecture.png"
+npx cdk-dia --include EtiyaProd \
+  --target-path "$(git rev-parse --show-toplevel)/docs/images/architecture.png"
 ```
+`--include` matters now that there are two stacks: without it `cdk-dia` draws both in one image. `EtiyaProd` is the one worth showing, since dev is the same thing without `Web`.
 It reads `cdk.out/tree.json` and needs Graphviz, which the `infra` shell provides. Pass an absolute path: `cdk-dia` mangles relative ones that start with `..`.
 
 ## Prerequisites
