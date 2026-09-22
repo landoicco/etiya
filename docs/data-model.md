@@ -89,6 +89,19 @@ A set is a `count`, a `weight` and a `unit`, and the unit belongs to **each set*
 
 Duration and distance, for cardio, do not fit this shape yet: a run can only be logged as a count, see [still open](decisions.md#still-open).
 
+## What the two numbers in a set mean
+
+A `count` and a `weight` are ambiguous on their own. Two dumbbells of 40 lb are 40 or 80; eight hammer curls alternating arms are eight or sixteen. Both are settled by convention rather than by a field, and the convention is the same in both cases: **the number is the one you would say out loud to another lifter.**
+
+* **`weight` is what is written on the implement you pick up.** One dumbbell of 40 is `40`. A barbell is the total on the bar, including the bar. A machine is whatever the stack says.
+* **`count` is how many repetitions one side did.** For a bilateral movement that is simply the repetitions. For anything trained one limb at a time — a single-arm row, an alternating hammer curl, a split squat — it is the number that limb performed, not the two sides added up.
+
+Neither belongs on the set, because **neither is a property of the set**: they follow from the exercise, which does not change between one set and the next. A field would cost a tap in the middle of a workout to record something already known, and the app is meant to be used one-handed between sets.
+
+What the convention does not store is **how many implements were involved**, so total load is not derivable from a workout alone. That is recoverable: it is a property of the exercise, and a workout references the exercise by id, so [tagging the catalog](decisions.md#still-open) later answers it for every workout ever stored without rewriting one of them. The stored data is not lossy; it is merely incomplete on its own.
+
+The alternating hammer curl is the case that shows the convention paying for itself: performed one arm at a time or both at once, the number logged is the same, so it stays **one** catalog entry instead of two.
+
 ## Every item says which shape it was written with
 
 Each stored item carries a `schemaVersion`, a number stamped on every write. All three are at `1` today.

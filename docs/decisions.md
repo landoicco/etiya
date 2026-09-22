@@ -84,6 +84,28 @@ For gyms, the slug includes the optional branch and the city, so two locations o
 
 Known limitation: `city` is free text, so `Monterrey` and `Monterrey, NL` produce different IDs. Google Places (`place_id`) is the real fix, and can be added later without changing the model.
 
+### Exercise variations live in the name
+
+A bench press is flat, inclined or declined, with a barbell, dumbbells, a machine or a Smith. Every one of those is a different exercise — nobody progresses the same way on incline as on flat — so each is its own catalog entry, and the variation is carried **in the name** rather than in fields beside it.
+
+That is not only the cheapest option, it is the one the rest of the design forces. **An exercise's id is the slug of its name, and every stored workout holds that id.** Identity therefore cannot be restructured without orphaning history, so whatever describes a variation has to be either part of the name or metadata that does not touch the id.
+
+The risk this leaves is not that a name cannot express a variation — names are 50 characters and the longest in the catalog uses 46 — but that two people express the same variation differently. The defences are a grammar, and a seed catalog complete enough that people pick instead of type:
+
+```
+[Modifier] [Equipment] [Movement]        singular
+```
+
+`Incline Dumbbell Bench Press`, `Close-Grip Barbell Bench Press`, `Single-Arm Cable Row`, `Machine Chest Press`. Three rules decide the awkward cases, and all three came out of naming a real gym's worth of exercises:
+
+* **A cable attachment enters the name only where it separates exercises that are actually done.** Rope, V-bar and straight bar are three different pushdowns, so all three are named. A single-arm overhead extension has no competing attachment, so it stays `Cable`.
+* **Where one variant is the obvious default, only the exceptions are marked.** The seated cable row is the V-handle one, so it keeps the plain name and the other is `Wide-Grip Seated Cable Row`. Search puts a name that starts with what was typed first, so the plain one also comes up first. Where there is no default, as with pushdowns, every variant is marked.
+* **The equipment word stays when dropping it would create ambiguity.** `Straight-Bar Triceps Pushdown` needs no "Cable", since a pushdown is only ever a cable. `Straight-Bar Cable Curl` does, or it reads as the free-weight `Barbell Curl`.
+
+Brand names stay out: a machine is `Machine Hip Thrust`, not the name of the manufacturer that gym happens to buy from.
+
+The seed catalog is therefore part of the design rather than sample data, and it was written before production had one to migrate — because renaming an entry changes its id, which is free today and a migration later.
+
 ## Cognito from the first deploy
 
 Self sign-up is disabled, so only an administrator creates users. The JWT authorizer sits on **every** route, which means unauthenticated traffic is rejected by API Gateway before any Lambda runs.
@@ -228,6 +250,7 @@ Deliberately postponed, with the trigger that would justify each:
 | `PUT` for a workout, so a set logged with the wrong number can be corrected | "View summary" before saving turns out not to catch enough of them. `DELETE` is not here on purpose: it was [decided against](#workouts-are-not-deleted), not postponed |
 | Moderating the shared catalog (reporting, merging or hiding entries) and MFA | There are users other than the owner |
 | Aliases on catalog exercises ("also known as"), so a search for one name finds the other | Near-duplicate exercises start to get in the way |
+| **`equipment` on a catalog exercise** (barbell, dumbbell, machine, cable), which is what makes total load derivable: a set records [what one implement weighs](data-model.md#what-the-two-numbers-in-a-set-mean), and only the exercise knows whether there were two of them. Additive, and it fixes every workout ever stored at once, since a workout references the exercise by id | Something needs the total rather than the number logged — a volume chart, or grouping every bench press variant together. Note there is no `PUT /exercises`, so backfilling the entries that already exist means a new route or a one-off script |
 | A workout's split ("Push day") derived from its exercises' categories and shown in the history | Its trigger has fired — the history screen exists. Waiting on a turn rather than on anything else, and worth doing beside the picker's opening category: a stored workout carries an exercise's id and name but not its category, so both need the same lookup in the catalog already on the device |
 | **Making `prod` the default Spring profile instead of `local`.** `application.properties` sets `spring.profiles.active=local`, so the production jar defaults to a profile whose beans it does not contain, and only works because `Functions.java` overrides it with `SPRING_PROFILES_ACTIVE=prod`. Inverting it — `prod` by default, `local` set by the Dockerfile and Compose — would make the safe value the default one | Any change to how the Lambdas get their environment. Today it works; the failure mode is what argues for it, since dropping that variable would leave a Lambda with no `DynamoDbClient` bean, failing at startup rather than at build time |
 | **The exercise picker opening on the category already being trained.** It always opens on "All" (`ExercisePicker.tsx:35`, `useState(null)`): the picker is a route, so closing it unmounts it and the chip resets. Someone logging a leg day picks Legs again for every exercise. The category would come from the last exercise added to the workout, which means a catalog lookup — `LoggedExercise` carries only `exerciseCatalogItemId` and `name`, not the category — and the whole catalog is already on the device, so it costs nothing and works offline. Falls back to "All" when that id is `null`, which is what an exercise typed while offline has | Whenever; it is small. Worth doing with the first change that touches the picker rather than on its own. Note it guesses: the chip must stay one tap away from All, and the guess has to be visible rather than silently hiding the rest of the catalog |
