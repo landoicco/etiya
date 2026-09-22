@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GymSet, WeightUnit } from "@/platform/api";
 import { Stepper } from "./Stepper";
+import { useConfirm } from "./useConfirm";
 import {
   hasWeight,
   type LoggedExercise,
@@ -30,7 +31,10 @@ export function SetLogger({
 
   return (
     <section className="safe-x safe-bottom border-t border-line bg-raised pt-4">
-      <p className="truncate text-sm font-semibold text-muted">{exercise.name}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="truncate text-sm font-semibold text-muted">{exercise.name}</p>
+        <UndoButton sets={exercise.sets.length} onUndo={onUndo} />
+      </div>
 
       <div className="mt-2 flex gap-3">
         <Stepper
@@ -69,15 +73,26 @@ export function SetLogger({
       >
         Log set
       </button>
-      <button
-        type="button"
-        onClick={onUndo}
-        disabled={exercise.sets.length === 0}
-        className="mt-1 h-11 w-full text-sm text-muted disabled:opacity-40"
-      >
-        Undo last set
-      </button>
     </section>
+  );
+}
+
+// Up by the exercise name, not under "Log set": full width and one line below the button a
+// thumb taps all session, it was hit by mistake. Two taps, because an undone set is gone
+function UndoButton({ sets, onUndo }: { sets: number; onUndo: () => void }) {
+  const { armed, onClick } = useConfirm(onUndo);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={sets === 0}
+      className={`h-11 shrink-0 rounded-xl px-3 text-sm font-semibold disabled:opacity-40 ${
+        armed ? "bg-danger text-raised" : "border border-line text-muted"
+      }`}
+    >
+      {armed ? "Tap again" : "Undo set"}
+    </button>
   );
 }
 
