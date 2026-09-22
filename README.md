@@ -47,7 +47,7 @@ Every request carries a client-generated ULID, so a send that actually went thro
 
 **The URL says what is on screen, sheets included.** A phone's back gesture is the main way out of anything, so closing a sheet is the same `history.back()` the gesture performs, and there is no second stack of open sheets to keep in step with the browser's. The router is forty lines rather than a dependency.
 
-**The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 42 of its 44 requests run unchanged against either.
+**The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 38 of its 40 requests run unchanged against either.
 
 ```mermaid
 flowchart TB

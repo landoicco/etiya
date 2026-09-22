@@ -2,7 +2,7 @@
 
 *For running the suite against either environment, and knowing what it covers.*
 
-Three layers:
+Two layers:
 
 * **Unit tests** for the logic with the most edge cases, on both sides. Plain JUnit for the API, no Spring context and no database; **Vitest** for the web app. Both run in milliseconds.
 * **An integration suite** of plain-text requests written for **Bruno**, run against the local stack or the deployed API. No graphical client is needed; the Nix shell bundles the CLI (`bru`).
@@ -34,11 +34,12 @@ The screens are not tested; what is, is the logic underneath them, which is writ
 
 | Test | What it pins down |
 |---|---|
-| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
+| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), one added by name merging with the same one added with its catalog id, sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
 | `workouts.test.ts` | How a saved workout reads: minutes rounded, hours split out past the hour, and the summary line naming the gym, the length and the exercises, singular included |
 | `router.test.ts` | That every route survives a round trip through its path, that a new exercise's typed name rides in the history entry and a reload without it still opens the screen, and that an unknown path goes home rather than nowhere |
 | `sendQueue.test.ts` | What the send queue does with each answer: an empty queue when everything goes through, stopping at the first workout it cannot reach the API with so the order survives, another go after a `401` or a `429`, and a `4xx` marked as refused for good without holding up the ones behind it |
-| `catalog.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic, and the catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
+| `slugs.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic |
+| `catalog.test.ts` | The catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
 
 Two more commands run over the whole app:
 
