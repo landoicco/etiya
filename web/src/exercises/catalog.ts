@@ -1,4 +1,5 @@
 import type { CatalogExercise, ExerciseCategory, MuscleGroup } from "@/platform/api";
+import { normalize } from "@/platform/slugs";
 
 // The chips over the search box, in the order of the push/pull/legs split they come from
 export const CATEGORIES: ExerciseCategory[] = ["PUSH", "PULL", "LEGS", "CORE", "CARDIO", "OTHER"];
@@ -46,26 +47,6 @@ export interface CatalogFilter {
   query: string;
   // null is the "All" chip
   category: ExerciseCategory | null;
-}
-
-// The same normalization the API applies to build an exercise's id, step by step: accents
-// split and their marks dropped, apostrophes joining words, anything else separating them.
-// It has to agree with Slugs.of in core, because the id of an exercise is the slug of its
-// name, and that is how the app recognizes one the API says already exists
-export function normalize(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-// The same from several parts, which is how a gym's id is built out of its name, branch and
-// city. Parts that are missing or blank are skipped, exactly as the API skips them
-export function slugOf(...parts: (string | null | undefined)[]): string {
-  return normalize(parts.filter((part) => part != null && part.trim() !== "").join(" "));
 }
 
 // Anywhere in the name, not just the start: "press" should find the incline bench press,

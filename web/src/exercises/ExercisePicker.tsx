@@ -12,9 +12,9 @@ import {
   findByName,
   MUSCLE_GROUP_LABELS,
   MUSCLE_GROUPS,
-  normalize,
   searchCatalog,
 } from "./catalog";
+import { normalize } from "@/platform/slugs";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
 import type { Router } from "@/app/router";
 import type { ExerciseChoice } from "@/workout/workout";
@@ -74,7 +74,7 @@ export function ExercisePicker({ api, router, onPick }: Props) {
         />
         <button
           type="button"
-          onClick={router.close}
+          onClick={() => router.close()}
           className="h-14 shrink-0 px-2 text-sm text-muted"
         >
           Cancel
