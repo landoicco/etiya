@@ -72,8 +72,9 @@ export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDisc
           onPick={(choice) => {
             onChange((current) => addExercise(current, choice));
             // Leaves the same way the back gesture would, so picking an exercise does not
-            // leave a spent entry for the next back press to land on
-            router.close();
+            // leave a spent entry for the next back press to land on. An exercise just added
+            // to the catalog is two entries deep, and the search behind it is finished with
+            router.close(sheet === "newExercise" ? 2 : 1);
           }}
         />
       )}

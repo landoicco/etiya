@@ -15,7 +15,7 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
     <main className="flex h-dvh flex-col">
       <div className="safe-x safe-top flex items-center justify-between gap-4 pb-3">
         <h1 className="text-2xl font-bold">History</h1>
-        <button type="button" onClick={router.close} className="h-11 shrink-0 px-2 text-sm text-muted">
+        <button type="button" onClick={() => router.close()} className="h-11 shrink-0 px-2 text-sm text-muted">
           Back
         </button>
       </div>

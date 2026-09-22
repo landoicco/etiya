@@ -23,7 +23,7 @@ export function WorkoutDetail({ api, id, router }: { api: Api; id: string; route
         </div>
         <button
           type="button"
-          onClick={router.close}
+          onClick={() => router.close()}
           className="h-11 shrink-0 px-2 text-sm text-muted"
         >
           Back

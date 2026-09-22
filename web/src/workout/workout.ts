@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
 import type { GymSet, WeightUnit } from "@/platform/api";
+import { slugOf } from "@/platform/slugs";
 
 // The workout being logged, as it lives on the phone. Its shape follows the API's so that
 // finishing it is little more than adding endedAt, and it is what gets saved to IndexedDB
@@ -200,13 +201,15 @@ export function elapsedLabel(workout: ActiveWorkout, now: Date): string {
   return hours > 0 ? `${hours}:${tail}` : `${minutes}:${pad(seconds % 60)}`;
 }
 
-// The catalog id identifies an exercise; two offline ones are the same when they were
-// typed the same way, whatever the capitalization
 function isSame(exercise: LoggedExercise, choice: ExerciseChoice): boolean {
-  if (exercise.exerciseCatalogItemId !== null || choice.exerciseCatalogItemId !== null) {
-    return exercise.exerciseCatalogItemId === choice.exerciseCatalogItemId;
-  }
-  return exercise.name.trim().toLowerCase() === choice.name.trim().toLowerCase();
+  return identityOf(exercise) === identityOf(choice);
+}
+
+// A catalog id is the slug of its name, so the two are comparable: an exercise added without
+// one still matches the same exercise added with it. That happens when the network drops the
+// reply to a POST the server did save, and the retry comes back with the real id
+function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
+  return exerciseCatalogItemId ?? slugOf(name);
 }
 
 function replaceCurrent(workout: ActiveWorkout, exercise: LoggedExercise): ActiveWorkout {

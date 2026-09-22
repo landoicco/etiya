@@ -93,11 +93,24 @@ describe("addExercise", () => {
     expect(again.exercises).toHaveLength(1);
   });
 
-  it("keeps an exercise from the catalog apart from one typed with the same name", () => {
+  // What happens when the network drops the reply to a POST the server did save: the first
+  // attempt falls back to the name alone, and the retry answers 409 with the real id
+  it("merges an exercise added by name into the same one added with its catalog id", () => {
     const byName = { exerciseCatalogItemId: null, name: "Pull Up" };
     const typed = addExercise(startWorkout(START, null), byName);
+    const retried = addExercise(typed, PULL_UP);
 
-    expect(addExercise(typed, PULL_UP).exercises).toHaveLength(2);
+    expect(retried.exercises).toHaveLength(1);
+    expect(retried.currentExerciseIndex).toBe(0);
+  });
+
+  it("keeps two different exercises apart, id or no id", () => {
+    const workout = addExercise(startWorkout(START, null), {
+      exerciseCatalogItemId: null,
+      name: "Pull Up",
+    });
+
+    expect(addExercise(workout, BENCH).exercises).toHaveLength(2);
   });
 });
 
