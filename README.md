@@ -1,13 +1,14 @@
 # Etiya
 
-**A serverless gym tracker API.** Log your workouts, keep a history, and pay nothing to run it.
+**A gym tracker you can use with one hand, mid-set.** Log your workouts, keep a history, and pay nothing to run it.
 
 [![CI](https://github.com/landoicco/etiya/actions/workflows/ci.yml/badge.svg)](https://github.com/landoicco/etiya/actions/workflows/ci.yml)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
+[![Web](https://img.shields.io/badge/Web-React%20%2B%20TypeScript-61dafb)](https://react.dev/)
 [![AWS CDK](https://img.shields.io/badge/IaC-AWS%20CDK-yellow)](https://aws.amazon.com/cdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-Built with Java and Spring Cloud Function on AWS Lambda, behind an HTTP API with Cognito authentication, storing everything in a single DynamoDB table. The whole thing is defined as code and fits inside the AWS free tier.
+Two halves. A serverless API in Java and Spring Cloud Function on AWS Lambda, behind an HTTP API with Cognito authentication, storing everything in a single DynamoDB table. And a PWA that installs on a phone and logs sets one-handed, offline, on the gym floor. Both are defined as code in this repo, and the whole thing fits inside the AWS free tier.
 
 > **Etiya** is Nahuatl for [*to become heavy*](https://gdn.iib.unam.mx/diccionario/etiya/25282) — the barbell, not you. Although the dictionary also offers *"to be left without strength"*, which is a fair description of leg day.
 
@@ -15,7 +16,9 @@ Built with Java and Spring Cloud Function on AWS Lambda, behind an HTTP API with
 
 ```mermaid
 flowchart LR
-    Client["Client"] -->|"Bearer token"| API["HTTP API<br/>JWT authorizer"]
+    Phone["PWA on a phone<br/>logs sets offline"]
+    Phone -->|"app shell"| CF["CloudFront + S3"]
+    Phone -->|"Bearer token"| API["HTTP API<br/>JWT authorizer"]
     Cognito["Cognito<br/>user pool"] -. "validates tokens" .-> API
     API --> Gyms["gymsApi<br/>Lambda"]
     API --> Exercises["exercisesApi<br/>Lambda"]
@@ -25,11 +28,26 @@ flowchart LR
     Workouts --> DDB
 ```
 
-One Lambda per domain, all running the same jar and picking their handler from an environment variable. Requests without a valid token are rejected by API Gateway before any code runs. Workouts are stored under their owner, so reading someone else's is not something the API can even express.
+The app is static files on CloudFront, so there is no server rendering it and nothing to keep warm. One Lambda per domain, all running the same jar and picking their handler from an environment variable. Requests without a valid token are rejected by API Gateway before any code runs. Workouts are stored under their owner, so reading someone else's is not something the API can even express.
+
+The same stack is defined twice: **`EtiyaProd`, which is always up and retains its data, and `EtiyaDev`, disposable and raised only when there is something to try.** What differs between them is what survives a mistake, so a wrong command in development cannot cost anything that matters.
 
 ## What's interesting here
 
-**The same code runs locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the exact events API Gateway would send, including fake Cognito claims. Local development needs no AWS account and no emulator, and the same test suite validates both environments.
+**A workout survives a gym with no signal.** Sets are written to IndexedDB as they happen, and finishing a workout queues it rather than sending it. The queue drains when the app opens and whenever the connection returns.
+
+```mermaid
+flowchart LR
+    W["Workout in progress<br/>IndexedDB"] -->|"Finish"| Q[("Send queue<br/>IndexedDB")]
+    Q -->|"on open, and when<br/>the connection returns"| API["POST /me/workouts"]
+    API -. "same ULID → 200, not a duplicate" .-> Q
+```
+
+Every request carries a client-generated ULID, so a send that actually went through the first time answers `200` with the stored workout instead of creating a second one. That is what makes retrying safe enough to do blindly.
+
+**The URL says what is on screen, sheets included.** A phone's back gesture is the main way out of anything, so closing a sheet is the same `history.back()` the gesture performs, and there is no second stack of open sheets to keep in step with the browser's. The router is forty lines rather than a dependency.
+
+**The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 42 of its 44 requests run unchanged against either.
 
 ```mermaid
 flowchart TB
@@ -44,9 +62,13 @@ flowchart TB
     H --> S["Services and repositories<br/>(no AWS types)"]
 ```
 
+**It is not AWS on your machine, and does not try to be.** There is no Cognito, no API Gateway and no Lambda runtime locally, so token validation, CORS, throttling and cold starts are only answered by [running the suite against a deployed stack](docs/testing.md). What the local stack covers is where the bugs actually are, and CI runs it on every pull request with no AWS credentials at all.
+
 **Workout IDs are ULIDs derived from the start time.** Because a ULID begins with its timestamp, sorting IDs sorts by date. One key serves both "open this workout" and "show my history, newest first", with no secondary index and no timezone guessing.
 
 **Cold starts are handled, not ignored.** Spring on Lambda is slow to boot, so SnapStart is enabled and each function is exposed through an alias, since SnapStart only applies to published versions. Warm responses land around 400 ms.
+
+**Every stored item records the shape it was written with.** A `schemaVersion` is stamped from the first production write, because data cannot be versioned retroactively: inspecting attributes can tell an added field from a renamed one, but not a field whose meaning changed while its name and type stayed the same.
 
 **Cost is a design constraint.** Provisioned DynamoDB capacity instead of on-demand (the free tier covers the former), log retention set on purpose, no NAT gateways or KMS keys, and throttling on the API so a flood cannot turn into a bill.
 
@@ -73,14 +95,14 @@ Run the integration suite in another terminal:
 cd bruno-tests && bru run --env Local
 ```
 
-Deploying your own copy takes two commands and is covered in [the deployment guide](docs/deployment.md).
+The web app is developed against a deployed stack rather than this one, because signing in is a real Cognito login: [running the web app](docs/local-development.md#running-the-web-app). Deploying your own copy is covered in [the deployment guide](docs/deployment.md).
 
 ## Documentation
 
 | Guide | What's in it |
 |---|---|
 | [Local development](docs/local-development.md) | Docker Compose, the web app, the Nix shells, how identity works locally, building |
-| [Deployment](docs/deployment.md) | CDK stack, bootstrap, first Cognito user, cost and abuse limits |
+| [Deployment](docs/deployment.md) | The two stacks, bootstrap, first Cognito user, cost and abuse limits |
 | [API reference](docs/api.md) | Endpoints, conventions, status codes |
 | [Data model](docs/data-model.md) | Single table design, slugs, ULIDs, workout times |
 | [Testing](docs/testing.md) | Unit tests, Bruno against local and AWS, what CI runs |
@@ -104,8 +126,6 @@ This project is developed alongside [Claude Code](https://claude.com/claude-code
 
 ## Status and roadmap
 
-The API is complete and deployed: gyms, exercises and workouts, with authentication, pagination and validation. Releases track what each version added.
+Both halves are built and in use. The API covers gyms, exercises and workouts, with authentication, pagination and validation (`api-v0.3.0`). The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection (`web-v0.1.0`). Releases track what each version added.
 
-In progress: the web app in `web/`, a PWA built for logging sets with one hand. Its design is in [decisions](docs/decisions.md#the-frontend-is-a-pwa).
-
-What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
+Next is the first stable release of both, and after it the things the app has already asked for while being used: carrying last session's numbers forward, and cardio logged as time rather than reps. What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
