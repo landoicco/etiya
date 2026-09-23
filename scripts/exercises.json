@@ -38,6 +38,7 @@
   { "name": "Pull-up", "muscleGroup": "BACK", "category": "PULL" },
   { "name": "Chin-up", "muscleGroup": "BACK", "category": "PULL" },
   { "name": "Lat Pulldown", "muscleGroup": "BACK", "category": "PULL" },
+  { "name": "V-Bar Lat Pulldown", "muscleGroup": "BACK", "category": "PULL" },
   { "name": "Single-Arm Cable Lat Pulldown", "muscleGroup": "BACK", "category": "PULL" },
   { "name": "Plate-Loaded Lat Pulldown", "muscleGroup": "BACK", "category": "PULL" },
   { "name": "Single-Arm Plate-Loaded Lat Pulldown", "muscleGroup": "BACK", "category": "PULL" },

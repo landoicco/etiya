@@ -8,7 +8,7 @@ import { loadConfig } from "@/platform/config";
 import { HistoryScreen } from "@/history/HistoryScreen";
 import { HomeScreen } from "@/app/HomeScreen";
 import { LoginScreen } from "@/auth/LoginScreen";
-import { CATALOG_KEY, loadCachedCatalog } from "@/exercises/exerciseCatalog";
+import { CATALOG_KEY, forgetCatalog, loadCachedCatalog } from "@/exercises/exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "@/gyms/gyms";
 import { HOME, useRouter } from "@/app/router";
 import { usePersistence } from "@/platform/storage";
@@ -65,8 +65,9 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 
   async function signOut() {
     await auth.signOut();
-    // The next user must not see this one's data, not even for a moment
+    // The next user must not see this one's data, not even for a moment, nor on the next launch
     queryClient.clear();
+    await forgetCatalog();
     setUser(null);
   }
 

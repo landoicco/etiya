@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, set } from "idb-keyval";
+import { del, get, set } from "idb-keyval";
 import { useCallback } from "react";
 import type { Api, CatalogExercise, NewCatalogExercise } from "@/platform/api";
 
@@ -19,6 +19,14 @@ export async function loadCachedCatalog(): Promise<CatalogExercise[] | null> {
 async function saveCatalog(items: CatalogExercise[]): Promise<void> {
   try {
     await set(STORED_KEY, items);
+  } catch {
+  }
+}
+
+// The stored copy holds the exercises this user added, which nobody else may see
+export async function forgetCatalog(): Promise<void> {
+  try {
+    await del(STORED_KEY);
   } catch {
   }
 }
