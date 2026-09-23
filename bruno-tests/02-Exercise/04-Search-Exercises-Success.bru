@@ -18,7 +18,7 @@ script:post-response {
     expect(res.getStatus()).to.equal(200);
 
     const ids = res.getBody().items.map(e => e.id);
-    expect(ids).to.include("barbell-bench-press");
+    expect(ids).to.include("barbell-pin-press");
     expect(ids).to.not.include("overhead-barbell-press");
   });
 }
