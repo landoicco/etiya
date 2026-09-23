@@ -17,7 +17,10 @@ cd core && mvn test
 |---|---|
 | `SlugsTest` | Accents, apostrophes and symbols, and that a partial search is a prefix of the full ID |
 | `WorkoutServiceTest` | Time normalization to UTC, the 12 hour and future limits, ULIDs sorting by start time, client IDs keeping their random part and landing on the same ID when retried, the owner coming from the token, page size limits |
-| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, enums stored by name, and no key at all when a part is missing |
+| `ExerciseServiceTest` | An exercise a user adds is stored under them, a name the shared catalog has is refused, a list holds the shared catalog plus the caller's own with the shared one winning on the same ID, and someone else's exercise reads as missing |
+| `TableSchemaFactoryTest` | `PK`/`SK` for each item type, a user's exercise under their partition, enums stored by name, and no key at all when a part is missing |
+| `ApiRequestTest` | A route limited to a group answers `401` to nobody and `403` to somebody outside it |
+| `ApiGatewayAdapterTest` | The groups read from `cognito:groups`, which the HTTP API passes as one string like `[admins]` |
 | `WorkoutCursorsTest` | Cursors are URL-safe, and anything the API did not issue is rejected |
 | `RequestBodyReaderTest` | A value outside a fixed list names the field and the accepted values, however deeply nested |
 
@@ -86,7 +89,7 @@ ETIYA2_USERNAME=you+second@example.com
 ETIYA2_PASSWORD='<PASSWORD>'
 ```
 
-The second user exists only to prove that one user cannot reach another's workouts. It never registers anything, so it stays empty run after run.
+The second user exists only to prove that one user cannot reach another's workouts or exercises, and that it cannot write to the shared catalog. It never registers anything, so it stays empty run after run, and it is **never added to the `admins` group**. The first user is, since seeding dev needs it (see [deployment](deployment.md)).
 
 Both tokens are requested on the spot and passed on the command line, so neither is ever written to a file:
 ```bash
@@ -113,26 +116,34 @@ cp bruno-tests/environments/Dev.example.bru bruno-tests/environments/Dev.bru
 ```
 Note that `userId` there is the Cognito `sub`, not `user-default` as in the local environment.
 
-To repeat the full suite against AWS, delete the catalog items from the previous run first, or the registration tests get `409`. The suite registers one gym and three exercises:
+To repeat the full suite against AWS, delete the items from the previous run first, or the registration tests get `409`. The suite registers one gym, which is shared, and three exercises, which are the dev user's own and so live under their `sub`:
 ```bash
-for sk in GYM#golds-gym-sunset-st-los-angeles EXERCISE#barbell-bench-press \
-          EXERCISE#overhead-barbell-press EXERCISE#farmers-walk-basico; do
+SUB=<the userId in Dev.bru>
+for key in GYM,GYM#golds-gym-sunset-st-los-angeles \
+           USER#$SUB,EXERCISE#barbell-pin-press \
+           USER#$SUB,EXERCISE#overhead-barbell-press \
+           USER#$SUB,EXERCISE#farmers-walk-basico; do
   aws dynamodb delete-item --table-name <TABLE_NAME> \
-    --key "{\"PK\":{\"S\":\"${sk%%#*}\"},\"SK\":{\"S\":\"$sk\"}}"
+    --key "{\"PK\":{\"S\":\"${key%%,*}\"},\"SK\":{\"S\":\"${key#*,}\"}}"
 done
 ```
+
+**The exercise fixtures must never be in the seed.** Dev is usually seeded, and a name the shared catalog already has is refused, so the registration tests would get `409` on every run. That is why the suite registers `Barbell Pin Press` and not a bench press.
 
 The workouts the suite registers stay in the dev user's history, since the API cannot delete them yet.
 
 ## The `local-only` tag
 
-Two tests are tagged `local-only` and excluded when running against AWS: the ones that expect `401` without a user. On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
+Four tests are tagged `local-only` and excluded when running against AWS:
+
+* **The two that expect `401` without a user.** On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
+* **An admin writing to the shared catalog, and another user then seeing it.** On AWS that would leave a fixture in a catalog every user sees. There, the seed script proves the same route: it runs as an admin, and a `403` on every exercise would mean the group never reached the API.
 
 ## Two users, two identities
 
-The two tests that prove one user cannot reach another's workouts run **in both environments**, because a second identity can be expressed in a way each understands. They send an `X-User-Id` header *and* their own `Authorization`, overriding the collection's:
+The tests that prove one user cannot reach another's workouts or exercises, or write to the shared catalog, run **in both environments**, because a second identity can be expressed in a way each understands. They send an `X-User-Id` header *and* their own `Authorization`, overriding the collection's:
 
-* **Locally** the bridge fakes the Cognito `sub` from `X-User-Id` and never looks at the token, so the empty `otherAuthToken` is ignored.
+* **Locally** the bridge fakes the Cognito `sub` from `X-User-Id`, and the groups from `X-User-Groups`, and never looks at the token, so the empty `otherAuthToken` is ignored.
 * **On AWS** the token is the identity and `X-User-Id` is inert, exactly as it already is for every other request in the suite.
 
 This matters more than it looks. Until the second user existed, the only evidence that a user's workouts are private came from the local bridge, where identity is a header anyone could set. On AWS it comes from a Cognito token, which is the mechanism that actually protects the data, and that path had never been exercised.
@@ -153,6 +164,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit`, forged cursors, and one user being unable to list or open another's workouts.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit`, forged cursors, one user being unable to list or open another's workouts or exercises, and the shared catalog refusing a write from outside the `admins` group.
 
-That is 40 requests locally and 38 against AWS, the difference being the two `local-only` tests.
+That is 45 requests locally and 41 against AWS, the difference being the four `local-only` tests.

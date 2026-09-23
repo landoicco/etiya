@@ -1,0 +1,26 @@
+meta {
+  name: Get Other User Exercise Not Found Error
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises/barbell-pin-press
+  body: none
+  auth: none
+}
+
+headers {
+  X-User-Id: user-without-workouts
+  Authorization: Bearer {{otherAuthToken}}
+}
+
+script:post-response {
+  // A second identity, as in the workout isolation tests: X-User-Id locally, the token on AWS
+  // The exercise exists, but another user added it
+  test("Should not expose an exercise another user added", function() {
+    expect(res.getStatus()).to.equal(404);
+
+    const body = res.getBody();
+    expect(body.error).to.equal("EXERCISE_NOT_FOUND");
+  });
+}
