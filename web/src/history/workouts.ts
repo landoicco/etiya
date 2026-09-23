@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import type { Api, Page, Workout } from "./api";
+import type { Api, Page, Workout } from "@/platform/api";
 
 // Everything the history reads lives under this key, which is also what the send queue
 // invalidates once a workout finally reaches the API

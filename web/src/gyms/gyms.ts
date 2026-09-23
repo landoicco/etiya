@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 import { useCallback } from "react";
-import type { Api, Gym, NewGym } from "./api";
-import { normalize, slugOf } from "./catalog";
-import type { WorkoutGym } from "./workout";
+import type { Api, Gym, NewGym } from "@/platform/api";
+import { normalize, slugOf } from "@/platform/slugs";
+import type { WorkoutGym } from "@/workout/workout";
 
 // Same deal as the exercise catalog: one request brings all of it, and the phone keeps a copy
 export const GYMS_KEY = ["gyms"];
@@ -14,7 +14,6 @@ export async function loadCachedGyms(): Promise<Gym[] | null> {
   try {
     return (await get<Gym[]>(STORED_KEY)) ?? null;
   } catch {
-    // Storage unavailable
     return null;
   }
 }
@@ -23,18 +22,14 @@ async function saveGyms(gyms: Gym[]): Promise<void> {
   try {
     await set(STORED_KEY, gyms);
   } catch {
-    // Storage unavailable
   }
 }
 
-// Almost everybody trains in the same place almost every time, so the gym of the last workout
-// is offered first and starting there is one tap. It is per device, not per account: it is
-// about where this phone has been, not about the user
+// Per device, not per account: it is about where this phone has been
 export async function loadLastGym(): Promise<WorkoutGym | null> {
   try {
     return (await get<WorkoutGym>(LAST_KEY)) ?? null;
   } catch {
-    // Storage unavailable
     return null;
   }
 }
@@ -43,7 +38,6 @@ export async function saveLastGym(gym: WorkoutGym): Promise<void> {
   try {
     await set(LAST_KEY, gym);
   } catch {
-    // Storage unavailable
   }
 }
 
@@ -76,8 +70,7 @@ export function useRegisterGym(api: Api) {
   );
 }
 
-// The id already holds the name, the branch and the city, so one substring match over it
-// finds a gym by any of the three: "monterrey" lists every gym in the city
+// The id holds name, branch and city, so one match over it finds a gym by any of the three
 export function searchGyms(gyms: Gym[], query: string): Gym[] {
   const needle = normalize(query);
 

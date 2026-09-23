@@ -82,8 +82,9 @@ export function useRouter() {
   }, []);
 
   // Closing one is the same as pressing back, so a sheet opened and closed by hand leaves no
-  // entry behind for a later back press to land on
-  const close = useCallback(() => window.history.back(), []);
+  // entry behind for a later back press to land on. Adding an exercise to the catalog opens
+  // two entries, the search and the form, and finishing there is done with both
+  const close = useCallback((entries = 1) => window.history.go(-entries), []);
 
   // Replaces the current entry, for a screen the user should not be able to go back into:
   // the workout that has just been saved, or one that is no longer in progress

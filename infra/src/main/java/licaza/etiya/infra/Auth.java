@@ -1,5 +1,6 @@
 package licaza.etiya.infra;
 
+import licaza.etiya.infra.EtiyaStack.Kind;
 import software.amazon.awscdk.Acknowledgment;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
@@ -24,7 +25,7 @@ public class Auth extends Construct {
   private final UserPool userPool;
   private final UserPoolClient apiClient;
 
-  public Auth(final Construct scope, final String id) {
+  public Auth(final Construct scope, final String id, final Kind kind) {
     super(scope, id);
 
     this.userPool =
@@ -50,7 +51,9 @@ public class Auth extends Construct {
             .mfa(Mfa.OFF)
             // Cheapest plan; it covers sign-in and JWT, which is all the API needs
             .featurePlan(FeaturePlan.LITE)
-            .removalPolicy(RemovalPolicy.DESTROY)
+            // Every workout is stored under the "sub" of the user who logged it, so losing the
+            // pool orphans the whole table: the data survives and nobody can sign in to reach it
+            .removalPolicy(kind == Kind.PRODUCTION ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY)
             .build();
 
     Validations.of(userPool)
@@ -58,8 +61,8 @@ public class Auth extends Construct {
             Acknowledgment.builder()
                 .id("AwsSolutions-COG2")
                 .reason(
-                    "Single user in a dev environment. Required MFA would also break the"
-                        + " USER_PASSWORD_AUTH flow the CLI uses to get a token for Bruno")
+                    "A handful of invited users, created by hand. Required MFA would also break"
+                        + " the USER_PASSWORD_AUTH flow the CLI uses to get a token for Bruno")
                 .build(),
             Acknowledgment.builder()
                 .id("AwsSolutions-COG8")

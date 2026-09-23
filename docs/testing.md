@@ -2,7 +2,7 @@
 
 *For running the suite against either environment, and knowing what it covers.*
 
-Three layers:
+Two layers:
 
 * **Unit tests** for the logic with the most edge cases, on both sides. Plain JUnit for the API, no Spring context and no database; **Vitest** for the web app. Both run in milliseconds.
 * **An integration suite** of plain-text requests written for **Bruno**, run against the local stack or the deployed API. No graphical client is needed; the Nix shell bundles the CLI (`bru`).
@@ -30,15 +30,16 @@ cd web && npm test          # once
 cd web && npm run test:watch # re-runs on save
 ```
 
-The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout.ts` so it needs neither a browser nor a rendered component.
+The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout/workout.ts` so it needs neither a browser nor a rendered component.
 
 | Test | What it pins down |
 |---|---|
-| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
+| `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), one added by name merging with the same one added with its catalog id, sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
 | `workouts.test.ts` | How a saved workout reads: minutes rounded, hours split out past the hour, and the summary line naming the gym, the length and the exercises, singular included |
 | `router.test.ts` | That every route survives a round trip through its path, that a new exercise's typed name rides in the history entry and a reload without it still opens the screen, and that an unknown path goes home rather than nowhere |
 | `sendQueue.test.ts` | What the send queue does with each answer: an empty queue when everything goes through, stopping at the first workout it cannot reach the API with so the order survives, another go after a `401` or a `429`, and a `4xx` marked as refused for good without holding up the ones behind it |
-| `catalog.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic, and the catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
+| `slugs.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic |
+| `catalog.test.ts` | The catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
 
 Two more commands run over the whole app:
 
@@ -49,7 +50,7 @@ cd web && npm run typecheck # tsc --noEmit, also part of npm run build
 
 `oxlint` needs no configuration beyond [`.oxlintrc.json`](../web/.oxlintrc.json) and no TypeScript plugin, which is why it is here instead of ESLint: `typescript-eslint` still asks for TypeScript below 6.1, and this app is on 7.
 
-Storage is not unit tested. `web/src/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
+Storage is not unit tested. `web/src/workout/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
 
 ## Against the local stack
 
@@ -63,25 +64,45 @@ cd bruno-tests && bru run --env Local
 > docker compose down -v && docker compose up --build
 > ```
 
+## The suite never runs against production
+
+It runs locally and against `EtiyaDev`, and that is the whole of it. Production receives **the same jar and the same constructs** that dev has already validated, so running the suite there would re-prove logic that did not change, while writing fake workouts into a table meant for real ones and leaving test accounts in the pool that can sign in forever.
+
+What dev genuinely cannot prove is the **wiring**: that production's authorizer is bound to production's user pool, that `TABLE_NAME` points at production's table, and that CORS allows the CloudFront origin — the last one being a branch dev never executes at all, since a disposable environment has no `Web` construct and passes `null` as the origin.
+
+All three are checked by opening the app on a phone and signing in. That exercises the pool, the authorizer, CORS and the table in one go, with a workout that is real instead of fixture data. A `curl` with no `Authorization` header confirms the `401`.
+
+Isolation between users gets the same treatment: it is confirmed the first time a second **real** person signs in, rather than with a pair of dummy accounts created to prove it. Two people who cannot see each other's workouts is the same evidence, and it leaves nothing behind.
+
 ## Against AWS
 
 The same tests run against the deployed API with the `Dev` environment. Every request needs a Cognito token, which the collection sends as `Authorization: Bearer {{authToken}}`.
 
-The login of the dev user lives in `.env.dev` at the repository root, which git ignores. That is a shortcut accepted for a throwaway dev user only:
+The logins of the two dev users live in `.env.EtiyaDev` at the repository root, which git ignores. **One file per stack, named after it**, so two environments' credentials cannot be confused for each other. That is a shortcut accepted for throwaway dev users only, and never for a real account:
 ```bash
-ETIYA_DEV_USERNAME=you@example.com
-ETIYA_DEV_PASSWORD='<PASSWORD>'
+ETIYA_USERNAME=you@example.com
+ETIYA_PASSWORD='<PASSWORD>'
+ETIYA2_USERNAME=you+second@example.com
+ETIYA2_PASSWORD='<PASSWORD>'
 ```
 
-The token is requested on the spot and passed on the command line, so it is never written to a file:
-```bash
-source .env.dev
-TOKEN=$(aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
-  --client-id <CLIENT_ID> \
-  --auth-parameters USERNAME="$ETIYA_DEV_USERNAME",PASSWORD="$ETIYA_DEV_PASSWORD" \
-  --query 'AuthenticationResult.AccessToken' --output text)
+The second user exists only to prove that one user cannot reach another's workouts. It never registers anything, so it stays empty run after run.
 
-cd bruno-tests && bru run --env Dev --env-var authToken="$TOKEN" --exclude-tags local-only
+Both tokens are requested on the spot and passed on the command line, so neither is ever written to a file:
+```bash
+source .env.EtiyaDev
+token_for() {
+  aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
+    --client-id <CLIENT_ID> \
+    --auth-parameters USERNAME="$1",PASSWORD="$2" \
+    --query 'AuthenticationResult.AccessToken' --output text
+}
+TOKEN=$(token_for "$ETIYA_USERNAME" "$ETIYA_PASSWORD")
+OTHER_TOKEN=$(token_for "$ETIYA2_USERNAME" "$ETIYA2_PASSWORD")
+
+cd bruno-tests && bru run --env Dev \
+  --env-var authToken="$TOKEN" --env-var otherAuthToken="$OTHER_TOKEN" \
+  --exclude-tags local-only
 ```
 
 Tokens last one hour; when one expires, request another. If the password is lost, set a new one with `aws cognito-idp admin-set-user-password ... --permanent`; it needs uppercase, lowercase, a digit and a symbol.
@@ -105,10 +126,16 @@ The workouts the suite registers stay in the dev user's history, since the API c
 
 ## The `local-only` tag
 
-Four tests are tagged `local-only` and excluded when running against AWS, because they depend on how the local bridge fakes identity:
+Two tests are tagged `local-only` and excluded when running against AWS: the ones that expect `401` without a user. On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
 
-* Two expect `401` without a user. On AWS, API Gateway rejects those before any code runs, and the collection always sends a token.
-* Two check that a user cannot see another user's workouts, using the `X-User-Id` header. On AWS the identity comes from the token, so verifying this would need a second Cognito user.
+## Two users, two identities
+
+The two tests that prove one user cannot reach another's workouts run **in both environments**, because a second identity can be expressed in a way each understands. They send an `X-User-Id` header *and* their own `Authorization`, overriding the collection's:
+
+* **Locally** the bridge fakes the Cognito `sub` from `X-User-Id` and never looks at the token, so the empty `otherAuthToken` is ignored.
+* **On AWS** the token is the identity and `X-User-Id` is inert, exactly as it already is for every other request in the suite.
+
+This matters more than it looks. Until the second user existed, the only evidence that a user's workouts are private came from the local bridge, where identity is a header anyone could set. On AWS it comes from a Cognito token, which is the mechanism that actually protects the data, and that path had never been exercised.
 
 ## In CI
 
@@ -126,6 +153,6 @@ Every job must pass to merge into `main`, including on the pull requests **Depen
 
 ## What the integration suite covers
 
-Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit` and forged cursors.
+Registration and retrieval for the three domains, prefix search, filtering by muscle group, slug normalization, pagination with cursors, and the error paths: validation, malformed JSON, unknown IDs, duplicates (`409`), retried workouts (`200` with the stored one), sets without weight, values outside the fixed lists, unauthenticated requests, invalid `limit`, forged cursors, and one user being unable to list or open another's workouts.
 
-That is 40 requests locally and 36 against AWS, the difference being the four `local-only` tests.
+That is 40 requests locally and 38 against AWS, the difference being the two `local-only` tests.

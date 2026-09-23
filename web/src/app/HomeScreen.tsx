@@ -1,17 +1,19 @@
 import type { ReactNode } from "react";
-import type { Api } from "./api";
-import type { User } from "./auth";
-import { GymPicker } from "./GymPicker";
-import { WorkoutCard } from "./HistoryScreen";
+import type { Api } from "@/platform/api";
+import type { User } from "@/auth/auth";
+import { GymPicker } from "@/gyms/GymPicker";
+import { WorkoutCard } from "@/history/HistoryScreen";
 import type { Router } from "./router";
-import type { useSendQueue } from "./sendQueue";
-import { useRecentWorkouts } from "./workouts";
-import type { WorkoutGym } from "./workout";
+import type { useSendQueue } from "@/platform/sendQueue";
+import { useRecentWorkouts } from "@/history/workouts";
+import type { WorkoutGym } from "@/workout/workout";
 
 interface Props {
   api: Api;
   user: User;
   queue: SendQueue;
+  // null until the browser has answered
+  persisted: boolean | null;
   router: Router;
   onSignOut: () => void;
   onStarted: (gym: WorkoutGym | null) => void;
@@ -21,7 +23,7 @@ type SendQueue = ReturnType<typeof useSendQueue>;
 
 // Content on top and the actions at the bottom, in reach of the thumb: the layout every
 // screen follows
-export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: Props) {
+export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onStarted }: Props) {
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
       <header className="flex items-start justify-between gap-4">
@@ -34,14 +36,14 @@ export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: P
         </button>
       </header>
 
-      <SendQueueNotice queue={queue} />
+      <SendQueueNotice queue={queue} persisted={persisted} />
       <RecentWorkouts api={api} router={router} />
 
       <footer className="mt-auto pt-6">
         <button
           type="button"
           onClick={() => router.open({ name: "start" })}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface"
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent"
         >
           Start workout
         </button>
@@ -58,7 +60,7 @@ export function HomeScreen({ api, user, queue, router, onSignOut, onStarted }: P
 
 // A finished workout that has not reached the API yet is not lost, and saying so is the
 // point: the app is trusted with an hour of training and has to show where it went
-function SendQueueNotice({ queue }: { queue: SendQueue }) {
+function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: boolean | null }) {
   const refused = queue.pending.filter((item) => item.refusal !== null);
   const waiting = queue.pending.length - refused.length;
 
@@ -77,7 +79,7 @@ function SendQueueNotice({ queue }: { queue: SendQueue }) {
 
       {refused.map((item) => (
         <div key={item.request.id} className={waiting > 0 ? "mt-3" : undefined}>
-          <p className="text-red-300">The API refused a workout: {item.refusal}</p>
+          <p className="text-danger">The API refused a workout: {item.refusal}</p>
           <button
             type="button"
             onClick={() => void queue.drop(item.request.id)}
@@ -89,9 +91,18 @@ function SendQueueNotice({ queue }: { queue: SendQueue }) {
       ))}
 
       {waiting > 0 && !queue.sending && (
-        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent">
+        <button type="button" onClick={() => void queue.flush()} className="mt-2 h-11 text-accent-ink">
           Try again now
         </button>
+      )}
+
+      {/* Only said when something is actually waiting, and only when the browser refused to
+          promise it will keep it. Installing the app is what turns the refusal into a yes */}
+      {waiting > 0 && persisted === false && (
+        <p className="mt-3 text-muted">
+          This browser may clear saved data to free up space. Add Etiya to your home screen and
+          it will keep it instead.
+        </p>
       )}
     </section>
   );
@@ -110,7 +121,7 @@ function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
     return (
       <Notice>
         {error.message}
-        <button type="button" onClick={() => void refetch()} className="mt-3 block h-11 text-accent">
+        <button type="button" onClick={() => void refetch()} className="mt-3 block h-11 text-accent-ink">
           Try again
         </button>
       </Notice>
@@ -130,7 +141,7 @@ function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
           <button
             type="button"
             onClick={() => router.open({ name: "history" })}
-            className="h-11 text-sm text-accent"
+            className="h-11 text-sm text-accent-ink"
           >
             See all
           </button>

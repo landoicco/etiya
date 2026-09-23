@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 
-// Keeps the screen on while a workout is open: between sets nobody wants to unlock a phone
-// with chalk on their hands. The browser drops the lock whenever the app goes to the
-// background, so it is taken again on the way back. Where it does not exist, nothing happens
+// Keeps the screen on, re-acquiring on the way back because browsers drop the lock when the
+// app is hidden. Absent API, or a refusal, means nothing happens
 export function useWakeLock() {
   useEffect(() => {
     if (!("wakeLock" in navigator)) {

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Prints one output of a deployed stack, the same ones cdk deploy prints.
-# Usage: scripts/stack-output.sh <OutputKey>    (STACK defaults to EtiyaDev)
+# Usage: scripts/stack-output.sh <OutputKey>    (STACK defaults to EtiyaProd)
 set -euo pipefail
 
-STACK="${STACK:-EtiyaDev}"
+STACK="${STACK:-EtiyaProd}"
 
 value="$(aws cloudformation describe-stacks --stack-name "$STACK" \
   --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text)"

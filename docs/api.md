@@ -116,6 +116,8 @@ The caller's workouts, newest first. `limit` defaults to 20 and accepts 1 to 100
 ### `GET /me/workouts/{workoutId}`
 Returns one of the caller's workouts, or `404`.
 
-## Not implemented yet
+## Not implemented
 
-`PUT` and `DELETE` for workouts. See [decisions](decisions.md#still-open).
+`PUT` for a workout, so a set logged with the wrong number can be corrected. See [still open](decisions.md#still-open).
+
+`DELETE` for a workout, which is **not planned**: a training log is worth keeping because it is faithful, and deleting a session edits your own history. See [decisions](decisions.md#workouts-are-not-deleted).

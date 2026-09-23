@@ -1,9 +1,6 @@
 meta {
   name: Get My Workouts Other User Empty
   type: http
-  tags: [
-    local-only
-  ]
 }
 
 get {
@@ -14,9 +11,13 @@ get {
 
 headers {
   X-User-Id: user-without-workouts
+  Authorization: Bearer {{otherAuthToken}}
 }
 
 script:post-response {
+  // A second identity, expressed the way each environment understands one: locally the
+  // bridge fakes the sub from X-User-Id and ignores the token, on AWS the token is the
+  // identity and the header is inert. Overrides the collection's Authorization
   test("Should only return the caller's own workouts", function() {
     expect(res.getStatus()).to.equal(200);
 

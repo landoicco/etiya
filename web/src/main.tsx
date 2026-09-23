@@ -1,21 +1,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { loadActiveWorkout } from "./activeWorkout";
-import { type Api, ApiError, createApi } from "./api";
-import { type Auth, cognitoAuth, type User } from "./auth";
-import { loadConfig } from "./config";
-import { HistoryScreen } from "./HistoryScreen";
-import { HomeScreen } from "./HomeScreen";
-import { LoginScreen } from "./LoginScreen";
-import { CATALOG_KEY, loadCachedCatalog } from "./exerciseCatalog";
-import { GYMS_KEY, loadCachedGyms } from "./gyms";
-import { HOME, useRouter } from "./router";
-import { loadPending, type PendingWorkout, useSendQueue } from "./sendQueue";
-import { useActiveWorkout } from "./useActiveWorkout";
-import type { ActiveWorkout } from "./workout";
-import { WorkoutDetail } from "./WorkoutDetail";
-import { WorkoutScreen } from "./WorkoutScreen";
+import { loadActiveWorkout } from "@/workout/activeWorkout";
+import { type Api, ApiError, createApi } from "@/platform/api";
+import { type Auth, cognitoAuth, type User } from "@/auth/auth";
+import { loadConfig } from "@/platform/config";
+import { HistoryScreen } from "@/history/HistoryScreen";
+import { HomeScreen } from "@/app/HomeScreen";
+import { LoginScreen } from "@/auth/LoginScreen";
+import { CATALOG_KEY, loadCachedCatalog } from "@/exercises/exerciseCatalog";
+import { GYMS_KEY, loadCachedGyms } from "@/gyms/gyms";
+import { HOME, useRouter } from "@/app/router";
+import { usePersistence } from "@/platform/storage";
+import { loadPending, type PendingWorkout, useSendQueue } from "@/platform/sendQueue";
+import { useActiveWorkout } from "@/workout/useActiveWorkout";
+import type { ActiveWorkout } from "@/workout/workout";
+import { WorkoutDetail } from "@/history/WorkoutDetail";
+import { WorkoutScreen } from "@/workout/WorkoutScreen";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,9 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
   const { workout, start: startWorkout, update, clear } = useActiveWorkout(initialWorkout);
   const queue = useSendQueue(api, initialPending);
   const router = useRouter();
+  // Asked for once here rather than per screen: what it protects is the queue, which outlives
+  // any of them
+  const persisted = usePersistence();
 
   // A workout in progress owns the screens under /workout, and nothing else may claim them.
   // Replacing rather than opening keeps the back gesture out of a screen that is now gone,
@@ -101,6 +105,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
       api={api}
       user={user}
       queue={queue}
+      persisted={persisted}
       router={router}
       onStarted={(gym) => {
         startWorkout(gym);
@@ -140,12 +145,14 @@ async function start(container: HTMLElement) {
       loadPending(),
     ]);
     // The pickers then open on the copies this phone already has, and fresh ones replace them
-    // once they arrive, instead of showing an empty list on every launch
+    // once they arrive, instead of showing an empty list on every launch. updatedAt keeps them
+    // stale: without it setQueryData stamps them as just fetched, and staleTime cancels the
+    // refetch on every launch, so a phone holding a copy would never see a new catalog
     if (catalog) {
-      queryClient.setQueryData(CATALOG_KEY, catalog);
+      queryClient.setQueryData(CATALOG_KEY, catalog, { updatedAt: 0 });
     }
     if (gyms) {
-      queryClient.setQueryData(GYMS_KEY, gyms);
+      queryClient.setQueryData(GYMS_KEY, gyms, { updatedAt: 0 });
     }
     root.render(
       <StrictMode>

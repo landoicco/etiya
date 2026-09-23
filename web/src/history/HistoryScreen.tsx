@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { Api, Workout } from "./api";
-import type { Router } from "./router";
+import type { Api, Workout } from "@/platform/api";
+import type { Router } from "@/app/router";
 import { dayLabel, summaryLine, useWorkoutHistory } from "./workouts";
 
 // Pages are asked for one at a time, by a button rather than by scrolling: a tap is honest
@@ -15,7 +15,7 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
     <main className="flex h-dvh flex-col">
       <div className="safe-x safe-top flex items-center justify-between gap-4 pb-3">
         <h1 className="text-2xl font-bold">History</h1>
-        <button type="button" onClick={router.close} className="h-11 shrink-0 px-2 text-sm text-muted">
+        <button type="button" onClick={() => router.close()} className="h-11 shrink-0 px-2 text-sm text-muted">
           Back
         </button>
       </div>

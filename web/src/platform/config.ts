@@ -1,5 +1,4 @@
-// Values of the stack the app talks to. They are read at startup instead of being built in,
-// so one build works for any stack and none of them is committed
+// Values of the stack the app talks to, read at startup rather than built in
 export interface Config {
   apiUrl: string;
   userPoolId: string;
@@ -8,8 +7,7 @@ export interface Config {
 
 const KEYS = ["apiUrl", "userPoolId", "userPoolClientId"] as const;
 
-// Written next to the build by scripts/config.sh: by npm run deploy, or by npm run config for
-// npm run dev
+// Written next to the build by scripts/config.sh, via npm run deploy or npm run config
 export async function loadConfig(): Promise<Config> {
   const response = await fetch("/config.json");
   // In development, Vite answers a missing file with index.html, so a failed parse means the

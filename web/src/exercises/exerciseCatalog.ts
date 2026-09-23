@@ -1,21 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 import { useCallback } from "react";
-import type { Api, CatalogExercise, NewCatalogExercise } from "./api";
+import type { Api, CatalogExercise, NewCatalogExercise } from "@/platform/api";
 
-// The catalog is small, shared by everyone and changes rarely, so the app takes the whole
-// thing once and searches it on the phone. That is what makes the picker open instantly and
-// still work in a basement with no signal
 export const CATALOG_KEY = ["exercises"];
 const STORED_KEY = "exercise-catalog";
 
-// Read before the first render, like the workout in progress, and put into the query cache
-// so the picker has something to show while a fresh copy is on its way
+// Read before the first render and seeded into the query cache, so the picker has something
+// to show while a fresh copy is on its way
 export async function loadCachedCatalog(): Promise<CatalogExercise[] | null> {
   try {
     return (await get<CatalogExercise[]>(STORED_KEY)) ?? null;
   } catch {
-    // Storage unavailable
     return null;
   }
 }
@@ -24,7 +20,6 @@ async function saveCatalog(items: CatalogExercise[]): Promise<void> {
   try {
     await set(STORED_KEY, items);
   } catch {
-    // Storage unavailable
   }
 }
 

@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
-import type { GymSet, WeightUnit } from "./api";
+import type { GymSet, WeightUnit } from "@/platform/api";
+import { slugOf } from "@/platform/slugs";
 
 // The workout being logged, as it lives on the phone. Its shape follows the API's so that
 // finishing it is little more than adding endedAt, and it is what gets saved to IndexedDB
@@ -65,9 +66,7 @@ export const UNIT_LABELS: Record<WeightUnit, string> = { KG: "kg", LB: "lb", NON
 const MAX_COUNT = 999;
 const MAX_WEIGHT = 9999;
 
-// The gym is chosen before the workout starts, because that is when it is known: at the end
-// nobody wants anything between them and the finish button. It is optional, for training
-// somewhere that is not in the catalog, or at home
+// The gym is known at the start, and optional: training at home must not be a dead end
 export function startWorkout(now: Date, gym: WorkoutGym | null): ActiveWorkout {
   return {
     // The server keeps the random part and re-stamps the time from startedAt, so a retry
@@ -202,13 +201,15 @@ export function elapsedLabel(workout: ActiveWorkout, now: Date): string {
   return hours > 0 ? `${hours}:${tail}` : `${minutes}:${pad(seconds % 60)}`;
 }
 
-// The catalog id identifies an exercise; two offline ones are the same when they were
-// typed the same way, whatever the capitalization
 function isSame(exercise: LoggedExercise, choice: ExerciseChoice): boolean {
-  if (exercise.exerciseCatalogItemId !== null || choice.exerciseCatalogItemId !== null) {
-    return exercise.exerciseCatalogItemId === choice.exerciseCatalogItemId;
-  }
-  return exercise.name.trim().toLowerCase() === choice.name.trim().toLowerCase();
+  return identityOf(exercise) === identityOf(choice);
+}
+
+// A catalog id is the slug of its name, so the two are comparable: an exercise added without
+// one still matches the same exercise added with it. That happens when the network drops the
+// reply to a POST the server did save, and the retry comes back with the real id
+function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
+  return exerciseCatalogItemId ?? slugOf(name);
 }
 
 function replaceCurrent(workout: ActiveWorkout, exercise: LoggedExercise): ActiveWorkout {
@@ -234,9 +235,8 @@ function lastWeightedUnit(workout: ActiveWorkout): WeightUnit {
   return FIRST_SET.unit;
 }
 
-// Forgetting to finish a workout is easy: the phone dies, or it is put away and opened the
-// next morning. Capping the end at the limit saves it with an absurd duration rather than
-// losing it, and the summary shows that duration before anything is sent
+// Capping saves a forgotten workout with an absurd duration rather than losing it: the API
+// refuses anything over the limit, forever
 function endTime(workout: ActiveWorkout, now: Date): string {
   const started = Date.parse(workout.startedAt);
   const ended = clamp(now.getTime(), started + 1000, started + MAX_DURATION_MS);

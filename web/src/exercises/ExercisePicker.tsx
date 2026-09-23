@@ -5,19 +5,19 @@ import {
   type CatalogExercise,
   type ExerciseCategory,
   type MuscleGroup,
-} from "./api";
+} from "@/platform/api";
 import {
   CATEGORIES,
   CATEGORY_LABELS,
   findByName,
   MUSCLE_GROUP_LABELS,
   MUSCLE_GROUPS,
-  normalize,
   searchCatalog,
 } from "./catalog";
+import { normalize } from "@/platform/slugs";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
-import type { Router } from "./router";
-import type { ExerciseChoice } from "./workout";
+import type { Router } from "@/app/router";
+import type { ExerciseChoice } from "@/workout/workout";
 
 interface Props {
   api: Api;
@@ -74,7 +74,7 @@ export function ExercisePicker({ api, router, onPick }: Props) {
         />
         <button
           type="button"
-          onClick={router.close}
+          onClick={() => router.close()}
           className="h-14 shrink-0 px-2 text-sm text-muted"
         >
           Cancel
@@ -115,7 +115,7 @@ export function ExercisePicker({ api, router, onPick }: Props) {
           <button
             type="button"
             onClick={() => router.open({ name: "newExercise", exerciseName: typed })}
-            className="h-14 w-full truncate rounded-2xl border border-accent px-4 font-semibold text-accent"
+            className="h-14 w-full truncate rounded-2xl border border-accent-ink px-4 font-semibold text-accent-ink"
           >
             + Add “{typed}”
           </button>
@@ -252,14 +252,14 @@ function NewExercise({
           selected={category}
           onSelect={setCategory}
         />
-        {failure && <p className="mt-4 text-sm text-red-300">{failure}</p>}
+        {failure && <p className="mt-4 text-sm text-danger">{failure}</p>}
       </div>
 
       <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
         <button
           type="submit"
           disabled={muscleGroup === null || category === null || sending}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-surface disabled:opacity-40"
+          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
         >
           {sending ? "Adding…" : "Add exercise"}
         </button>
@@ -294,7 +294,7 @@ function Choices<T extends string>({
             onClick={() => onSelect(option)}
             aria-pressed={option === selected}
             className={`h-12 rounded-xl px-1 text-sm font-semibold ${
-              option === selected ? "bg-accent text-surface" : "border border-line text-muted"
+              option === selected ? "bg-accent text-on-accent" : "border border-line text-muted"
             }`}
           >
             {labels[option]}
@@ -320,7 +320,7 @@ function Chip({
       onClick={onSelect}
       aria-pressed={selected}
       className={`h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${
-        selected ? "bg-accent text-surface" : "border border-line text-muted"
+        selected ? "bg-accent text-on-accent" : "border border-line text-muted"
       }`}
     >
       {label}
