@@ -23,13 +23,15 @@ import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 // Local stand-in for API Gateway: matches the request against the declared routes, builds the
-// same payload 2.0 event AWS would send, and fakes the Cognito "sub" claim from X-User-Id
+// same payload 2.0 event AWS would send, and fakes the Cognito "sub" claim from X-User-Id and
+// the "cognito:groups" claim from X-User-Groups (comma-separated)
 @Slf4j
 @Profile("local")
 @RestController
 public class LocalApiGatewayBridge {
 
   private static final String USER_ID_HEADER = "X-User-Id";
+  private static final String GROUPS_HEADER = "X-User-Groups";
 
   private final ApiGatewayAdapter adapter;
   private final List<RouteBinding> bindings;
@@ -113,10 +115,15 @@ public class LocalApiGatewayBridge {
 
     String userId = request.getHeader(USER_ID_HEADER);
     if (userId != null && !userId.isBlank()) {
+      Map<String, String> claims = new HashMap<>(Map.of("sub", userId));
+      // Written the way the HTTP API writes it, so the adapter's parsing runs locally too
+      String groups = request.getHeader(GROUPS_HEADER);
+      if (groups != null && !groups.isBlank()) {
+        claims.put("cognito:groups", "[" + groups.replace(",", " ") + "]");
+      }
       context.withAuthorizer(
           RequestContext.Authorizer.builder()
-              .withJwt(
-                  RequestContext.Authorizer.JWT.builder().withClaims(Map.of("sub", userId)).build())
+              .withJwt(RequestContext.Authorizer.JWT.builder().withClaims(claims).build())
               .build());
     }
 

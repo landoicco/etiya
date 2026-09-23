@@ -1,13 +1,14 @@
-// Registers the common exercises in scripts/exercises.json through the API, so a new stack
-// starts with a usable catalog. Safe to run again: an exercise that already exists gets 409 and
-// is skipped, and nothing stored is ever changed.
+// Registers the common exercises in scripts/exercises.json in the shared catalog, through the API,
+// so a new stack starts with a usable catalog. Safe to run again: an exercise that already exists
+// gets 409 and is skipped, and nothing stored is ever changed.
 //
 // Usage, from the repository root:
 //   node scripts/seed-catalog.mjs            the deployed stack (STACK, default EtiyaProd)
 //   node scripts/seed-catalog.mjs --local    the Docker stack on localhost:8080
 //
 // Against AWS it signs in as ETIYA_USERNAME / ETIYA_PASSWORD, read from .env.<stack> if that
-// file exists and from the environment otherwise, and needs AWS credentials to read the outputs
+// file exists and from the environment otherwise, and needs AWS credentials to read the outputs.
+// That user must be in the Cognito "admins" group, or every exercise fails with 403
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -22,7 +23,7 @@ const target = process.argv.includes("--local") ? localTarget() : awsTarget();
 
 const results = { created: [], existing: [], failed: [] };
 for (const exercise of exercises) {
-  const response = await fetch(`${target.apiUrl}/exercises`, {
+  const response = await fetch(`${target.apiUrl}/catalog/exercises`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...target.headers },
     body: JSON.stringify(exercise),
@@ -44,9 +45,12 @@ for (const failure of results.failed) {
 }
 process.exit(results.failed.length === 0 ? 0 : 1);
 
-// The local bridge takes the caller from a header instead of a token
+// The local bridge takes the caller and their groups from headers instead of a token
 function localTarget() {
-  return { apiUrl: "http://localhost:8080", headers: { "X-User-Id": "catalog-seed" } };
+  return {
+    apiUrl: "http://localhost:8080",
+    headers: { "X-User-Id": "catalog-seed", "X-User-Groups": "admins" },
+  };
 }
 
 function awsTarget() {
