@@ -1,5 +1,5 @@
 meta {
-  name: Register Exercise Barbell Bench Press Success
+  name: Register Exercise Barbell Pin Press Success
   type: http
 }
 
@@ -11,7 +11,7 @@ post {
 
 body:json {
   {
-    "name": "Barbell Bench Press",
+    "name": "Barbell Pin Press",
     "muscleGroup": "CHEST",
     "category": "PUSH"
   }
@@ -22,8 +22,8 @@ script:post-response {
     expect(res.getStatus()).to.equal(201);
 
     const body = res.getBody();
-    expect(body.id).to.equal("barbell-bench-press");
-    expect(body.name).to.equal("Barbell Bench Press");
+    expect(body.id).to.equal("barbell-pin-press");
+    expect(body.name).to.equal("Barbell Pin Press");
     expect(body.category).to.equal("PUSH");
   });
 }

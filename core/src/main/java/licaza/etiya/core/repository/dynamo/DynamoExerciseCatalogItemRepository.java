@@ -1,8 +1,8 @@
 package licaza.etiya.core.repository.dynamo;
 
-import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.EXERCISE_PK;
 import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.EXERCISE_SK_PREFIX;
 import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.PK;
+import static licaza.etiya.core.repository.dynamo.TableSchemaFactory.exercisePartition;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,17 +53,21 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
   }
 
   @Override
-  public Optional<ExerciseCatalogItem> findById(String id) {
-    Key key = Key.builder().partitionValue(EXERCISE_PK).sortValue(EXERCISE_SK_PREFIX + id).build();
+  public Optional<ExerciseCatalogItem> findById(String ownerId, String id) {
+    Key key =
+        Key.builder()
+            .partitionValue(exercisePartition(ownerId))
+            .sortValue(EXERCISE_SK_PREFIX + id)
+            .build();
 
     return Optional.ofNullable(table.getItem(key));
   }
 
   @Override
-  public List<ExerciseCatalogItem> findBySlugPrefix(String slugPrefix) {
+  public List<ExerciseCatalogItem> findBySlugPrefix(String ownerId, String slugPrefix) {
     Key key =
         Key.builder()
-            .partitionValue(EXERCISE_PK)
+            .partitionValue(exercisePartition(ownerId))
             .sortValue(EXERCISE_SK_PREFIX + slugPrefix)
             .build();
 
@@ -74,11 +78,9 @@ public class DynamoExerciseCatalogItemRepository implements ExerciseCatalogItemR
         .toList();
   }
 
+  // A user's partition also holds their workouts, so only the EXERCISE# items are read
   @Override
-  public List<ExerciseCatalogItem> findAll() {
-    Key key = Key.builder().partitionValue(EXERCISE_PK).build();
-
-    return table.query(r -> r.queryConditional(QueryConditional.keyEqualTo(key))).items().stream()
-        .toList();
+  public List<ExerciseCatalogItem> findAll(String ownerId) {
+    return findBySlugPrefix(ownerId, "");
   }
 }

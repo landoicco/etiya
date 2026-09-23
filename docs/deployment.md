@@ -128,7 +128,15 @@ aws cognito-idp admin-get-user --user-pool-id <POOL_ID> --username you@example.c
 
 ## Seeding the exercise catalog
 
-A new stack starts with an empty catalog. [`scripts/seed-catalog.mjs`](../scripts/seed-catalog.mjs) registers the common exercises listed in [`scripts/exercises.json`](../scripts/exercises.json), each with its muscle group and category, through the API:
+A new stack starts with an empty catalog. [`scripts/seed-catalog.mjs`](../scripts/seed-catalog.mjs) registers the common exercises listed in [`scripts/exercises.json`](../scripts/exercises.json), each with its muscle group and category, in the shared catalog through the API.
+
+That route only accepts the Cognito **`admins` group**, so add the account first. A token issued before that does not carry the group, so **sign in again** afterwards, in the app too:
+```bash
+aws cognito-idp admin-add-user-to-group --user-pool-id <POOL_ID> \
+  --username you@example.com --group-name admins
+```
+
+Then:
 ```bash
 node scripts/seed-catalog.mjs
 ```
@@ -142,9 +150,9 @@ node scripts/seed-catalog.mjs
 unset ETIYA_PASSWORD
 ```
 
-Any account works: the catalog records nothing about who created an entry, and seeding registers no workouts, so using a real account leaves nothing behind in that account's history.
+Your own account is the natural admin. The shared catalog records nothing about who seeded an entry, and seeding registers no workouts, so it leaves nothing behind in that account's history. Being an admin does not change what the app does either: exercises added from the app stay private, because only the seed's route writes to the shared catalog. A `403` on every exercise means the account is not in the group, or its token predates joining it.
 
-Gyms are not seeded: users add their own from the app, and the catalog is shared, see [decisions](decisions.md#server-generated-ids-and-409-on-duplicates).
+Gyms are not seeded: users add their own from the app, and that catalog is shared, see [decisions](decisions.md#server-generated-ids-and-409-on-duplicates).
 
 ## Tearing it down
 

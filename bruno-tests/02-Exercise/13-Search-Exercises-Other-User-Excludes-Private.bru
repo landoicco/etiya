@@ -1,0 +1,29 @@
+meta {
+  name: Search Exercises Other User Excludes Private
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/exercises?q=barbell
+  body: none
+  auth: none
+}
+
+params:query {
+  q: barbell
+}
+
+headers {
+  X-User-Id: user-without-workouts
+  Authorization: Bearer {{otherAuthToken}}
+}
+
+script:post-response {
+  // The same search as 04, as someone else: the shared catalog may answer, the private one must not
+  test("Should leave out exercises another user added", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const ids = res.getBody().items.map(e => e.id);
+    expect(ids).to.not.include("barbell-pin-press");
+  });
+}

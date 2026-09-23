@@ -17,9 +17,11 @@ import software.amazon.awscdk.services.cognito.StandardAttributes;
 import software.amazon.awscdk.services.cognito.UserPool;
 import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolClientOptions;
+import software.amazon.awscdk.services.cognito.UserPoolGroupOptions;
 import software.constructs.Construct;
 
-// Users of the API. The HTTP API validates their tokens and the handlers read the "sub" claim
+// Users of the API. The HTTP API validates their tokens and the handlers read the "sub" and
+// "cognito:groups" claims
 public class Auth extends Construct {
 
   private final UserPool userPool;
@@ -55,6 +57,15 @@ public class Auth extends Construct {
             // pool orphans the whole table: the data survives and nobody can sign in to reach it
             .removalPolicy(kind == Kind.PRODUCTION ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY)
             .build();
+
+    // Members can write to the shared exercise catalog. Its name is checked in core's
+    // ExerciseRoutes, and users are added to it with the AWS CLI
+    userPool.addGroup(
+        "Admins",
+        UserPoolGroupOptions.builder()
+            .groupName("admins")
+            .description("Can add exercises to the shared catalog")
+            .build());
 
     Validations.of(userPool)
         .acknowledge(

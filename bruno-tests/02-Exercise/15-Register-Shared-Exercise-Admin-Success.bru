@@ -1,0 +1,36 @@
+meta {
+  name: Register Shared Exercise Admin Success
+  type: http
+  tags: [
+    local-only
+  ]
+}
+
+post {
+  url: {{baseUrl}}/catalog/exercises
+  body: json
+  auth: none
+}
+
+headers {
+  X-User-Groups: admins
+}
+
+body:json {
+  {
+    "name": "Seal Row",
+    "muscleGroup": "BACK",
+    "category": "PULL"
+  }
+}
+
+script:post-response {
+  // Local only: on AWS it would leave a fixture in the shared catalog every user sees.
+  // There, running the seed as an admin proves the same route
+  test("Should add an exercise to the shared catalog for an admin", function() {
+    expect(res.getStatus()).to.equal(201);
+
+    const body = res.getBody();
+    expect(body.id).to.equal("seal-row");
+  });
+}

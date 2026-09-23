@@ -48,6 +48,6 @@ class RequestBodyReaderTest {
   }
 
   private static ApiRequest request(String body) {
-    return new ApiRequest("POST /exercises", "/exercises", null, null, body, "user-123");
+    return new ApiRequest("POST /exercises", "/exercises", null, null, body, "user-123", null);
   }
 }

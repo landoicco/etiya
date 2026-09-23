@@ -12,7 +12,7 @@ post {
 body:json {
   {
     "id": "a-different-id",
-    "name": "barbell bench-press",
+    "name": "barbell pin-press",
     "muscleGroup": "CHEST",
     "category": "PUSH"
   }
@@ -25,6 +25,6 @@ script:post-response {
 
     const body = res.getBody();
     expect(body.error).to.equal("EXERCISE_ALREADY_EXISTS");
-    expect(body.message).to.contain("barbell-bench-press");
+    expect(body.message).to.contain("barbell-pin-press");
   });
 }

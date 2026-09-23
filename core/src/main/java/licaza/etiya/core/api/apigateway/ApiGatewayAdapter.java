@@ -3,9 +3,12 @@ package licaza.etiya.core.api.apigateway;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import licaza.etiya.core.api.ApiDispatcher;
 import licaza.etiya.core.api.ApiRequest;
 import licaza.etiya.core.api.ApiResponse;
@@ -48,16 +51,28 @@ public class ApiGatewayAdapter {
         event.getPathParameters(),
         event.getQueryStringParameters(),
         body,
-        userIdFrom(event));
+        claim(event, "sub"),
+        groupsFrom(claim(event, "cognito:groups")));
   }
 
-  // The JWT authorizer has already validated the token; Cognito's unique user ID is the "sub" claim
-  private String userIdFrom(APIGatewayV2HTTPEvent event) {
+  // The JWT authorizer has already validated the token, so its claims can be trusted.
+  // Cognito's unique user ID is the "sub" claim
+  private String claim(APIGatewayV2HTTPEvent event, String name) {
     return Optional.ofNullable(event.getRequestContext())
         .map(APIGatewayV2HTTPEvent.RequestContext::getAuthorizer)
         .map(APIGatewayV2HTTPEvent.RequestContext.Authorizer::getJwt)
         .map(APIGatewayV2HTTPEvent.RequestContext.Authorizer.JWT::getClaims)
-        .map(claims -> claims.get("sub"))
+        .map(claims -> claims.get(name))
         .orElse(null);
+  }
+
+  // The HTTP API flattens the token's array into one string, like "[admins other]"
+  static Set<String> groupsFrom(String claim) {
+    if (claim == null) {
+      return Set.of();
+    }
+    return Arrays.stream(claim.replaceAll("[\\[\\]\"]", "").split("[\\s,]+"))
+        .filter(group -> !group.isEmpty())
+        .collect(Collectors.toUnmodifiableSet());
   }
 }

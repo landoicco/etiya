@@ -4,7 +4,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/exercises/barbell-bench-press
+  url: {{baseUrl}}/exercises/barbell-pin-press
   body: none
   auth: none
 }
@@ -14,7 +14,7 @@ script:post-response {
     expect(res.getStatus()).to.equal(200);
 
     const body = res.getBody();
-    expect(body.id).to.equal("barbell-bench-press");
+    expect(body.id).to.equal("barbell-pin-press");
     expect(body.muscleGroup).to.equal("CHEST");
   });
 }

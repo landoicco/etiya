@@ -1,0 +1,27 @@
+meta {
+  name: Get Shared Exercise Other User Success
+  type: http
+  tags: [
+    local-only
+  ]
+}
+
+get {
+  url: {{baseUrl}}/exercises/seal-row
+  body: none
+  auth: none
+}
+
+headers {
+  X-User-Id: user-without-workouts
+}
+
+script:post-response {
+  // Depends on 15, which only runs locally
+  test("Should show an exercise in the shared catalog to every user", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const body = res.getBody();
+    expect(body.id).to.equal("seal-row");
+  });
+}

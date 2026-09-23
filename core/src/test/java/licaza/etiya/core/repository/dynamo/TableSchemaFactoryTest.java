@@ -39,7 +39,7 @@ class TableSchemaFactoryTest {
   }
 
   @Test
-  void exercisesShareOnePartition() {
+  void sharedExercisesShareOnePartition() {
     ExerciseCatalogItem exercise =
         new ExerciseCatalogItem(
             "barbell-bench-press", "Barbell Bench Press", MuscleGroup.CHEST, ExerciseCategory.PUSH);
@@ -49,6 +49,24 @@ class TableSchemaFactoryTest {
 
     assertThat(item.get("PK").s()).isEqualTo("EXERCISE");
     assertThat(item.get("SK").s()).isEqualTo("EXERCISE#barbell-bench-press");
+    assertThat(item).doesNotContainKey("ownerId");
+  }
+
+  // Beside the owner's workouts, whose query only reads WORKOUT# keys
+  @Test
+  void anExerciseAUserAddedLivesUnderThem() {
+    ExerciseCatalogItem exercise =
+        new ExerciseCatalogItem(
+            "costureras", "Costureras", MuscleGroup.GLUTES, ExerciseCategory.LEGS);
+    exercise.setOwnerId("user-123");
+
+    Map<String, AttributeValue> item =
+        TableSchemaFactory.createExerciseCatalogItemSchema().itemToMap(exercise, true);
+
+    assertThat(item.get("PK").s()).isEqualTo("USER#user-123");
+    assertThat(item.get("SK").s()).isEqualTo("EXERCISE#costureras");
+    assertThat(TableSchemaFactory.createExerciseCatalogItemSchema().mapToItem(item))
+        .isEqualTo(exercise);
   }
 
   // Enums are stored by name, so the stored value is what the API returns
