@@ -100,6 +100,8 @@ public class Api extends Construct {
     addRoute(
         "Exercises", functions.getExercisesApi(), "/exercises", HttpMethod.POST, HttpMethod.GET);
     addRoute("Exercise", functions.getExercisesApi(), "/exercises/{exerciseId}", HttpMethod.GET);
+    // Any valid token passes the authorizer; the handler checks the admins group
+    addRoute("Catalog", functions.getExercisesApi(), "/catalog/exercises", HttpMethod.POST);
 
     addRoute(
         "Workouts", functions.getWorkoutsApi(), "/me/workouts", HttpMethod.POST, HttpMethod.GET);
