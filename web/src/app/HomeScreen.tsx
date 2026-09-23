@@ -31,9 +31,17 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
           <h1 className="text-3xl font-bold tracking-tight">Etiya</h1>
           <p className="mt-1 truncate text-sm text-muted">{user.email ?? "Offline"}</p>
         </div>
-        <button type="button" onClick={onSignOut} className="h-11 px-2 text-sm text-muted">
-          Sign out
-        </button>
+        {/* The queue does not know whose workouts it holds: whoever signs in next would send
+            them as their own */}
+        {queue.pending.length === 0 ? (
+          <button type="button" onClick={onSignOut} className="h-11 px-2 text-sm text-muted">
+            Sign out
+          </button>
+        ) : (
+          <p className="max-w-36 py-2 text-right text-xs text-muted">
+            Sign out once your workouts are sent
+          </p>
+        )}
       </header>
 
       <SendQueueNotice queue={queue} persisted={persisted} />
