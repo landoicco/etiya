@@ -33,18 +33,20 @@ public class ExerciseRoutes implements ApiRoutes {
   }
 
   private ApiResponse registerExercise(ApiRequest request) {
+    String userId = request.requireUserId();
     ExerciseCatalogItem exerciseInput = bodyReader.read(request, ExerciseCatalogItem.class);
 
-    log.info("📥 Request received to catalog exercise: '{}'", exerciseInput.getName());
+    log.info("📥 Request received to add exercise: '{}'", exerciseInput.getName());
 
-    ExerciseCatalogItem savedItem = service.registerExercise(exerciseInput);
+    ExerciseCatalogItem savedItem = service.registerExercise(userId, exerciseInput);
 
-    log.info("🏋️‍♂️ Exercise successfully stored on master catalog! ID: {}", savedItem.getId());
+    log.info("🏋️‍♂️ Exercise successfully stored for its owner! ID: {}", savedItem.getId());
 
     return ApiResponse.created(savedItem);
   }
 
   private ApiResponse searchExercises(ApiRequest request) {
+    String userId = request.requireUserId();
     String query = request.queryParameter("q").orElse(null);
     String muscleGroup = request.queryParameter("muscleGroup").orElse(null);
 
@@ -53,7 +55,7 @@ public class ExerciseRoutes implements ApiRoutes {
         query,
         muscleGroup);
 
-    List<ExerciseCatalogItem> results = service.searchExercises(query, muscleGroup);
+    List<ExerciseCatalogItem> results = service.searchExercises(userId, query, muscleGroup);
 
     log.info("✨ Exercise search completed. Found {}", results.size());
 
@@ -61,10 +63,11 @@ public class ExerciseRoutes implements ApiRoutes {
   }
 
   private ApiResponse getExercise(ApiRequest request) {
+    String userId = request.requireUserId();
     String exerciseId = request.pathParameter("exerciseId");
 
     log.info("📥 Request received to fetch exercise: '{}'", exerciseId);
 
-    return ApiResponse.ok(service.getExercise(exerciseId));
+    return ApiResponse.ok(service.getExercise(userId, exerciseId));
   }
 }

@@ -21,6 +21,7 @@ import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.exception.GymNotFoundException;
 import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.model.Exercise;
+import licaza.etiya.core.model.ExerciseCatalogItem;
 import licaza.etiya.core.model.GymSet;
 import licaza.etiya.core.model.WeightUnit;
 import licaza.etiya.core.model.Workout;
@@ -43,11 +44,15 @@ class WorkoutServiceTest {
       mock(ExerciseCatalogItemRepository.class);
   private final WorkoutRepository workoutRepository = mock(WorkoutRepository.class);
 
+  private final InputValidationService validator =
+      new InputValidationService(Validation.buildDefaultValidatorFactory().getValidator());
+
+  // The real exercise service, so exercise lookups follow its shared-then-own rule
   private final WorkoutService service =
       new WorkoutService(
-          new InputValidationService(Validation.buildDefaultValidatorFactory().getValidator()),
+          validator,
           gymRepository,
-          exerciseRepository,
+          new ExerciseService(validator, exerciseRepository),
           workoutRepository);
 
   // Every write succeeds unless a test says otherwise
@@ -271,11 +276,32 @@ class WorkoutServiceTest {
   void rejectsExerciseNotInCatalog() {
     Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
     input.getExercises().getFirst().setExerciseCatalogItemId("unknown-exercise");
-    when(exerciseRepository.findById("unknown-exercise")).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.registerWorkout(USER_ID, input))
         .isInstanceOf(ExerciseCatalogItemNotFoundException.class);
     verify(workoutRepository, never()).create(any());
+  }
+
+  @Test
+  void acceptsAnExerciseTheOwnerAdded() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.getExercises().getFirst().setExerciseCatalogItemId("costureras");
+    when(exerciseRepository.findById(USER_ID, "costureras"))
+        .thenReturn(Optional.of(new ExerciseCatalogItem()));
+
+    assertThat(service.registerWorkout(USER_ID, input).created()).isTrue();
+  }
+
+  // Only the shared catalog and the owner's own exercises are looked at
+  @Test
+  void rejectsAnExerciseSomeoneElseAdded() {
+    Workout input = workout("2026-07-31T18:00:00Z", "2026-07-31T19:00:00Z");
+    input.getExercises().getFirst().setExerciseCatalogItemId("costureras");
+    when(exerciseRepository.findById("someone-else", "costureras"))
+        .thenReturn(Optional.of(new ExerciseCatalogItem()));
+
+    assertThatThrownBy(() -> service.registerWorkout(USER_ID, input))
+        .isInstanceOf(ExerciseCatalogItemNotFoundException.class);
   }
 
   // --- Pagination ---

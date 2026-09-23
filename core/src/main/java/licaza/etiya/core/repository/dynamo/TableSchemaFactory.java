@@ -60,6 +60,8 @@ public class TableSchemaFactory {
         .build();
   }
 
+  // The shared catalog lives in one partition; an exercise a user added lives beside their
+  // workouts, where nobody else's queries reach
   public static TableSchema<ExerciseCatalogItem> createExerciseCatalogItemSchema() {
     return StaticTableSchema.builder(ExerciseCatalogItem.class)
         .newItemSupplier(ExerciseCatalogItem::new)
@@ -67,7 +69,7 @@ public class TableSchemaFactory {
             String.class,
             a ->
                 a.name(PK)
-                    .getter(e -> EXERCISE_PK)
+                    .getter(e -> exercisePartition(e.getOwnerId()))
                     .setter((e, v) -> {})
                     .tags(primaryPartitionKey()))
         .addAttribute(
@@ -98,6 +100,12 @@ public class TableSchemaFactory {
                 a.name("category")
                     .getter(ExerciseCatalogItem::getCategory)
                     .setter(ExerciseCatalogItem::setCategory))
+        .addAttribute(
+            String.class,
+            a ->
+                a.name("ownerId")
+                    .getter(ExerciseCatalogItem::getOwnerId)
+                    .setter(ExerciseCatalogItem::setOwnerId))
         .addAttribute(
             Integer.class,
             a -> a.name(SCHEMA_VERSION).getter(e -> EXERCISE_SCHEMA_VERSION).setter((e, v) -> {}))
@@ -175,6 +183,11 @@ public class TableSchemaFactory {
             Integer.class,
             a -> a.name(SCHEMA_VERSION).getter(w -> WORKOUT_SCHEMA_VERSION).setter((w, v) -> {}))
         .build();
+  }
+
+  // A null owner means the shared catalog
+  public static String exercisePartition(String ownerId) {
+    return ownerId == null ? EXERCISE_PK : USER_PK_PREFIX + ownerId;
   }
 
   // Returns null when any part is missing, so the SDK rejects the item instead of storing

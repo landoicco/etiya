@@ -1,15 +1,14 @@
 package licaza.etiya.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ExerciseCatalogItem {
   private String id;
 
@@ -25,4 +24,16 @@ public class ExerciseCatalogItem {
 
   @NotNull(message = "Exercise category (PUSH, PULL, LEGS, CORE, CARDIO or OTHER) is required")
   private ExerciseCategory category;
+
+  // The user who added it, or null for the shared catalog. Set by the server only: never read
+  // from a request body, never shown in a response
+  @JsonIgnore private String ownerId;
+
+  public ExerciseCatalogItem(
+      String id, String name, MuscleGroup muscleGroup, ExerciseCategory category) {
+    this.id = id;
+    this.name = name;
+    this.muscleGroup = muscleGroup;
+    this.category = category;
+  }
 }

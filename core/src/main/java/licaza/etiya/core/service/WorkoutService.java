@@ -9,14 +9,12 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import licaza.etiya.core.exception.ExerciseCatalogItemNotFoundException;
 import licaza.etiya.core.exception.GymNotFoundException;
 import licaza.etiya.core.exception.InputValidationException;
 import licaza.etiya.core.exception.WorkoutNotFoundException;
 import licaza.etiya.core.model.Exercise;
 import licaza.etiya.core.model.Page;
 import licaza.etiya.core.model.Workout;
-import licaza.etiya.core.repository.ExerciseCatalogItemRepository;
 import licaza.etiya.core.repository.GymRepository;
 import licaza.etiya.core.repository.WorkoutRepository;
 import licaza.etiya.core.service.validation.InputValidationService;
@@ -36,17 +34,17 @@ public class WorkoutService {
 
   private final InputValidationService validatorService;
   private final GymRepository gymRepository;
-  private final ExerciseCatalogItemRepository exerciseCatalogRepository;
+  private final ExerciseService exerciseService;
   private final WorkoutRepository workoutRepository;
 
   public WorkoutService(
       InputValidationService validatorService,
       GymRepository gymRepository,
-      ExerciseCatalogItemRepository exerciseCatalogRepository,
+      ExerciseService exerciseService,
       WorkoutRepository workoutRepository) {
     this.validatorService = validatorService;
     this.gymRepository = gymRepository;
-    this.exerciseCatalogRepository = exerciseCatalogRepository;
+    this.exerciseService = exerciseService;
     this.workoutRepository = workoutRepository;
   }
 
@@ -167,22 +165,12 @@ public class WorkoutService {
       }
     }
 
-    // Verify exercise is on master catalog
+    // Verify each exercise is one the owner can see: shared, or added by them
     if (input.getExercises() != null) {
       for (Exercise exe : input.getExercises()) {
         if (exe.getExerciseCatalogItemId() != null
             && !exe.getExerciseCatalogItemId().trim().isEmpty()) {
-          boolean existExercise =
-              exerciseCatalogRepository.findById(exe.getExerciseCatalogItemId()).isPresent();
-          if (!existExercise) {
-            log.error(
-                "❌ Exercise validation failed. Catalog Item ID '{}' not found.",
-                exe.getExerciseCatalogItemId());
-            throw new ExerciseCatalogItemNotFoundException(
-                "❌ Error: The exercise with ID '"
-                    + exe.getExerciseCatalogItemId()
-                    + "' does not exist in the master catalog.");
-          }
+          exerciseService.getExercise(input.getUserId(), exe.getExerciseCatalogItemId());
         }
       }
     }
