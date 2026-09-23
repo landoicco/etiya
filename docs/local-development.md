@@ -38,6 +38,15 @@ On AWS the user comes from the Cognito `sub` claim that API Gateway validates. T
 curl -H "X-User-Id: user-default" http://localhost:8080/me/workouts
 ```
 
+Cognito groups come from `X-User-Groups`, comma-separated, written into the claim the way the HTTP API writes it. Writing to the shared exercise catalog needs `admins`, which is what the seed script sends:
+
+```bash
+curl -X POST -H "X-User-Id: user-default" -H "X-User-Groups: admins" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Seal Row","muscleGroup":"BACK","category":"PULL"}' \
+  http://localhost:8080/catalog/exercises
+```
+
 The bridge matches the request against the same route table the Lambdas use, so local and AWS run the same handler code. It lives in a separate source folder that only the `local` Maven profile compiles, so it can never reach the Lambda jar.
 
 ## Running the web app

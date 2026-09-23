@@ -47,7 +47,7 @@ Every request carries a client-generated ULID, so a send that actually went thro
 
 **The URL says what is on screen, sheets included.** A phone's back gesture is the main way out of anything, so closing a sheet is the same `history.back()` the gesture performs, and there is no second stack of open sheets to keep in step with the browser's. The router is forty lines rather than a dependency.
 
-**The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 38 of its 40 requests run unchanged against either.
+**The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 41 of its 45 requests run unchanged against either.
 
 ```mermaid
 flowchart TB
@@ -126,6 +126,6 @@ This project is developed alongside [Claude Code](https://claude.com/claude-code
 
 ## Status and roadmap
 
-Both halves are built and in use. The API covers gyms, exercises and workouts, with authentication, pagination and validation (`api-v0.3.0`). The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection (`web-v0.1.0`). Releases track what each version added.
+Both halves are built and in use. The API covers gyms, exercises and workouts, with authentication, pagination and validation (`api-v0.3.0`). The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection (`web-v0.2.0`). Releases track what each version added.
 
 Next is the first stable release of both, and after it the things the app has already asked for while being used: carrying last session's numbers forward, and cardio logged as time rather than reps. What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.

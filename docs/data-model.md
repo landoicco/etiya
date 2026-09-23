@@ -7,7 +7,8 @@ Gyms, exercises and workouts live in the **same table**, keyed by a partition ke
 | Item | `PK` | `SK` | Access patterns |
 |---|---|---|---|
 | Gym | `GYM` | `GYM#<slug>` | Get by ID, prefix search by name, list catalog |
-| Exercise | `EXERCISE` | `EXERCISE#<slug>` | Get by ID, prefix search by name, list catalog |
+| Exercise, shared | `EXERCISE` | `EXERCISE#<slug>` | Get by ID, prefix search by name, list catalog |
+| Exercise, a user's own | `USER#<userId>` | `EXERCISE#<slug>` | Same as the shared ones, within the user's partition |
 | Workout | `USER#<userId>` | `WORKOUT#<ulid>` | Get by ID, list a user's workouts newest first (paginated) |
 
 Keys are defined in three places that must stay in sync: `TableSchemaFactory` (how items are written), `DynamoDbLocalInitializer` (the local table) and the `Database` construct in `infra/` (the real table).
@@ -34,6 +35,14 @@ Creation uses a conditional write (`attribute_not_exists`), so an existing entry
 The partition key is `USER#<userId>`, where `userId` is the Cognito `sub`. A user's workouts are therefore a single partition, and reading someone else's is not just forbidden, it is impossible to express as a query.
 
 Workouts optionally carry denormalized `gymId` and `gymName` to avoid a second lookup when showing history.
+
+## Exercises a user adds live with their workouts
+
+An exercise a user adds goes in their own partition, `USER#<sub>`, beside their workouts, and carries an `ownerId` attribute with the same `sub`. The sort key prefix keeps the two apart: listing workouts queries `WORKOUT#` and listing exercises queries `EXERCISE#`, so neither ever reads the other. The shared catalog stays in the `EXERCISE` partition and has no `ownerId`; nothing records who seeded it.
+
+`ownerId` is set by the server and never leaves it, like `schemaVersion`: it is not read from a request body and not shown in a response.
+
+Both kinds share one ID space, the slug of the name. That is what lets the API merge them into one list, and it means that **promoting** a user's exercise to the shared catalog later keeps its ID, so every workout that already references it keeps working without being rewritten. Once the shared copy exists it wins, and the private one is simply shadowed.
 
 ## Workout IDs are ULIDs
 

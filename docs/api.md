@@ -58,12 +58,16 @@ Returns one gym, or `404`.
 
 ## Exercises — `exercisesApi` Lambda
 
+A user sees two catalogs as one: the **shared catalog**, which is curated and seeded, and the exercises **they added themselves**, which nobody else sees. Both use the slug of the name as the ID. Where an ID is in both, the shared one is what the user gets.
+
 ### `POST /exercises`
-Registers an exercise in the catalog, which every user shares. The ID is the slug of the name.
+Adds an exercise for the caller only. The ID is the slug of the name.
 ```json
 { "name": "Barbell Bench Press", "muscleGroup": "CHEST", "category": "PUSH" }
 ```
-Both lists are fixed, so the shared catalog stays consistent. A value outside them is a `400` that names the accepted ones:
+Returns `409` if the shared catalog already has that name, so nobody ends up with a private copy of a shared exercise, or if the caller already added it.
+
+Both lists are fixed, so the catalog stays consistent. A value outside them is a `400` that names the accepted ones:
 
 | Field | Values |
 |---|---|
@@ -72,11 +76,14 @@ Both lists are fixed, so the shared catalog stays consistent. A value outside th
 
 `category` groups exercises after the push/pull/legs split, so the app can filter the catalog with one tap. It is stored rather than derived from the muscle group, which is ambiguous: shoulders cover both presses (push) and rear delt flyes (pull).
 
+### `POST /catalog/exercises`
+Adds an exercise to the **shared catalog**, with the same body and the same `409`. Only members of the Cognito `admins` group may call it; anyone else gets `403`. The app never does: it is what [`scripts/seed-catalog.mjs`](../scripts/seed-catalog.mjs) uses. Being an admin does not change `POST /exercises`, which stays private, so the route decides where an exercise goes, not who is asking.
+
 ### `GET /exercises?q=bench&muscleGroup=chest`
-Both filters are optional. `q` matches a name prefix; `muscleGroup` matches exactly, ignoring case.
+The shared catalog plus the caller's own, sorted by ID. Both filters are optional. `q` matches a name prefix; `muscleGroup` matches exactly, ignoring case.
 
 ### `GET /exercises/{exerciseId}`
-Returns one exercise, or `404`.
+Returns one exercise from the shared catalog or the caller's own, or `404`. An exercise another user added is a `404` too, so its ID cannot be probed.
 
 ## Workouts — `workoutsApi` Lambda
 
