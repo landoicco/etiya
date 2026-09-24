@@ -108,7 +108,7 @@ The risk this leaves is not that a name cannot express a variation — names are
 
 Brand names stay out: a machine is `Machine Hip Thrust`, not the name of the manufacturer that gym happens to buy from.
 
-The seed catalog is therefore part of the design rather than sample data, and it was written before production had one to migrate — because renaming an entry changes its id, which is free today and a migration later.
+The seed catalog is therefore part of the design rather than sample data, and it was written before production had one to migrate — because renaming an entry changes its id, which was free before the launch and is a migration from now on.
 
 ## Cognito from the first deploy
 
@@ -252,6 +252,7 @@ Deliberately postponed, with the trigger that would justify each:
 | **A light and a dark mode**, instead of the single light palette. The nine tokens make it possible, but three things are hardcoded to one theme: `@theme` is static, `html` fixes `color-scheme: light`, and the manifest's `theme_color` would need a second `<meta media>` tag, since an installed app keeps the colour it was installed with | A gym is dark enough, or bright enough, that one palette is wrong in it. Judge it in the light it is used in, not on a desk |
 | **The font, self-hosted in `public/`.** The app uses the system stack today. A Google Fonts request is the wrong way to do it here: a basement with no signal would fall back mid-workout, and the point of this app is that a gym's connection does not matter | The system font starts looking like the thing that dates the app |
 | **A name to greet the user by** ("Hi, Lando"), optional and not unique. Cognito's standard `name` attribute already exists on every pool, optional and mutable without being declared, and it rides in the ID token; set it with `admin-update-user-attributes` or from the app with `updateUserAttributes`. It must stay optional and must not become a sign-in alias: both are fixed when a pool is created, and replacing production's pool gives every user a new `sub`, orphaning their workouts. Email and password remain the only required things | The app has somewhere to show it. If other users ever need to see it, it belongs in a profile item under `USER#<sub>` instead, where the API can return it |
+| **Rehearsing a point-in-time restore** of production's table. The backup has existed since the launch but nobody has restored from it, and an untried backup is a checkbox. A restore creates a new table and never touches the original, so it is safe to try on the real one, then delete the copy | The table holds a few weeks of real workouts |
 | `gymName` read from the catalog instead of trusting the client | Anything other than this app writes a workout. The history does show the name now, so a wrong one would be visible — but the only client there is reads it from the catalog it downloaded, so getting it wrong takes a hand-written request |
 | `PUT` for a workout, so a set logged with the wrong number can be corrected | "View summary" before saving turns out not to catch enough of them. `DELETE` is not here on purpose: it was [decided against](#workouts-are-not-deleted), not postponed |
 | Moderating the shared gym catalog (reporting, merging or hiding entries) and MFA | There are users other than the owner |
