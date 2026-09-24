@@ -109,20 +109,31 @@ cd web && STACK=EtiyaDev npm run config
 
 Users cannot sign themselves up, so an administrator creates them:
 ```bash
-aws cognito-idp admin-create-user --user-pool-id <POOL_ID> \
-  --username you@example.com --message-action SUPPRESS
-
-aws cognito-idp admin-set-user-password --user-pool-id <POOL_ID> \
-  --username you@example.com --password '<PASSWORD>' --permanent
+POOL=<POOL_ID>
+EMAIL=you@example.com
+aws cognito-idp admin-create-user --user-pool-id "$POOL" --username "$EMAIL" \
+  --user-attributes Name=email,Value="$EMAIL" Name=email_verified,Value=true \
+  --message-action SUPPRESS
+```
+Then read the password without echoing it or leaving it in the shell's history. **Paste this line on its own**: pasted together with the next command, `read` would take that command as the password.
+```bash
+read -rsp "Password: " PW && echo
+```
+```bash
+aws cognito-idp admin-set-user-password --user-pool-id "$POOL" \
+  --username "$EMAIL" --password "$PW" --permanent
+unset PW
 ```
 
 * The password needs at least 8 characters, with uppercase, lowercase, a digit and a symbol.
-* `--message-action SUPPRESS` skips the invitation email. The address is never contacted, so it does not need to be real.
+* `--message-action SUPPRESS` skips the invitation email.
+* **A real account needs a real address, marked verified.** Account recovery is by email only, and Cognito sends no reset code to an unverified address. A throwaway dev user can have a fake one, since it is never contacted.
 * `--permanent` matters: without it the user stays in `FORCE_CHANGE_PASSWORD` and login returns a challenge instead of tokens.
+* `--password` is briefly visible in the process list while the command runs; fine on your own machine, not on a shared one.
 
 The `sub` claim of that user is the ID the API stores as the owner of their workouts:
 ```bash
-aws cognito-idp admin-get-user --user-pool-id <POOL_ID> --username you@example.com \
+aws cognito-idp admin-get-user --user-pool-id "$POOL" --username "$EMAIL" \
   --query 'UserAttributes[?Name==`sub`].Value' --output text
 ```
 
@@ -132,8 +143,8 @@ A new stack starts with an empty catalog. [`scripts/seed-catalog.mjs`](../script
 
 That route only accepts the Cognito **`admins` group**, so add the account first. A token issued before that does not carry the group, so **sign in again** afterwards, in the app too:
 ```bash
-aws cognito-idp admin-add-user-to-group --user-pool-id <POOL_ID> \
-  --username you@example.com --group-name admins
+aws cognito-idp admin-add-user-to-group --user-pool-id "$POOL" \
+  --username "$EMAIL" --group-name admins
 ```
 
 Then:
@@ -142,10 +153,12 @@ node scripts/seed-catalog.mjs
 ```
 It signs in as `ETIYA_USERNAME` / `ETIYA_PASSWORD` and reads the stack outputs, so it needs AWS credentials; `STACK` selects the stack and defaults to `EtiyaProd`. Every new environment needs this run once. It is safe to run again: an exercise that already exists gets `409` and is skipped, and nothing stored is changed. To add exercises for everyone, add them to the JSON and run it again.
 
-The credentials come from `.env.<stack>` when that file exists, and from the environment otherwise. Dev keeps a file (`.env.EtiyaDev`, git-ignored, see [testing](testing.md)); **production does not**, because a real account's password does not belong in a file. Export it for the one command that needs it, without putting it in the shell's history:
+The credentials come from `.env.<stack>` when that file exists, and from the environment otherwise. Dev keeps a file (`.env.EtiyaDev`, git-ignored, see [testing](testing.md)); **production does not**, because a real account's password does not belong in a file. Export it for the one command that needs it, without putting it in the shell's history, again pasting the `read` line on its own:
 ```bash
 read -rsp "Password: " ETIYA_PASSWORD && export ETIYA_PASSWORD
-export ETIYA_USERNAME=you@example.com
+```
+```bash
+export ETIYA_USERNAME="$EMAIL"
 node scripts/seed-catalog.mjs
 unset ETIYA_PASSWORD
 ```
