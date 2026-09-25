@@ -15,8 +15,8 @@
     "deploy": "scripts/deploy.sh"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.103.1",
-    "aws-amplify": "^6.20.0",
+    "@tanstack/react-query": "^5.103.2",
+    "aws-amplify": "^6.22.0",
     "idb-keyval": "^6.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -28,7 +28,7 @@
     "@types/react-dom": "^19.3.0",
     "@vite-pwa/assets-generator": "^1.0.4",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.83.0",
+    "oxlint": "^1.85.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
