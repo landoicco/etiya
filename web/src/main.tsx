@@ -5,6 +5,7 @@ import { loadActiveWorkout } from "@/workout/activeWorkout";
 import { type Api, ApiError, createApi } from "@/platform/api";
 import { type Auth, cognitoAuth, type User } from "@/auth/auth";
 import { loadConfig } from "@/platform/config";
+import { AboutScreen } from "@/app/AboutScreen";
 import { HistoryScreen } from "@/history/HistoryScreen";
 import { HomeScreen } from "@/app/HomeScreen";
 import { LoginScreen } from "@/auth/LoginScreen";
@@ -96,6 +97,10 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 
   if (router.route.name === "history") {
     return <HistoryScreen api={api} router={router} />;
+  }
+
+  if (router.route.name === "about") {
+    return <AboutScreen router={router} />;
   }
 
   if (router.route.name === "workout") {

@@ -52,6 +52,7 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
 
       <nav className="mt-4">
         <MenuRow label="History" onOpen={() => router.open({ name: "history" })} />
+        <MenuRow label="About" onOpen={() => router.open({ name: "about" })} />
       </nav>
 
       <footer className="mt-auto pt-6">
