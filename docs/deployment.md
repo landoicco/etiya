@@ -107,7 +107,7 @@ cd web && STACK=EtiyaDev npm run config
 
 ## Creating the first user
 
-Users cannot sign themselves up, so an administrator creates them:
+Users cannot sign themselves up, so an administrator creates them. This is for your own account and the test users Bruno signs in as; to let someone else in, [invite them](#inviting-someone) instead:
 ```bash
 POOL=<POOL_ID>
 EMAIL=you@example.com
@@ -136,6 +136,21 @@ The `sub` claim of that user is the ID the API stores as the owner of their work
 aws cognito-idp admin-get-user --user-pool-id "$POOL" --username "$EMAIL" \
   --query 'UserAttributes[?Name==`sub`].Value' --output text
 ```
+
+## Inviting someone
+
+Anyone else gets an invitation instead, and chooses their own password in the app:
+```bash
+aws cognito-idp admin-create-user --user-pool-id <POOL_ID> \
+  --username friend@example.com \
+  --user-attributes Name=email,Value=friend@example.com Name=email_verified,Value=true
+```
+
+* Cognito emails them the app's link, their email and a temporary password. On their first sign-in the app asks for a new password and signs them in with it. The text of that email is in [`Auth.java`](../infra/src/main/java/licaza/etiya/infra/Auth.java).
+* `email_verified=true` is what lets **Forgot password?** send them a code later. Without it the address has never been confirmed, so Cognito has nowhere to send one.
+* The email comes from Cognito's own address and may land in spam: tell them to look there.
+* The temporary password expires after **7 days**. Past that, the app tells them to ask for a new one, which is the same command with `--message-action RESEND` added.
+* Cognito's own sender allows 50 emails a day, invitations and reset codes together.
 
 ## Seeding the exercise catalog
 

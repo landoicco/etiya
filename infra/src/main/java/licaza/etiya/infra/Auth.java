@@ -14,6 +14,7 @@ import software.amazon.awscdk.services.cognito.PasswordPolicy;
 import software.amazon.awscdk.services.cognito.SignInAliases;
 import software.amazon.awscdk.services.cognito.StandardAttribute;
 import software.amazon.awscdk.services.cognito.StandardAttributes;
+import software.amazon.awscdk.services.cognito.UserInvitationConfig;
 import software.amazon.awscdk.services.cognito.UserPool;
 import software.amazon.awscdk.services.cognito.UserPoolClient;
 import software.amazon.awscdk.services.cognito.UserPoolClientOptions;
@@ -24,10 +25,14 @@ import software.constructs.Construct;
 // "cognito:groups" claims
 public class Auth extends Construct {
 
+  // Matches what the invitation email promises
+  private static final int TEMPORARY_PASSWORD_DAYS = 7;
+
   private final UserPool userPool;
   private final UserPoolClient apiClient;
 
-  public Auth(final Construct scope, final String id, final Kind kind) {
+  // appUrl is null in a disposable environment, which has no hosted app to link to
+  public Auth(final Construct scope, final String id, final Kind kind, final String appUrl) {
     super(scope, id);
 
     this.userPool =
@@ -48,6 +53,13 @@ public class Auth extends Construct {
                     .requireUppercase(true)
                     .requireDigits(true)
                     .requireSymbols(true)
+                    .tempPasswordValidity(Duration.days(TEMPORARY_PASSWORD_DAYS))
+                    .build())
+            // Sent by admin-create-user, from Cognito's own address: free, but it may land in spam
+            .userInvitation(
+                UserInvitationConfig.builder()
+                    .emailSubject("Your Etiya account")
+                    .emailBody(invitation(appUrl))
                     .build())
             .accountRecovery(AccountRecovery.EMAIL_ONLY)
             .mfa(Mfa.OFF)
@@ -97,6 +109,26 @@ public class Auth extends Construct {
                 .refreshTokenValidity(Duration.days(30))
                 .preventUserExistenceErrors(true)
                 .build());
+  }
+
+  // Cognito sends it as HTML and requires both placeholders: {username} (the email) and
+  // {####} (the temporary password)
+  private static String invitation(final String appUrl) {
+    final String open =
+        appUrl == null
+            ? "Open the app"
+            : "Open <a href=\"" + appUrl + "\">" + appUrl + "</a> on your phone";
+    return "<p>You have been invited to Etiya, an app to log your gym workouts.</p>"
+        + "<p>"
+        + open
+        + " and sign in with:</p>"
+        + "<p>Email: {username}<br>Temporary password: {####}</p>"
+        + "<p>Right after, you will choose your own password. This temporary one expires in "
+        + TEMPORARY_PASSWORD_DAYS
+        + " days.</p>"
+        + "<p>Tip: add Etiya to your home screen so it opens like an app and keeps your workouts"
+        + " safe while offline. On iPhone, Share → Add to Home Screen. On Android, the menu →"
+        + " Install app.</p>";
   }
 
   public UserPool getUserPool() {
