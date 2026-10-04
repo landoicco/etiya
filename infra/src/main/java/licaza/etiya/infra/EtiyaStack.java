@@ -30,13 +30,14 @@ public class EtiyaStack extends Stack {
     super(scope, id, props);
 
     this.database = new Database(this, "Database", kind);
-    this.auth = new Auth(this, "Auth", kind);
-    this.functions = new Functions(this, "Functions", database.getWorkoutsTable());
     // A disposable environment is developed against localhost, which the API already allows,
     // so it skips the distribution: creating and destroying one costs about 15 minutes each way
     this.web = kind == Kind.PRODUCTION ? new Web(this, "Web") : null;
-    // Web comes before Api, which allows its origin in CORS
-    this.api = new Api(this, "Api", auth, functions, web == null ? null : web.getUrl());
+    final String appUrl = web == null ? null : web.getUrl();
+    // Web comes first: Auth links to it in the invitation email, and Api allows it in CORS
+    this.auth = new Auth(this, "Auth", kind, appUrl);
+    this.functions = new Functions(this, "Functions", database.getWorkoutsTable());
+    this.api = new Api(this, "Api", auth, functions, appUrl);
 
     publishOutputs();
   }
