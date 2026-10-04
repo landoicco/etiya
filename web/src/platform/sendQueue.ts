@@ -1,8 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type Api, ApiError } from "./api";
-import type { WorkoutRequest } from "@/workout/workout";
+import { type Api, ApiError, type WorkoutRequest } from "./api";
 
 // A finished workout goes here first, so finishing never waits on a connection
 export interface PendingWorkout {

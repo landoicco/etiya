@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { type Api, ApiError, type Workout } from "./api";
+import { type Api, ApiError, type Workout, type WorkoutRequest } from "./api";
 import { type PendingWorkout, sendPending } from "./sendQueue";
-import type { WorkoutRequest } from "@/workout/workout";
 
 function request(id: string): WorkoutRequest {
   return {

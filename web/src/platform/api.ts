@@ -1,5 +1,4 @@
 import type { Auth } from "@/auth/auth";
-import type { WorkoutRequest } from "@/workout/workout";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra
@@ -61,6 +60,17 @@ export interface Workout {
   id: string;
   userId: string;
   // UTC, as yyyy-MM-ddTHH:mm:ssZ
+  startedAt: string;
+  endedAt: string;
+  gymId: string | null;
+  gymName: string | null;
+  exercises: Exercise[];
+}
+
+// The body of POST /me/workouts. A finished workout is the active one plus an end time,
+// which is why the two shapes are this close
+export interface WorkoutRequest {
+  id: string;
   startedAt: string;
   endedAt: string;
   gymId: string | null;

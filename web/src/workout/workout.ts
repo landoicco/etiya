@@ -1,5 +1,5 @@
 import { ulid } from "ulid";
-import type { GymSet, WeightUnit } from "@/platform/api";
+import type { GymSet, WeightUnit, WorkoutRequest } from "@/platform/api";
 import { slugOf } from "@/platform/slugs";
 
 // The workout being logged, as it lives on the phone. Its shape follows the API's so that
@@ -34,17 +34,6 @@ export interface ExerciseChoice {
 export interface WorkoutGym {
   id: string;
   name: string;
-}
-
-// The body of POST /me/workouts. A finished workout is the active one plus an end time,
-// which is why the two shapes are this close
-export interface WorkoutRequest {
-  id: string;
-  startedAt: string;
-  endedAt: string;
-  gymId: string | null;
-  gymName: string | null;
-  exercises: LoggedExercise[];
 }
 
 // The API refuses anything longer, and refuses it forever: a workout over the limit would
@@ -149,7 +138,7 @@ export function finishWorkout(workout: ActiveWorkout, now: Date): WorkoutRequest
   };
 }
 
-// Whether there is anything worth saving, which is what the finish button waits for
+// How many sets the finish sheet counts
 export function loggedSets(workout: ActiveWorkout): number {
   return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
 }

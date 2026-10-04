@@ -7,8 +7,8 @@ import {
   finishWorkout,
   loggedExercises,
   loggedSets,
-  type WorkoutRequest,
 } from "./workout";
+import type { WorkoutRequest } from "@/platform/api";
 
 // Both ways out of a workout live here, so neither is a stray tap away while training. It is
 // also the last point where a mistake can still be caught, which is what the summary is for:

@@ -1,4 +1,4 @@
-import type { Api } from "@/platform/api";
+import type { Api, WorkoutRequest } from "@/platform/api";
 import { ExerciseList } from "./ExerciseList";
 import { ExercisePicker } from "@/exercises/ExercisePicker";
 import { ExerciseHistory } from "@/history/ExerciseHistory";
@@ -18,7 +18,6 @@ import {
   nextSet,
   selectExercise,
   undoLastSet,
-  type WorkoutRequest,
 } from "./workout";
 
 type Change = (workout: ActiveWorkout) => ActiveWorkout;
