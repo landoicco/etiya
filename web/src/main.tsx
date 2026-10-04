@@ -10,6 +10,7 @@ import { HomeScreen } from "@/app/HomeScreen";
 import { LoginScreen } from "@/auth/LoginScreen";
 import { CATALOG_KEY, forgetCatalog, loadCachedCatalog } from "@/exercises/exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "@/gyms/gyms";
+import { forgetLastMonth, LAST_MONTH_KEY, loadCachedLastMonth } from "@/history/lastMonth";
 import { HOME, useRouter } from "@/app/router";
 import { usePersistence } from "@/platform/storage";
 import { loadPending, type PendingWorkout, useSendQueue } from "@/platform/sendQueue";
@@ -67,7 +68,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
     await auth.signOut();
     // The next user must not see this one's data, not even for a moment, nor on the next launch
     queryClient.clear();
-    await forgetCatalog();
+    await Promise.all([forgetCatalog(), forgetLastMonth()]);
     setUser(null);
   }
 
@@ -138,14 +139,15 @@ async function start(container: HTMLElement) {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const [user, workout, catalog, gyms, pending] = await Promise.all([
+    const [user, workout, catalog, gyms, lastMonth, pending] = await Promise.all([
       auth.currentUser(),
       loadActiveWorkout(),
       loadCachedCatalog(),
       loadCachedGyms(),
+      loadCachedLastMonth(),
       loadPending(),
     ]);
-    // The pickers then open on the copies this phone already has, and fresh ones replace them
+    // The pickers and the home screen then open on the copies this phone already has, and fresh ones replace them
     // once they arrive, instead of showing an empty list on every launch. updatedAt keeps them
     // stale: without it setQueryData stamps them as just fetched, and staleTime cancels the
     // refetch on every launch, so a phone holding a copy would never see a new catalog
@@ -154,6 +156,9 @@ async function start(container: HTMLElement) {
     }
     if (gyms) {
       queryClient.setQueryData(GYMS_KEY, gyms, { updatedAt: 0 });
+    }
+    if (lastMonth) {
+      queryClient.setQueryData(LAST_MONTH_KEY, lastMonth, { updatedAt: 0 });
     }
     root.render(
       <StrictMode>

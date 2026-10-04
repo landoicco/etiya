@@ -208,7 +208,7 @@ function isSame(exercise: LoggedExercise, choice: ExerciseChoice): boolean {
 // A catalog id is the slug of its name, so the two are comparable: an exercise added without
 // one still matches the same exercise added with it. That happens when the network drops the
 // reply to a POST the server did save, and the retry comes back with the real id
-function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
+export function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
   return exerciseCatalogItemId ?? slugOf(name);
 }
 
