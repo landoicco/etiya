@@ -4,7 +4,28 @@
   <!-- Independent from core: infrastructure dependencies never reach the Lambda jar -->
   <groupId>licaza.etiya</groupId>
   <artifactId>infra</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <!-- Deployed with the API, so it follows the api-v* tags too -->
+  <version>1.0.0</version>
+  <name>Etiya infrastructure</name>
+  <description>AWS CDK app that defines Etiya's stacks: API, Cognito, DynamoDB and the web app's hosting</description>
+  <url>https://github.com/landoicco/etiya</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Lando Icaza</name>
+      <url>https://github.com/landoicco</url>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/landoicco/etiya.git</connection>
+    <developerConnection>scm:git:git@github.com:landoicco/etiya.git</developerConnection>
+    <url>https://github.com/landoicco/etiya</url>
+  </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>21</maven.compiler.release>

@@ -21,7 +21,7 @@ import software.constructs.Construct;
 public class Functions extends Construct {
 
   // Built beforehand with: cd core && mvn -P prod clean package
-  private static final String JAR_PATH = "../core/target/core-0.0.1-SNAPSHOT-aws.jar";
+  private static final String JAR_PATH = "../core/target/core-aws.jar";
 
   // Entry point of spring-cloud-function-adapter-aws; it boots Spring and looks up the bean
   private static final String HANDLER =
