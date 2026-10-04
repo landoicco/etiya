@@ -19,7 +19,7 @@ export function monthBefore(now: Date): Date {
   return new Date(now.getTime() - DAYS * 24 * 60 * 60 * 1000);
 }
 
-// The last 30 days, and never less than the latest workout, so "Last: Push" survives a break
+// The last 30 days, and never less than the latest workout, so "Last workout" survives a break
 export async function fetchLastMonth(api: Api, now: Date): Promise<Workout[]> {
   const since = monthBefore(now).getTime();
   const workouts: Workout[] = [];

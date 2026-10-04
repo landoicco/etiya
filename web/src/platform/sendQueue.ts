@@ -93,7 +93,7 @@ export function useSendQueue(api: Api, initial: PendingWorkout[]) {
       await savePending(left);
       setPending(left);
       if (sent > 0) {
-        // The history on the home screen is now a workout short
+        // The history and the last month on the phone are now a workout short
         void queryClient.invalidateQueries({ queryKey: ["workouts"] });
       }
     } finally {

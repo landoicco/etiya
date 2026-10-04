@@ -23,7 +23,7 @@ export type MuscleGroup =
 
 export type ExerciseCategory = "PUSH" | "PULL" | "LEGS" | "CORE" | "CARDIO" | "OTHER";
 
-// An exercise in the catalog every user shares. Its id is the slug of its name
+// An exercise from the shared catalog or one this user added. Its id is the slug of its name
 export interface CatalogExercise {
   id: string;
   name: string;
@@ -142,8 +142,8 @@ export function createApi(apiUrl: string, auth: Auth) {
       return post("/gyms", gym);
     },
 
-    // 409 when an exercise with the same slug is already there, which is not an error for
-    // the app: it means somebody else added it first
+    // Private to this user. 409 when the shared catalog or this user already has the slug,
+    // which the app takes as "use the existing one"
     registerExercise(exercise: NewCatalogExercise): Promise<CatalogExercise> {
       return post("/exercises", exercise);
     },

@@ -16,8 +16,7 @@ export interface User {
   email: string | null;
 }
 
-// What the app needs from a login. Screens only see this, never Amplify, so a local mode
-// without Cognito can be added later behind the same interface
+// What the app needs from a login. Screens only see this, never Amplify
 export interface Auth {
   currentUser(): Promise<User | null>;
   signIn(email: string, password: string): Promise<SignInResult>;

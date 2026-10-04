@@ -138,7 +138,6 @@ export function finishWorkout(workout: ActiveWorkout, now: Date): WorkoutRequest
   };
 }
 
-// How many sets the finish sheet counts
 export function loggedSets(workout: ActiveWorkout): number {
   return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
 }

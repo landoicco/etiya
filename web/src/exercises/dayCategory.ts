@@ -2,7 +2,7 @@ import type { CatalogExercise, Exercise, ExerciseCategory } from "@/platform/api
 import { identityOf } from "@/workout/workout";
 import { CATEGORIES, CATEGORY_LABELS } from "./catalog";
 
-// The split a day trained, for "Last: Push": push, pull or legs with the most sets. Core,
+// The split a day trained, for "Push · Tuesday": push, pull or legs with the most sets. Core,
 // cardio and other only count on a day with none of the three. Ties name every category tied,
 // and exercises missing from the catalog are left out
 export function dayCategory(
