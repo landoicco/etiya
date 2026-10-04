@@ -2,10 +2,13 @@ import type { ReactNode } from "react";
 import type { Api } from "@/platform/api";
 import type { User } from "@/auth/auth";
 import { GymPicker } from "@/gyms/GymPicker";
-import { WorkoutCard } from "@/history/HistoryScreen";
 import type { Router } from "./router";
 import type { useSendQueue } from "@/platform/sendQueue";
-import { useRecentWorkouts } from "@/history/workouts";
+import { dayCategoryLabel } from "@/exercises/dayCategory";
+import { useExerciseCatalog } from "@/exercises/exerciseCatalog";
+import { useLastMonth, withQueued } from "@/history/lastMonth";
+import { agoLabel } from "@/history/workouts";
+import { useNow } from "@/platform/useNow";
 import type { WorkoutGym } from "@/workout/workout";
 
 interface Props {
@@ -45,7 +48,11 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
       </header>
 
       <SendQueueNotice queue={queue} persisted={persisted} />
-      <RecentWorkouts api={api} router={router} />
+      <LastWorkout api={api} queue={queue} />
+
+      <nav className="mt-4">
+        <MenuRow label="History" onOpen={() => router.open({ name: "history" })} />
+      </nav>
 
       <footer className="mt-auto pt-6">
         <button
@@ -116,8 +123,27 @@ function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: bo
   );
 }
 
-function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
-  const { data, error, isPending, fetchStatus, refetch } = useRecentWorkouts(api);
+// What was trained last, as a reference for what comes next. Read from the copy on the phone
+// plus the queue, so it shows at once, offline too, and counts a workout not sent yet
+function LastWorkout({ api, queue }: { api: Api; queue: SendQueue }) {
+  const { data, error, isPending, fetchStatus, refetch } = useLastMonth(api);
+  const catalog = useExerciseCatalog(api).data ?? [];
+  const [last] = withQueued(data ?? [], queue.pending);
+  // Ticks, so "Today" turns into "Yesterday" on an app left open overnight
+  const now = useNow();
+
+  if (last) {
+    const category = dayCategoryLabel(last.exercises, catalog);
+    const ago = agoLabel(last.startedAt, now);
+    return (
+      <Notice>
+        <span className="block font-semibold text-muted">Last workout</span>
+        <span className="mt-1 block text-base font-semibold text-ink">
+          {category ? `${category} · ${ago}` : ago}
+        </span>
+      </Notice>
+    );
+  }
 
   if (isPending) {
     // Offline, TanStack Query pauses the request instead of failing it, and sends it when
@@ -136,36 +162,21 @@ function RecentWorkouts({ api, router }: { api: Api; router: Router }) {
     );
   }
 
-  if (data.items.length === 0) {
-    return <Notice>No workouts yet.</Notice>;
-  }
+  return <Notice>No workouts yet. Start one and it shows up here.</Notice>;
+}
 
+function MenuRow({ label, onOpen }: { label: string; onOpen: () => void }) {
   return (
-    <section className="mt-8">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-sm font-semibold text-muted">Recent workouts</h2>
-        {/* Only worth offering once there is more than what fits here */}
-        {data.nextCursor !== null && (
-          <button
-            type="button"
-            onClick={() => router.open({ name: "history" })}
-            className="h-11 text-sm text-accent-ink"
-          >
-            See all
-          </button>
-        )}
-      </div>
-      <ul className="mt-1 space-y-3">
-        {data.items.map((workout) => (
-          <li key={workout.id}>
-            <WorkoutCard
-              workout={workout}
-              onOpen={() => router.open({ name: "workout", id: workout.id })}
-            />
-          </li>
-        ))}
-      </ul>
-    </section>
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex h-14 w-full items-center justify-between border-b border-line px-1 text-left font-semibold"
+    >
+      {label}
+      <span aria-hidden className="text-muted">
+        ›
+      </span>
+    </button>
   );
 }
 

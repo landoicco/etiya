@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Workout } from "@/platform/api";
-import { durationLabel, minutesOf, summaryLine, totalSets } from "./workouts";
+import { agoLabel, daysAgo, durationLabel, minutesOf, summaryLine, totalSets } from "./workouts";
 
 // Only the times, the gym and the sets are read here, so the rest stays out of the way
 function workout(minutes: number, gymName: string | null, ...sets: number[]): Workout {
@@ -56,5 +56,30 @@ describe("totalSets", () => {
   it("adds up the sets across the exercises", () => {
     expect(totalSets(workout(60, null, 3, 4, 2))).toBe(9);
     expect(totalSets(workout(60, null))).toBe(0);
+  });
+});
+
+// Local times, as the phone sees them
+function at(day: number, hour: number): Date {
+  return new Date(2026, 9, day, hour);
+}
+
+describe("daysAgo", () => {
+  it("counts calendar days, not 24-hour spans", () => {
+    expect(daysAgo(at(3, 23).toISOString(), at(4, 7))).toBe(1);
+    expect(daysAgo(at(4, 6).toISOString(), at(4, 22))).toBe(0);
+    expect(daysAgo(at(1, 18).toISOString(), at(4, 9))).toBe(3);
+  });
+});
+
+describe("agoLabel", () => {
+  it("says today and yesterday in words", () => {
+    expect(agoLabel(at(4, 6).toISOString(), at(4, 22))).toBe("Today");
+    expect(agoLabel(at(3, 23).toISOString(), at(4, 7))).toBe("Yesterday");
+  });
+
+  it("counts the days after that", () => {
+    expect(agoLabel(at(1, 18).toISOString(), at(4, 9))).toMatch(/, 3 days ago$/);
+    expect(agoLabel(at(1, 18).toISOString(), at(20, 9))).toMatch(/, 19 days ago$/);
   });
 });

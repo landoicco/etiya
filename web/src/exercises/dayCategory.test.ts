@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogExercise, Exercise } from "@/platform/api";
-import { dayCategory } from "./dayCategory";
+import { dayCategory, dayCategoryLabel } from "./dayCategory";
 
 const CATALOG: CatalogExercise[] = [
   { id: "barbell-bench-press", name: "Barbell Bench Press", muscleGroup: "CHEST", category: "PUSH" },
@@ -53,5 +53,14 @@ describe("dayCategory", () => {
   it("leaves out exercises missing from the catalog, and says nothing when that is all", () => {
     expect(dayCategory([done("Costureras", 5), done("Barbell Bench Press", 1)], CATALOG)).toEqual(["PUSH"]);
     expect(dayCategory([done("Costureras", 5)], CATALOG)).toEqual([]);
+  });
+});
+
+describe("dayCategoryLabel", () => {
+  it("joins tied categories, and is empty when none is known", () => {
+    expect(dayCategoryLabel([done("Lat Pulldown", 3), done("Barbell Bench Press", 3)], CATALOG)).toBe(
+      "Push + Pull",
+    );
+    expect(dayCategoryLabel([done("Costureras", 5)], CATALOG)).toBe("");
   });
 });

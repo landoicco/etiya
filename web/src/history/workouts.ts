@@ -11,16 +11,8 @@ import type { Api, Page, Workout } from "@/platform/api";
 // invalidates once a workout finally reaches the API
 export const WORKOUTS_KEY = ["workouts"];
 
-// Enough to fill a phone screen on the home screen, and a comfortable page in the history
-const RECENT = 10;
+// A comfortable page in the history
 const PAGE = 20;
-
-export function useRecentWorkouts(api: Api) {
-  return useQuery({
-    queryKey: [...WORKOUTS_KEY, "recent"],
-    queryFn: () => api.listWorkouts(RECENT),
-  });
-}
 
 export function useWorkoutHistory(api: Api) {
   return useInfiniteQuery({
@@ -38,21 +30,19 @@ export function useWorkout(api: Api, id: string) {
   return useQuery({
     queryKey: [...WORKOUTS_KEY, id],
     queryFn: () => api.getWorkout(id),
-    // A workout opened from a list is already in hand, so it appears at once and reads the
-    // same with no signal. A stored workout never changes, so there is nothing to refresh
+    // A workout opened from the history is already in hand, so it appears at once and reads
+    // the same with no signal. A stored workout never changes, so there is nothing to refresh
     initialData: () => findLoaded(queryClient, id),
   });
 }
 
 function findLoaded(queryClient: QueryClient, id: string): Workout | undefined {
-  const recent = queryClient.getQueryData<Page<Workout>>([...WORKOUTS_KEY, "recent"]);
   const history = queryClient.getQueryData<InfiniteData<Page<Workout>>>([
     ...WORKOUTS_KEY,
     "history",
   ]);
 
-  const loaded = [...(recent?.items ?? []), ...(history?.pages.flatMap((page) => page.items) ?? [])];
-  return loaded.find((workout) => workout.id === id);
+  return history?.pages.flatMap((page) => page.items).find((workout) => workout.id === id);
 }
 
 export function minutesOf(workout: Workout): number {
@@ -94,4 +84,30 @@ const DAY = new Intl.DateTimeFormat(undefined, {
 
 export function dayLabel(isoTime: string): string {
   return DAY.format(new Date(isoTime));
+}
+
+// Calendar days on the phone's clock, so last night at 11 PM is "yesterday" this morning
+export function daysAgo(isoTime: string, now: Date): number {
+  // Rounded, because a day with a daylight saving change is not 24 hours long
+  return Math.round((midnight(now) - midnight(new Date(isoTime))) / (24 * 60 * 60 * 1000));
+}
+
+function midnight(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: "long" });
+const DATE = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+
+// "Today", "Yesterday", "Tuesday, 3 days ago", and the date once it is a week or more
+export function agoLabel(isoTime: string, now: Date): string {
+  const days = daysAgo(isoTime, now);
+  if (days <= 0) {
+    return "Today";
+  }
+  if (days === 1) {
+    return "Yesterday";
+  }
+  const day = days < 7 ? WEEKDAY.format(new Date(isoTime)) : DATE.format(new Date(isoTime));
+  return `${day}, ${days} days ago`;
 }
