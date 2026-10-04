@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Exercise, GymSet } from "@/platform/api";
-import { exerciseStats } from "./exerciseStats";
+import { exerciseStats, lastUnit } from "./exerciseStats";
 import type { PastWorkout } from "./lastMonth";
 
 const SINCE = new Date("2026-09-04T12:00:00Z");
@@ -38,15 +38,18 @@ describe("exerciseStats", () => {
       unit: "KG",
       max: 65,
       average: 62.5,
-      sessions: 3,
-      since: "2026-09-12T18:00:00Z",
+      sessions: [
+        { startedAt: "2026-09-26T18:00:00Z", set: kg(62.5, 6) },
+        { startedAt: "2026-09-19T18:00:00Z", set: kg(65, 5) },
+        { startedAt: "2026-09-12T18:00:00Z", set: kg(60) },
+      ],
     });
   });
 
   it("works from a single session, for a user who just started", () => {
     const stats = exerciseStats([session("2026-10-01T18:00:00Z", bench(kg(40)))], BENCH, "KG", SINCE);
 
-    expect(stats).toMatchObject({ max: 40, average: 40, sessions: 1 });
+    expect(stats).toMatchObject({ max: 40, average: 40, sessions: [{ set: kg(40) }] });
   });
 
   it("is null when the exercise was not trained since then", () => {
@@ -84,13 +87,29 @@ describe("exerciseStats", () => {
       session("2026-09-19T18:00:00Z", bench(kg(60))),
     ];
 
-    expect(exerciseStats(workouts, BENCH, "KG", SINCE)).toMatchObject({ sessions: 1, max: 60 });
+    expect(exerciseStats(workouts, BENCH, "KG", SINCE)).toMatchObject({ max: 60, sessions: [{ set: kg(60) }] });
   });
 
   it("matches an exercise typed offline with the one from the catalog", () => {
     const offline: Exercise = { exerciseCatalogItemId: null, name: "Barbell Bench Press", sets: [kg(70)] };
     const workouts = [session("2026-09-26T18:00:00Z", offline), session("2026-09-19T18:00:00Z", bench(kg(60)))];
 
-    expect(exerciseStats(workouts, BENCH, "KG", SINCE)).toMatchObject({ sessions: 2, max: 70 });
+    expect(exerciseStats(workouts, BENCH, "KG", SINCE)).toMatchObject({ max: 70, sessions: [{ set: kg(70) }, { set: kg(60) }] });
+  });
+});
+
+describe("lastUnit", () => {
+  it("is the unit of the last set in the latest session with the exercise", () => {
+    const workouts = [
+      session("2026-09-19T18:00:00Z", bench(kg(60))),
+      session("2026-09-26T18:00:00Z", bench(kg(60), { count: 8, weight: 135, unit: "LB" })),
+      session("2026-10-01T18:00:00Z", pullUp(10)),
+    ];
+
+    expect(lastUnit(workouts, BENCH)).toBe("LB");
+  });
+
+  it("is null for an exercise never done", () => {
+    expect(lastUnit([session("2026-10-01T18:00:00Z", pullUp(10))], BENCH)).toBeNull();
   });
 });

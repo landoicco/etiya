@@ -16,6 +16,8 @@ export type Route =
   // The typed name travels in the history entry rather than the URL: it is a half-finished
   // thought, not something worth linking to
   | { name: "newExercise"; exerciseName: string }
+  // The stats of one exercise in the workout, by its identity
+  | { name: "exerciseHistory"; exercise: string }
   | { name: "finish" };
 
 export const HOME: Route = { name: "home" };
@@ -38,6 +40,9 @@ export function parseRoute(pathname: string, state: unknown): Route {
   if (parts[0] === "workout") {
     if (parts[1] === "finish") {
       return { name: "finish" };
+    }
+    if (parts[1] === "history" && parts[2] !== undefined) {
+      return { name: "exerciseHistory", exercise: decodeURIComponent(parts[2]) };
     }
     if (parts[1] === "exercises") {
       return parts[2] === "new"
@@ -67,6 +72,8 @@ export function routePath(route: Route): string {
       return "/workout/exercises";
     case "newExercise":
       return "/workout/exercises/new";
+    case "exerciseHistory":
+      return `/workout/history/${encodeURIComponent(route.exercise)}`;
     case "finish":
       return "/workout/finish";
   }

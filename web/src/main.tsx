@@ -79,6 +79,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
         api={api}
         workout={workout}
         router={router}
+        pending={queue.pending}
         onChange={update}
         onFinish={(request) => {
           // Queued first, then forgotten: the send is the queue's problem from here, and
@@ -124,7 +125,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 }
 
 // The routes that only mean anything while a workout is being logged
-const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "finish"]);
+const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "exerciseHistory", "finish"]);
 
 function StartupError({ message }: { message: string }) {
   return (
@@ -152,8 +153,9 @@ async function start(container: HTMLElement) {
       loadCachedLastMonth(),
       loadPending(),
     ]);
-    // The pickers and the home screen then open on the copies this phone already has, and fresh ones replace them
-    // once they arrive, instead of showing an empty list on every launch. updatedAt keeps them
+    // The pickers and the home screen then open on the copies this phone already has, and
+    // fresh ones replace them once they arrive, instead of showing nothing on every launch.
+    // updatedAt keeps them
     // stale: without it setQueryData stamps them as just fetched, and staleTime cancels the
     // refetch on every launch, so a phone holding a copy would never see a new catalog
     if (catalog) {

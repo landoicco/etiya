@@ -10,6 +10,7 @@ const ROUTES: Route[] = [
   { name: "logging" },
   { name: "exercises" },
   { name: "finish" },
+  { name: "exerciseHistory", exercise: "barbell-bench-press" },
 ];
 
 describe("parseRoute and routePath", () => {

@@ -2,15 +2,18 @@ import type { GymSet, WeightUnit } from "@/platform/api";
 import { identityOf } from "@/workout/workout";
 import type { PastWorkout } from "./lastMonth";
 
-// Each session's heaviest set, in the unit asked for. For a set logged without weight, it is
-// the most reps instead
+// Each session's heaviest set, as logged. For a set logged without weight, it is the most reps
+export interface SessionBest {
+  startedAt: string;
+  set: GymSet;
+}
+
+// max and average are in the unit asked for; sessions are newest first
 export interface ExerciseStats {
   unit: WeightUnit;
   max: number;
   average: number;
-  sessions: number;
-  // When the oldest session counted started, for "3 sessions since Sep 12"
-  since: string;
+  sessions: SessionBest[];
 }
 
 const KG_PER_LB = 0.453_592_37;
@@ -23,19 +26,21 @@ export function exerciseStats(
   unit: WeightUnit,
   since: Date,
 ): ExerciseStats | null {
-  const sessions: { startedAt: string; best: number }[] = [];
+  const sessions: (SessionBest & { value: number })[] = [];
 
   for (const workout of workouts) {
     if (Date.parse(workout.startedAt) < since.getTime()) {
       continue;
     }
-    const values = workout.exercises
-      .filter((logged) => identityOf(logged) === exercise)
-      .flatMap((logged) => logged.sets)
+    const best = setsOf(workout, exercise)
       .filter((set) => (set.unit === "NONE") === (unit === "NONE"))
-      .map((set) => valueOf(set, unit));
-    if (values.length > 0) {
-      sessions.push({ startedAt: workout.startedAt, best: Math.max(...values) });
+      .map((set) => ({ set, value: valueOf(set, unit) }))
+      .reduce<{ set: GymSet; value: number } | null>(
+        (heaviest, candidate) => (heaviest && heaviest.value >= candidate.value ? heaviest : candidate),
+        null,
+      );
+    if (best) {
+      sessions.push({ startedAt: workout.startedAt, ...best });
     }
   }
 
@@ -43,15 +48,29 @@ export function exerciseStats(
     return null;
   }
 
-  const bests = sessions.map((session) => session.best);
-  const oldest = sessions.reduce((a, b) => (Date.parse(a.startedAt) <= Date.parse(b.startedAt) ? a : b));
+  const values = sessions.map((session) => session.value);
   return {
     unit,
-    max: round(Math.max(...bests)),
-    average: round(bests.reduce((total, best) => total + best, 0) / bests.length),
-    sessions: sessions.length,
-    since: oldest.startedAt,
+    max: round(Math.max(...values)),
+    average: round(values.reduce((total, value) => total + value, 0) / values.length),
+    sessions: sessions
+      .toSorted((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+      .map(({ startedAt, set }) => ({ startedAt, set })),
   };
+}
+
+// The unit the exercise was last logged in, so the stats read the way it is usually done
+export function lastUnit(workouts: PastWorkout[], exercise: string): WeightUnit | null {
+  const latest = workouts
+    .filter((workout) => setsOf(workout, exercise).length > 0)
+    .toSorted((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0];
+  return latest ? (setsOf(latest, exercise).at(-1)?.unit ?? null) : null;
+}
+
+function setsOf(workout: PastWorkout, exercise: string): GymSet[] {
+  return workout.exercises
+    .filter((logged) => identityOf(logged) === exercise)
+    .flatMap((logged) => logged.sets);
 }
 
 function valueOf(set: GymSet, unit: WeightUnit): number {
