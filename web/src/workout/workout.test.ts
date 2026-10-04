@@ -308,14 +308,15 @@ describe("setLabel", () => {
   });
 });
 
+function elapsedAt(minutes: number, seconds = 0): string {
+  return elapsedLabel(startWorkout(START, null), new Date(START.getTime() + (minutes * 60 + seconds) * 1000));
+}
+
 describe("elapsedLabel", () => {
   it("counts minutes and seconds, and adds hours once past one", () => {
-    const at = (minutes: number, seconds = 0) =>
-      elapsedLabel(startWorkout(START, null), new Date(START.getTime() + (minutes * 60 + seconds) * 1000));
-
-    expect(at(0, 7)).toBe("0:07");
-    expect(at(9, 5)).toBe("9:05");
-    expect(at(75, 42)).toBe("1:15:42");
+    expect(elapsedAt(0, 7)).toBe("0:07");
+    expect(elapsedAt(9, 5)).toBe("9:05");
+    expect(elapsedAt(75, 42)).toBe("1:15:42");
   });
 
   it("shows zero while the phone's clock catches up", () => {
