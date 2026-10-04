@@ -11,7 +11,6 @@ import {
   addExercise,
   currentExercise,
   elapsedLabel,
-  loggedSets,
   logSet,
   nextSet,
   selectExercise,
@@ -91,8 +90,8 @@ export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDisc
   );
 }
 
-// Finishing is the only thing in the header besides the clock: it is disabled until there is
-// a set to save, because the API refuses a workout with nothing in it
+// Finishing is the only thing in the header besides the clock. Always enabled, even with no
+// sets: the sheet it opens is also the only way to discard
 function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () => void }) {
   const now = useNow();
 
@@ -102,8 +101,7 @@ function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () =>
       <button
         type="button"
         onClick={onFinish}
-        disabled={loggedSets(workout) === 0}
-        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink disabled:border-line disabled:text-muted"
+        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink"
       >
         Finish
       </button>

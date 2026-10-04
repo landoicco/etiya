@@ -51,6 +51,9 @@ export function useGymCatalog(api: Api) {
     },
     // A day: gyms are opened even less often than exercises are invented
     staleTime: 24 * 60 * 60 * 1000,
+    // Kept while the app is open: dropped after 5 idle minutes, the next picker would wait on
+    // the network instead of the copy seeded at launch
+    gcTime: Infinity,
   });
 }
 
