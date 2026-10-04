@@ -33,16 +33,20 @@ cd web && npm test          # once
 cd web && npm run test:watch # re-runs on save
 ```
 
-The screens are not tested; what is, is the logic underneath them, which is written as pure functions in `web/src/workout/workout.ts` so it needs neither a browser nor a rendered component.
+The screens are not tested; what is, is the logic underneath them, which is written as pure functions, in `web/src/workout/workout.ts` and beside each feature, so it needs neither a browser nor a rendered component.
 
 | Test | What it pins down |
 |---|---|
 | `workout.test.ts` | The id stamped from the start time so a retried send lands on the same workout, picking an exercise twice returning to it instead of duplicating it (a superset), one added by name merging with the same one added with its catalog id, sets logged and undone on the current exercise only, the weight cleared on a set logged without one, what the next set suggests (the previous one, the unit already in use, never a set without weight), the steppers and the keypad sharing one set of limits, and the elapsed clock |
-| `workouts.test.ts` | How a saved workout reads: minutes rounded, hours split out past the hour, and the summary line naming the gym, the length and the exercises, singular included |
+| `workouts.test.ts` | How a saved workout reads: minutes rounded, hours split out past the hour, and the summary line naming the gym, the length and the exercises, singular included, and how long ago it was: calendar days on the phone's clock, so last night is "Yesterday" this morning |
 | `router.test.ts` | That every route survives a round trip through its path, that a new exercise's typed name rides in the history entry and a reload without it still opens the screen, and that an unknown path goes home rather than nowhere |
 | `sendQueue.test.ts` | What the send queue does with each answer: an empty queue when everything goes through, stopping at the first workout it cannot reach the API with so the order survives, another go after a `401` or a `429`, and a `4xx` marked as refused for good without holding up the ones behind it |
 | `slugs.test.ts` | That the app builds slugs exactly as the API does, using the cases from `SlugsTest` including `Straße` and Cyrillic |
 | `catalog.test.ts` | The catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
+| `lastMonth.test.ts` | Which workouts the phone keeps: the last 30 days, asking for another page only while the last one ended inside them, the latest workout alone after a longer break, and queued workouts merged in newest first, once each, leaving out the ones the API refused |
+| `exerciseStats.test.ts` | An exercise's last 30 days: the average and the max of each session's heaviest set, from a single session up, kilograms and pounds converted to one decimal, reps for a set without weight and never mixed with weighted ones, an exercise typed offline matching its catalog entry, and the unit it was last logged in |
+| `dayCategory.test.ts` | A day's split: push, pull or legs by most sets, core and cardio only when alone, ties naming both, exercises missing from the catalog left out |
+| `passwordRules.test.ts` | The checklist under a new password: each of Cognito's five rules named when it is missing, and only the letters and symbols Cognito counts ticking a rule, so `Ñ` is not an uppercase letter and `¡` is not a symbol |
 
 Two more commands run over the whole app:
 
@@ -53,7 +57,7 @@ cd web && npm run typecheck # tsc --noEmit, also part of npm run build
 
 `oxlint` needs no configuration beyond [`.oxlintrc.json`](../web/.oxlintrc.json) and no TypeScript plugin, which is why it is here instead of ESLint: `typescript-eslint` still asks for TypeScript below 6.1, and this app is on 7.
 
-Storage is not unit tested. `web/src/workout/activeWorkout.ts` only reads and writes one IndexedDB key through `idb-keyval`, and it swallows every error on purpose: a browser with storage blocked costs the workout in progress, not the app.
+Storage is not unit tested. `web/src/workout/activeWorkout.ts` and the stored copies of the catalog, the gyms and the last month only read and write one IndexedDB key each through `idb-keyval`, and they swallow every error on purpose: a browser with storage blocked costs the workout in progress or a cached copy, not the app. What `lastMonth.ts` does with the API is tested, through a stub.
 
 ## Against the local stack
 
