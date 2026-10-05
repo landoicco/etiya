@@ -57,7 +57,6 @@ export default defineConfig({
         lang: "en",
         theme_color: BACKGROUND,
         background_color: BACKGROUND,
-        // Opens without browser bars, like an installed app
         display: "standalone",
         orientation: "portrait",
         start_url: "/",

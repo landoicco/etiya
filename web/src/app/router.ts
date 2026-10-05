@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-// What the user is looking at, which is what the URL says. Every screen and every sheet is
-// one of these, so the phone's back gesture closes what is on top instead of leaving the
-// app: there is no separate stack to keep in step with the browser's own
+// Every screen and sheet is a URL, so the back gesture closes what is on top
 export type Route =
   | { name: "home" }
   | { name: "history" }

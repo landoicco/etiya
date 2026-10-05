@@ -136,9 +136,8 @@ function StartupError({ message }: { message: string }) {
   );
 }
 
-// The session and the workout in progress are read before the first render, so a signed-in
-// user never sees the login form flash by, and the app opens straight back into the workout
-// that a killed PWA left behind. Until then the page shows the app's background color
+// Storage and the session are read before the first render: no login form flashing by, and a
+// killed PWA reopens on its workout
 async function start(container: HTMLElement) {
   const root = createRoot(container);
   try {

@@ -1,9 +1,7 @@
 import { useState } from "react";
 
-// Tapping the number opens the phone's keypad, for the jumps the steppers would take too
-// many taps to reach: 20 kg to 100 kg. While it is being typed the field holds the text as
-// written, so a half-finished "6." is not read as a number yet; leaving the field commits
-// it, and anything unreadable leaves the value alone
+// The keypad, for jumps too long for the steppers. Text is kept as typed so "6." is not parsed
+// yet; leaving the field commits it, and anything unreadable keeps the old value
 export function NumberField({
   label,
   value,

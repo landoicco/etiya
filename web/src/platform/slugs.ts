@@ -1,7 +1,5 @@
-// The same normalization the API applies to build an id, step by step: accents split and
-// their marks dropped, apostrophes joining words, anything else separating them. It has to
-// agree with Slugs.of in core, because a catalog item's id is the slug of its name, and that
-// is how the app recognizes one the API says already exists
+// Must match Slugs.of in core step by step: accents dropped, apostrophes joining words,
+// anything else separating them. A catalog item's id is the slug of its name
 export function normalize(text: string): string {
   return text
     .normalize("NFD")

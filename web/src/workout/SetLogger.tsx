@@ -77,8 +77,8 @@ export function SetLogger({
   );
 }
 
-// Up by the exercise name, not under "Log set": full width and one line below the button a
-// thumb taps all session, it was hit by mistake. Two taps, because an undone set is gone
+// By the exercise name, away from "Log set", where it was hit by mistake. Two taps: an undone
+// set is gone
 function UndoButton({ sets, onUndo }: { sets: number; onUndo: () => void }) {
   const { armed, onClick } = useConfirm(onUndo);
 

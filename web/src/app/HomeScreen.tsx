@@ -74,8 +74,7 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
   );
 }
 
-// A finished workout that has not reached the API yet is not lost, and saying so is the
-// point: the app is trusted with an hour of training and has to show where it went
+// Says where a finished workout is until it reaches the API
 function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: boolean | null }) {
   const refused = queue.pending.filter((item) => item.refusal !== null);
   const waiting = queue.pending.length - refused.length;
@@ -112,8 +111,7 @@ function SendQueueNotice({ queue, persisted }: { queue: SendQueue; persisted: bo
         </button>
       )}
 
-      {/* Only said when something is actually waiting, and only when the browser refused to
-          promise it will keep it. Installing the app is what turns the refusal into a yes */}
+      {/* Only with something waiting and storage refused; installing the app gets it granted */}
       {waiting > 0 && persisted === false && (
         <p className="mt-3 text-muted">
           This browser may clear saved data to free up space. Add Etiya to your home screen and

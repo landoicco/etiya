@@ -10,9 +10,8 @@ import {
 } from "./workout";
 import type { WorkoutRequest } from "@/platform/api";
 
-// Both ways out of a workout live here, so neither is a stray tap away while training. It is
-// also the last point where a mistake can still be caught, which is what the summary is for:
-// there is no editing once a workout is saved, by choice
+// Both ways out of a workout, away from stray taps. The summary is the last chance to catch a
+// mistake: a saved workout cannot be edited
 export function FinishSheet({
   workout,
   onSave,
