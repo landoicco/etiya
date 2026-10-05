@@ -54,9 +54,8 @@ public class Web extends Construct {
             .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
             .encryption(BucketEncryption.S3_MANAGED)
             .enforceSsl(true)
-            // Dev environment: cdk destroy must not leave the bucket behind. CloudFormation only
-            // deletes empty buckets, so it is emptied by hand first (see docs/deployment.md);
-            // autoDeleteObjects would do it with one more Lambda to maintain
+            // Holds only the build, which deploy.sh uploads again. CloudFormation deletes it
+            // only once emptied by hand; autoDeleteObjects would mean one more Lambda
             .removalPolicy(RemovalPolicy.DESTROY)
             .build();
 

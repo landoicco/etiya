@@ -101,8 +101,8 @@ public class Auth extends Construct {
                 .userPoolClientName("etiya-api-client")
                 // Public client: a browser or mobile app cannot keep a secret
                 .generateSecret(false)
-                // USER_PASSWORD_AUTH lets the AWS CLI get a token for Bruno without a hosted UI;
-                // SRP is what a real frontend should use
+                // USER_PASSWORD_AUTH gives the AWS CLI a token for Bruno and the seed script;
+                // the web app uses SRP
                 .authFlows(AuthFlow.builder().userPassword(true).userSrp(true).build())
                 .accessTokenValidity(Duration.hours(1))
                 .idTokenValidity(Duration.hours(1))

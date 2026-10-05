@@ -24,7 +24,6 @@ public class DynamoDbLocalInitializer {
       log.info("🔍 [DynamoDB Local] Checking database environment...");
 
       try {
-        // List existing tables
         boolean tableExists = ddbClient.listTables().tableNames().contains(tableName);
 
         if (!tableExists) {
@@ -32,7 +31,6 @@ public class DynamoDbLocalInitializer {
               "⚠️ [DynamoDB Local] Table '{}' does not exist in the Docker container.", tableName);
           log.info("🏗️ [DynamoDB Local] Starting creation process for table '{}'...", tableName);
 
-          // Configure the request
           CreateTableRequest request =
               CreateTableRequest.builder()
                   .tableName(tableName)
@@ -57,7 +55,6 @@ public class DynamoDbLocalInitializer {
                   .billingMode(BillingMode.PAY_PER_REQUEST)
                   .build();
 
-          // Create the table
           ddbClient.createTable(request);
 
           log.info("✅ [DynamoDB Local] Table '{}' successfully created!", tableName);
