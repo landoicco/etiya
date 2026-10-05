@@ -1,7 +1,7 @@
 {
   "name": "etiya-web",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Etiya's web app: a PWA to log gym workouts one-handed, offline",
   "author": "Lando Icaza (https://github.com/landoicco)",
   "license": "MIT",
