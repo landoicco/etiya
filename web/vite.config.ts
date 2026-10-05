@@ -3,6 +3,7 @@ import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import pkg from "./package.json" with { type: "json" };
 
 // Background of the app and of the splash screen while it opens. Must match --color-surface
 // in index.css, or opening the app flashes the wrong colour before the CSS lands
@@ -13,6 +14,10 @@ export default defineConfig({
   // in vitest.config.ts for the tests: all three have to say the same thing
   resolve: {
     alias: { "@": "/src" },
+  },
+  // Shown in About; package.json is the one place the web version is written
+  define: {
+    APP_VERSION: JSON.stringify(pkg.version),
   },
   plugins: [
     react(),
@@ -52,7 +57,6 @@ export default defineConfig({
         lang: "en",
         theme_color: BACKGROUND,
         background_color: BACKGROUND,
-        // Opens without browser bars, like an installed app
         display: "standalone",
         orientation: "portrait",
         start_url: "/",

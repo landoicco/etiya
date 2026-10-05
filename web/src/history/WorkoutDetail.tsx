@@ -3,8 +3,8 @@ import type { Router } from "@/app/router";
 import { setLabel } from "@/workout/workout";
 import { dayLabel, durationLabel, totalSets, useWorkout } from "./workouts";
 
-// One saved workout, set by set. It is the only screen reachable by a link, so it has to
-// stand on its own: opened from a list it is already in hand, reloaded it fetches itself
+// One saved workout, set by set. Opened from the history it is already in hand; opened by a
+// link or a reload, it fetches itself
 export function WorkoutDetail({ api, id, router }: { api: Api; id: string; router: Router }) {
   const { data: workout, error, isPending, fetchStatus } = useWorkout(api, id);
 

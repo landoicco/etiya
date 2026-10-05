@@ -1,6 +1,8 @@
-import type { Api } from "@/platform/api";
+import type { Api, WorkoutRequest } from "@/platform/api";
 import { ExerciseList } from "./ExerciseList";
 import { ExercisePicker } from "@/exercises/ExercisePicker";
+import { ExerciseHistory } from "@/history/ExerciseHistory";
+import type { PendingWorkout } from "@/platform/sendQueue";
 import { FinishSheet } from "./FinishSheet";
 import type { Router } from "@/app/router";
 import { SetLogger } from "./SetLogger";
@@ -11,12 +13,11 @@ import {
   addExercise,
   currentExercise,
   elapsedLabel,
-  loggedSets,
+  identityOf,
   logSet,
   nextSet,
   selectExercise,
   undoLastSet,
-  type WorkoutRequest,
 } from "./workout";
 
 type Change = (workout: ActiveWorkout) => ActiveWorkout;
@@ -25,16 +26,24 @@ interface Props {
   api: Api;
   workout: ActiveWorkout;
   router: Router;
+  // Queued workouts count in the exercise stats
+  pending: PendingWorkout[];
   onChange: (change: Change) => void;
   onFinish: (request: WorkoutRequest) => void;
   onDiscard: () => void;
 }
 
 // The workout scrolls above and the set logger stays at the bottom, where the thumb is
-export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDiscard }: Props) {
+export function WorkoutScreen({ api, workout, router, pending, onChange, onFinish, onDiscard }: Props) {
   useWakeLock();
   const exercise = currentExercise(workout);
-  const sheet = router.route.name;
+  const { route } = router;
+  const sheet = route.name;
+  // Missing for a link to an exercise no longer in the workout, which then shows nothing
+  const inHistory =
+    route.name === "exerciseHistory"
+      ? workout.exercises.find((logged) => identityOf(logged) === route.exercise)
+      : undefined;
 
   return (
     <main className="flex h-dvh flex-col">
@@ -43,6 +52,7 @@ export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDisc
         <ExerciseList
           workout={workout}
           onSelect={(index) => onChange((current) => selectExercise(current, index))}
+          onHistory={(logged) => router.open({ name: "exerciseHistory", exercise: identityOf(logged) })}
         />
         <button
           type="button"
@@ -71,11 +81,21 @@ export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDisc
           router={router}
           onPick={(choice) => {
             onChange((current) => addExercise(current, choice));
-            // Leaves the same way the back gesture would, so picking an exercise does not
-            // leave a spent entry for the next back press to land on. An exercise just added
-            // to the catalog is two entries deep, and the search behind it is finished with
+            // Back out of the picker's entries, so back does not land on it again; a new
+            // exercise is two entries deep, the search and the form
             router.close(sheet === "newExercise" ? 2 : 1);
           }}
+        />
+      )}
+
+      {route.name === "exerciseHistory" && inHistory && (
+        <ExerciseHistory
+          api={api}
+          pending={pending}
+          exercise={route.exercise}
+          name={inHistory.name}
+          unit={inHistory.sets.at(-1)?.unit ?? null}
+          onClose={() => router.close()}
         />
       )}
 
@@ -91,8 +111,8 @@ export function WorkoutScreen({ api, workout, router, onChange, onFinish, onDisc
   );
 }
 
-// Finishing is the only thing in the header besides the clock: it is disabled until there is
-// a set to save, because the API refuses a workout with nothing in it
+// Finishing is the only thing in the header besides the clock. Always enabled, even with no
+// sets: the sheet it opens is also the only way to discard
 function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () => void }) {
   const now = useNow();
 
@@ -102,8 +122,7 @@ function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () =>
       <button
         type="button"
         onClick={onFinish}
-        disabled={loggedSets(workout) === 0}
-        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink disabled:border-line disabled:text-muted"
+        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink"
       >
         Finish
       </button>

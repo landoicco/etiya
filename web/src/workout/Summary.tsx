@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { setLabel, type WorkoutRequest } from "./workout";
+import type { WorkoutRequest } from "@/platform/api";
+import { setLabel } from "./workout";
 
 // The counts above say how much was trained; this says what. Folded away by default
 export function Summary({ request }: { request: WorkoutRequest }) {

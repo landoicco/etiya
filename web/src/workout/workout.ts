@@ -1,5 +1,5 @@
 import { ulid } from "ulid";
-import type { GymSet, WeightUnit } from "@/platform/api";
+import type { GymSet, WeightUnit, WorkoutRequest } from "@/platform/api";
 import { slugOf } from "@/platform/slugs";
 
 // The workout being logged, as it lives on the phone. Its shape follows the API's so that
@@ -34,17 +34,6 @@ export interface ExerciseChoice {
 export interface WorkoutGym {
   id: string;
   name: string;
-}
-
-// The body of POST /me/workouts. A finished workout is the active one plus an end time,
-// which is why the two shapes are this close
-export interface WorkoutRequest {
-  id: string;
-  startedAt: string;
-  endedAt: string;
-  gymId: string | null;
-  gymName: string | null;
-  exercises: LoggedExercise[];
 }
 
 // The API refuses anything longer, and refuses it forever: a workout over the limit would
@@ -130,9 +119,7 @@ export function nextSet(workout: ActiveWorkout): GymSet {
   return previous ? { ...previous } : { ...FIRST_SET, unit: lastWeightedUnit(workout) };
 }
 
-// Exercises nobody logged a set on are dropped: they are the ones added and then thought
-// better of, and the API refuses an exercise without sets anyway. A workout with nothing
-// left is not a workout, which is what null means here
+// Exercises without sets are dropped, as the API refuses them. null when nothing is left
 export function finishWorkout(workout: ActiveWorkout, now: Date): WorkoutRequest | null {
   const exercises = workout.exercises.filter((exercise) => exercise.sets.length > 0);
   if (exercises.length === 0) {
@@ -149,7 +136,6 @@ export function finishWorkout(workout: ActiveWorkout, now: Date): WorkoutRequest
   };
 }
 
-// Whether there is anything worth saving, which is what the finish button waits for
 export function loggedSets(workout: ActiveWorkout): number {
   return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
 }
@@ -205,10 +191,9 @@ function isSame(exercise: LoggedExercise, choice: ExerciseChoice): boolean {
   return identityOf(exercise) === identityOf(choice);
 }
 
-// A catalog id is the slug of its name, so the two are comparable: an exercise added without
-// one still matches the same exercise added with it. That happens when the network drops the
-// reply to a POST the server did save, and the retry comes back with the real id
-function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
+// A catalog id is the slug of its name, so an exercise added offline, without one, still
+// matches the same exercise added with it
+export function identityOf({ exerciseCatalogItemId, name }: ExerciseChoice): string {
   return exerciseCatalogItemId ?? slugOf(name);
 }
 

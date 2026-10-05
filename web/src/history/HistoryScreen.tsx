@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Api, Workout } from "@/platform/api";
 import type { Router } from "@/app/router";
+import { dayCategoryLabel } from "@/exercises/dayCategory";
+import { useExerciseCatalog } from "@/exercises/exerciseCatalog";
 import { dayLabel, summaryLine, useWorkoutHistory } from "./workouts";
 
 // Pages are asked for one at a time, by a button rather than by scrolling: a tap is honest
@@ -8,6 +10,7 @@ import { dayLabel, summaryLine, useWorkoutHistory } from "./workouts";
 export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
   const { data, error, isPending, fetchStatus, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useWorkoutHistory(api);
+  const catalog = useExerciseCatalog(api).data ?? [];
 
   const workouts = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -40,6 +43,7 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
             <li key={workout.id}>
               <WorkoutCard
                 workout={workout}
+                category={dayCategoryLabel(workout.exercises, catalog)}
                 onOpen={() => router.open({ name: "workout", id: workout.id })}
               />
             </li>
@@ -61,16 +65,26 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
   );
 }
 
-// The same card on the home screen and in the history, so a workout looks the same wherever
-// it is met
-export function WorkoutCard({ workout, onOpen }: { workout: Workout; onOpen: () => void }) {
+// What was trained leads, so a week of cards reads as a split: Push, Pull, Legs
+function WorkoutCard({
+  workout,
+  category,
+  onOpen,
+}: {
+  workout: Workout;
+  // Empty when none of its exercises is in the catalog
+  category: string;
+  onOpen: () => void;
+}) {
+  const day = dayLabel(workout.startedAt);
+
   return (
     <button
       type="button"
       onClick={onOpen}
       className="w-full rounded-2xl border border-line bg-raised p-4 text-left"
     >
-      <p className="font-semibold">{dayLabel(workout.startedAt)}</p>
+      <p className="font-semibold">{category ? `${category} · ${day}` : day}</p>
       <p className="mt-1 text-sm text-muted">{summaryLine(workout)}</p>
     </button>
   );

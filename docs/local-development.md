@@ -106,7 +106,7 @@ nix shell nixpkgs#awscli2 --command aws sts get-caller-identity
 ```bash
 cd core
 mvn -P local package        # fat jar for Docker, includes Spring Web
-mvn -P prod package         # flat jar for Lambda (target/core-<version>-aws.jar)
+mvn -P prod package         # flat jar for Lambda (target/core-aws.jar)
 mvn spotless:apply          # format to the Google Java style the project uses
 ```
 

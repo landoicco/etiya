@@ -153,9 +153,7 @@ public class WorkoutService {
     }
   }
 
-  // Validate Gym and Exercise data is consistent
   private void validateBusinessRules(Workout input) {
-    // Verify Gym is on catalog
     if (input.getGymId() != null && !input.getGymId().trim().isEmpty()) {
       boolean existGym = gymRepository.findById(input.getGymId()).isPresent();
       if (!existGym) {

@@ -45,7 +45,7 @@ flowchart LR
 
 Every request carries a client-generated ULID, so a send that actually went through the first time answers `200` with the stored workout instead of creating a second one. That is what makes retrying safe enough to do blindly.
 
-**The URL says what is on screen, sheets included.** A phone's back gesture is the main way out of anything, so closing a sheet is the same `history.back()` the gesture performs, and there is no second stack of open sheets to keep in step with the browser's. The router is forty lines rather than a dependency.
+**The URL says what is on screen, sheets included.** A phone's back gesture is the main way out of anything, so closing a sheet is the same `history.back()` the gesture performs, and there is no second stack of open sheets to keep in step with the browser's. The router is one small file of our own rather than a dependency.
 
 **The same handlers run locally and on Lambda.** A bridge used only in local builds turns HTTP requests into the API Gateway events the handlers expect, including fake Cognito claims, so the API runs with no AWS account and the integration suite covers both — 41 of its 45 requests run unchanged against either.
 
@@ -126,6 +126,6 @@ This project is developed alongside [Claude Code](https://claude.com/claude-code
 
 ## Status and roadmap
 
-Both halves are in production since September 2026, at their first stable release (`api-v1.0.0`, `web-v1.0.0`). The API covers gyms, exercises and workouts, with authentication, pagination and validation. The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection. Releases track what each version added.
+Both halves are in production since September 2026: the API at `api-v1.0.0`, the web app at `web-v1.2.0`. The API covers gyms, exercises and workouts, with authentication, pagination and validation. The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection. Access is by invitation: an invited user sets their own password on first sign-in, and can reset it by email. The home screen says what was trained last ("Push · Tuesday, 3 days ago"), the history labels each workout by its split, and every exercise in a workout opens its last 30 days: the average and the max of each session's heaviest set. Releases track what each version added.
 
-Next are the things the app has already asked for while being used: carrying last session's numbers forward, and cardio logged as time rather than reps. What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
+Next are the things the app has already asked for while being used: the first set of an exercise starting from last session's numbers, which the phone now has at hand, cardio logged as time rather than reps, and a pass over the look of the interface. What comes after, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.

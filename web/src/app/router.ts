@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-// What the user is looking at, which is what the URL says. Every screen and every sheet is
-// one of these, so the phone's back gesture closes what is on top instead of leaving the
-// app: there is no separate stack to keep in step with the browser's own
+// Every screen and sheet is a URL, so the back gesture closes what is on top
 export type Route =
   | { name: "home" }
   | { name: "history" }
+  | { name: "about" }
   // A workout already saved, opened from the history or from a link
   | { name: "workout"; id: string }
   // Choosing a gym, which is how a workout starts
@@ -15,6 +14,8 @@ export type Route =
   // The typed name travels in the history entry rather than the URL: it is a half-finished
   // thought, not something worth linking to
   | { name: "newExercise"; exerciseName: string }
+  // The stats of one exercise in the workout, by its identity
+  | { name: "exerciseHistory"; exercise: string }
   | { name: "finish" };
 
 export const HOME: Route = { name: "home" };
@@ -25,6 +26,9 @@ export function parseRoute(pathname: string, state: unknown): Route {
   if (parts[0] === "history") {
     return { name: "history" };
   }
+  if (parts[0] === "about") {
+    return { name: "about" };
+  }
   if (parts[0] === "workouts" && parts[1] !== undefined) {
     return { name: "workout", id: parts[1] };
   }
@@ -34,6 +38,9 @@ export function parseRoute(pathname: string, state: unknown): Route {
   if (parts[0] === "workout") {
     if (parts[1] === "finish") {
       return { name: "finish" };
+    }
+    if (parts[1] === "history" && parts[2] !== undefined) {
+      return { name: "exerciseHistory", exercise: decodeURIComponent(parts[2]) };
     }
     if (parts[1] === "exercises") {
       return parts[2] === "new"
@@ -51,6 +58,8 @@ export function routePath(route: Route): string {
       return "/";
     case "history":
       return "/history";
+    case "about":
+      return "/about";
     case "workout":
       return `/workouts/${route.id}`;
     case "start":
@@ -61,6 +70,8 @@ export function routePath(route: Route): string {
       return "/workout/exercises";
     case "newExercise":
       return "/workout/exercises/new";
+    case "exerciseHistory":
+      return `/workout/history/${encodeURIComponent(route.exercise)}`;
     case "finish":
       return "/workout/finish";
   }

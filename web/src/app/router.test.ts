@@ -4,11 +4,13 @@ import { parseRoute, type Route, routePath } from "./router";
 const ROUTES: Route[] = [
   { name: "home" },
   { name: "history" },
+  { name: "about" },
   { name: "workout", id: "01KZ8BHKC0N761RDSJY0HMX246" },
   { name: "start" },
   { name: "logging" },
   { name: "exercises" },
   { name: "finish" },
+  { name: "exerciseHistory", exercise: "barbell-bench-press" },
 ];
 
 describe("parseRoute and routePath", () => {

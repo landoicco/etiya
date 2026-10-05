@@ -157,7 +157,7 @@ function Empty({
   typed: string;
 }) {
   if (catalog.length > 0) {
-    return <Notice>No exercise matches “{typed}”. Add it and it joins the shared catalog.</Notice>;
+    return <Notice>No exercise matches “{typed}”. Add it and it is saved to your own list.</Notice>;
   }
   if (paused) {
     return (
@@ -176,9 +176,7 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Adding is deliberately a second screen with two required choices. They are what makes the
-// shared catalog searchable by everybody else later, and the API refuses the exercise without
-// them
+// A second screen, because the API requires both choices; the exercise is private to this user
 function NewExercise({
   api,
   name,
@@ -211,8 +209,8 @@ function NewExercise({
       onCreated({ exerciseCatalogItemId: created.id, name: created.name });
     } catch (thrown) {
       if (thrown instanceof ApiError && thrown.status === 409) {
-        // Somebody else added it first, which is not a problem: an exercise's id is the slug
-        // of its name, so the one already in the catalog is the one meant here
+        // Already in the shared catalog or in this user's own: the id is the slug of the name,
+        // so the existing one is the one meant
         const existing = findByName(catalog, name);
         onCreated({ exerciseCatalogItemId: existing?.id ?? normalize(name), name });
       } else if (thrown instanceof ApiError) {

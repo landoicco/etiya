@@ -5,8 +5,8 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.constructs.Construct;
 
-// One stack per environment, with one construct per concern:
-// Database and Auth (step 4b), Functions (4c), Api (4d) and Web (frontend step 2)
+// One stack per environment, with one construct per concern: Database, Auth, Functions, Api
+// and, in production, Web
 public class EtiyaStack extends Stack {
 
   // What the environment is for, which decides what survives a mistake. Passed down to the

@@ -20,15 +20,8 @@ public class TableSchemaFactory {
   public static final String USER_PK_PREFIX = "USER#";
   public static final String WORKOUT_SK_PREFIX = "WORKOUT#";
 
-  // Stamped on every item written, and never read back: it says which shape an item was stored
-  // with, so a later change can tell old items from new ones and migrate them. Attributes alone
-  // cannot always answer that — a field whose meaning changes while its name and type stay the
-  // same is invisible to any inspection. Nothing reads these yet; the day a version 2 exists,
-  // the migration reads them raw from a scan, or a setter is added here to upgrade on read.
-  //
-  // One per item type, because the three shapes evolve independently. Deliberately not a model
-  // field: models are serialized straight into API responses and read straight from request
-  // bodies, so a field here would leak into the API and let a client claim its own version
+  // Stamped on every write, never read back yet; one per item type. Not a model field, or it
+  // would leak into the API. Why it exists: docs/data-model.md
   public static final String SCHEMA_VERSION = "schemaVersion";
 
   public static final int GYM_SCHEMA_VERSION = 1;

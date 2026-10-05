@@ -41,6 +41,9 @@ export function useExerciseCatalog(api: Api) {
     },
     // A day, because an exercise somebody else adds is not worth a request per picker open
     staleTime: 24 * 60 * 60 * 1000,
+    // Kept while the app is open: dropped after 5 idle minutes, the picker reopened mid-workout
+    // would wait on the network, or claim offline that this phone has no copy
+    gcTime: Infinity,
   });
 }
 

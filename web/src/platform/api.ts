@@ -1,5 +1,4 @@
 import type { Auth } from "@/auth/auth";
-import type { WorkoutRequest } from "@/workout/workout";
 
 // Shapes of the API responses, as core serializes them: empty fields come as null.
 // They must stay in sync with the models in core by hand, like the route keys in infra
@@ -24,7 +23,7 @@ export type MuscleGroup =
 
 export type ExerciseCategory = "PUSH" | "PULL" | "LEGS" | "CORE" | "CARDIO" | "OTHER";
 
-// An exercise in the catalog every user shares. Its id is the slug of its name
+// An exercise from the shared catalog or one this user added. Its id is the slug of its name
 export interface CatalogExercise {
   id: string;
   name: string;
@@ -61,6 +60,17 @@ export interface Workout {
   id: string;
   userId: string;
   // UTC, as yyyy-MM-ddTHH:mm:ssZ
+  startedAt: string;
+  endedAt: string;
+  gymId: string | null;
+  gymName: string | null;
+  exercises: Exercise[];
+}
+
+// The body of POST /me/workouts. A finished workout is the active one plus an end time,
+// which is why the two shapes are this close
+export interface WorkoutRequest {
+  id: string;
   startedAt: string;
   endedAt: string;
   gymId: string | null;
@@ -132,8 +142,8 @@ export function createApi(apiUrl: string, auth: Auth) {
       return post("/gyms", gym);
     },
 
-    // 409 when an exercise with the same slug is already there, which is not an error for
-    // the app: it means somebody else added it first
+    // Private to this user. 409 when the shared catalog or this user already has the slug,
+    // which the app takes as "use the existing one"
     registerExercise(exercise: NewCatalogExercise): Promise<CatalogExercise> {
       return post("/exercises", exercise);
     },

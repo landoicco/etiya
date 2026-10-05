@@ -5,11 +5,13 @@ import { loadActiveWorkout } from "@/workout/activeWorkout";
 import { type Api, ApiError, createApi } from "@/platform/api";
 import { type Auth, cognitoAuth, type User } from "@/auth/auth";
 import { loadConfig } from "@/platform/config";
+import { AboutScreen } from "@/app/AboutScreen";
 import { HistoryScreen } from "@/history/HistoryScreen";
 import { HomeScreen } from "@/app/HomeScreen";
 import { LoginScreen } from "@/auth/LoginScreen";
 import { CATALOG_KEY, forgetCatalog, loadCachedCatalog } from "@/exercises/exerciseCatalog";
 import { GYMS_KEY, loadCachedGyms } from "@/gyms/gyms";
+import { forgetLastMonth, LAST_MONTH_KEY, loadCachedLastMonth } from "@/history/lastMonth";
 import { HOME, useRouter } from "@/app/router";
 import { usePersistence } from "@/platform/storage";
 import { loadPending, type PendingWorkout, useSendQueue } from "@/platform/sendQueue";
@@ -67,7 +69,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
     await auth.signOut();
     // The next user must not see this one's data, not even for a moment, nor on the next launch
     queryClient.clear();
-    await forgetCatalog();
+    await Promise.all([forgetCatalog(), forgetLastMonth()]);
     setUser(null);
   }
 
@@ -77,6 +79,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
         api={api}
         workout={workout}
         router={router}
+        pending={queue.pending}
         onChange={update}
         onFinish={(request) => {
           // Queued first, then forgotten: the send is the queue's problem from here, and
@@ -95,6 +98,10 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 
   if (router.route.name === "history") {
     return <HistoryScreen api={api} router={router} />;
+  }
+
+  if (router.route.name === "about") {
+    return <AboutScreen router={router} />;
   }
 
   if (router.route.name === "workout") {
@@ -118,7 +125,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 }
 
 // The routes that only mean anything while a workout is being logged
-const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "finish"]);
+const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "exerciseHistory", "finish"]);
 
 function StartupError({ message }: { message: string }) {
   return (
@@ -129,31 +136,32 @@ function StartupError({ message }: { message: string }) {
   );
 }
 
-// The session and the workout in progress are read before the first render, so a signed-in
-// user never sees the login form flash by, and the app opens straight back into the workout
-// that a killed PWA left behind. Until then the page shows the app's background color
+// Storage and the session are read before the first render: no login form flashing by, and a
+// killed PWA reopens on its workout
 async function start(container: HTMLElement) {
   const root = createRoot(container);
   try {
     const config = await loadConfig();
     const auth = cognitoAuth(config);
     const api = createApi(config.apiUrl, auth);
-    const [user, workout, catalog, gyms, pending] = await Promise.all([
+    const [user, workout, catalog, gyms, lastMonth, pending] = await Promise.all([
       auth.currentUser(),
       loadActiveWorkout(),
       loadCachedCatalog(),
       loadCachedGyms(),
+      loadCachedLastMonth(),
       loadPending(),
     ]);
-    // The pickers then open on the copies this phone already has, and fresh ones replace them
-    // once they arrive, instead of showing an empty list on every launch. updatedAt keeps them
-    // stale: without it setQueryData stamps them as just fetched, and staleTime cancels the
-    // refetch on every launch, so a phone holding a copy would never see a new catalog
+    // The screens open on the copies this phone has, and fresh ones replace them. updatedAt: 0
+    // marks them stale, or staleTime would cancel the refetch and a copy would never update
     if (catalog) {
       queryClient.setQueryData(CATALOG_KEY, catalog, { updatedAt: 0 });
     }
     if (gyms) {
       queryClient.setQueryData(GYMS_KEY, gyms, { updatedAt: 0 });
+    }
+    if (lastMonth) {
+      queryClient.setQueryData(LAST_MONTH_KEY, lastMonth, { updatedAt: 0 });
     }
     root.render(
       <StrictMode>
