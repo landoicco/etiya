@@ -14,6 +14,8 @@ export type Route =
   // The typed name travels in the history entry rather than the URL: it is a half-finished
   // thought, not something worth linking to
   | { name: "newExercise"; exerciseName: string }
+  // The picture of a catalog exercise, over the picker, by its id
+  | { name: "exerciseArt"; exercise: string }
   // The stats of one exercise in the workout, by its identity
   | { name: "exerciseHistory"; exercise: string }
   | { name: "finish" };
@@ -43,6 +45,9 @@ export function parseRoute(pathname: string, state: unknown): Route {
       return { name: "exerciseHistory", exercise: decodeURIComponent(parts[2]) };
     }
     if (parts[1] === "exercises") {
+      if (parts[2] === "art" && parts[3] !== undefined) {
+        return { name: "exerciseArt", exercise: decodeURIComponent(parts[3]) };
+      }
       return parts[2] === "new"
         ? { name: "newExercise", exerciseName: nameFrom(state) }
         : { name: "exercises" };
@@ -70,6 +75,8 @@ export function routePath(route: Route): string {
       return "/workout/exercises";
     case "newExercise":
       return "/workout/exercises/new";
+    case "exerciseArt":
+      return `/workout/exercises/art/${encodeURIComponent(route.exercise)}`;
     case "exerciseHistory":
       return `/workout/history/${encodeURIComponent(route.exercise)}`;
     case "finish":

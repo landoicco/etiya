@@ -36,6 +36,13 @@ export default defineConfig({
             handler: "NetworkFirst",
             options: { cacheName: "config", networkTimeoutSeconds: 3 },
           },
+          {
+            // Uploaded apart from the build. The copy at hand at once, a fresh one for next
+            // time, so the pictures work offline and a redrawn one still arrives
+            urlPattern: ({ url }) => url.pathname.startsWith("/art/"),
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "art" },
+          },
         ],
       },
       // Every icon size, plus the matching <link> tags, is generated from this one SVG

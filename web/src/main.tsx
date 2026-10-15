@@ -125,7 +125,14 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
 }
 
 // The routes that only mean anything while a workout is being logged
-const UNDER_WORKOUT = new Set(["logging", "exercises", "newExercise", "exerciseHistory", "finish"]);
+const UNDER_WORKOUT = new Set([
+  "logging",
+  "exercises",
+  "newExercise",
+  "exerciseArt",
+  "exerciseHistory",
+  "finish",
+]);
 
 function StartupError({ message }: { message: string }) {
   return (

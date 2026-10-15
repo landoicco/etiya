@@ -75,7 +75,7 @@ export function WorkoutScreen({ api, workout, router, pending, onChange, onFinis
         />
       )}
 
-      {(sheet === "exercises" || sheet === "newExercise") && (
+      {(sheet === "exercises" || sheet === "newExercise" || sheet === "exerciseArt") && (
         <ExercisePicker
           api={api}
           router={router}
