@@ -21,7 +21,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 3000 --strictPort",
     "config": "scripts/config.sh public/config.json",
-    "deploy": "scripts/deploy.sh"
+    "deploy": "scripts/deploy.sh",
+    "deploy:art": "scripts/deploy-art.sh"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",
