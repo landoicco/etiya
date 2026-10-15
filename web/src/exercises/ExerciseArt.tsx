@@ -33,10 +33,12 @@ export function ArtThumbnail({ exerciseId }: { exerciseId: string }) {
 export function ArtSheet({
   exerciseId,
   name,
+  description,
   onClose,
 }: {
   exerciseId: string;
   name: string;
+  description: string;
   onClose: () => void;
 }) {
   return (
@@ -60,6 +62,7 @@ export function ArtSheet({
           className="mt-2 mb-6 aspect-[2/1] max-h-[40dvh] w-full bg-ink"
           style={mask(exerciseId, "center", "contain")}
         />
+        {description && <p className="-mt-2 mb-6 text-sm text-muted">{description}</p>}
       </section>
     </div>
   );

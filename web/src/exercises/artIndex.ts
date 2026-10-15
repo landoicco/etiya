@@ -7,17 +7,23 @@ export function artUrl(exerciseId: string): string {
   return `/art/exercises/${encodeURIComponent(exerciseId)}.svg`;
 }
 
-// Without art, CloudFront answers with index.html, so anything but a list of ids means none
-export function parseArtIndex(text: string): Set<string> {
+// Exercise id → a short description shown under its picture. Without art, CloudFront answers
+// with index.html, so anything but an object of strings means none
+export function parseArtIndex(text: string): Map<string, string> {
   try {
-    const ids: unknown = JSON.parse(text);
-    return Array.isArray(ids) ? new Set(ids.filter((id) => typeof id === "string")) : new Set();
+    const index: unknown = JSON.parse(text);
+    if (typeof index !== "object" || index === null || Array.isArray(index)) {
+      return new Map();
+    }
+    return new Map(
+      Object.entries(index).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+    );
   } catch {
-    return new Set();
+    return new Map();
   }
 }
 
-// The ids that have a picture. Once per launch; offline, the service worker has the last one
+// Which exercises have a picture. Once per launch; offline, the service worker has the last one
 export function useExerciseArt() {
   const { data } = useQuery({
     queryKey: ["exercise-art"],
@@ -26,5 +32,5 @@ export function useExerciseArt() {
     gcTime: Infinity,
     retry: false,
   });
-  return data ?? new Set<string>();
+  return data ?? new Map<string, string>();
 }

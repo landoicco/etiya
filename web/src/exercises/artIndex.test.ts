@@ -2,19 +2,25 @@ import { describe, expect, it } from "vitest";
 import { artUrl, parseArtIndex } from "./artIndex";
 
 describe("parseArtIndex", () => {
-  it("reads a list of exercise ids", () => {
-    expect(parseArtIndex('["back-squat", "barbell-bench-press"]')).toEqual(
-      new Set(["back-squat", "barbell-bench-press"]),
+  it("reads each exercise id with its description", () => {
+    expect(parseArtIndex('{"back-squat": "Bar on the upper back.", "dip": ""}')).toEqual(
+      new Map([
+        ["back-squat", "Bar on the upper back."],
+        ["dip", ""],
+      ]),
     );
   });
 
   it("finds no art in the page CloudFront serves for a missing file", () => {
-    expect(parseArtIndex("<!doctype html><html></html>")).toEqual(new Set());
+    expect(parseArtIndex("<!doctype html><html></html>")).toEqual(new Map());
   });
 
-  it("finds no art in JSON of another shape, and skips ids that are not strings", () => {
-    expect(parseArtIndex('{"ids": ["back-squat"]}')).toEqual(new Set());
-    expect(parseArtIndex('["back-squat", 3, null]')).toEqual(new Set(["back-squat"]));
+  it("finds no art in JSON of another shape, and skips entries that are not text", () => {
+    expect(parseArtIndex('["back-squat"]')).toEqual(new Map());
+    expect(parseArtIndex("null")).toEqual(new Map());
+    expect(parseArtIndex('{"back-squat": "Squat.", "dip": 3}')).toEqual(
+      new Map([["back-squat", "Squat."]]),
+    );
   });
 });
 

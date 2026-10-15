@@ -131,7 +131,14 @@ export function ExercisePicker({ api, router, onPick }: Props) {
         </div>
       )}
 
-      {inArt && <ArtSheet exerciseId={inArt.id} name={inArt.name} onClose={() => router.close()} />}
+      {inArt && (
+        <ArtSheet
+          exerciseId={inArt.id}
+          name={inArt.name}
+          description={art.get(inArt.id) ?? ""}
+          onClose={() => router.close()}
+        />
+      )}
     </Sheet>
   );
 }
