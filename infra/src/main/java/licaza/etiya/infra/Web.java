@@ -28,11 +28,13 @@ import software.amazon.awscdk.services.cloudfront.origins.S3BucketOrigin;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 // The PWA: a private bucket that only CloudFront can read, served on the default
 // cloudfront.net domain, which already has the HTTPS that service workers require.
-// The files are not part of the stack: web/scripts/deploy.sh builds and uploads them
+// The files are not part of the stack: web/scripts/deploy.sh builds and uploads them, and
+// web/scripts/deploy-art.sh the exercise pictures
 public class Web extends Construct {
 
   // Vite puts a content hash in every file name under assets/, so a new build never reuses a
@@ -54,8 +56,14 @@ public class Web extends Construct {
             .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
             .encryption(BucketEncryption.S3_MANAGED)
             .enforceSsl(true)
-            // Holds only the build, which deploy.sh uploads again. CloudFormation deletes it
-            // only once emptied by hand; autoDeleteObjects would mean one more Lambda
+            // Also the only copy of the art under art/, which is not in the repo: versions keep
+            // what an upload replaces, for a while
+            .versioned(true)
+            .lifecycleRules(
+                List.of(
+                    LifecycleRule.builder().noncurrentVersionExpiration(Duration.days(90)).build()))
+            // CloudFormation deletes it only once emptied by hand, old versions included;
+            // autoDeleteObjects would mean one more Lambda
             .removalPolicy(RemovalPolicy.DESTROY)
             .build();
 
