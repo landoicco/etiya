@@ -61,6 +61,8 @@ npm run dev          # http://localhost:5173, reloads on every change
 
 The web app is developed against the dev API on AWS with a real Cognito login, not against the Docker stack, so it needs a [deployed stack](deployment.md) and AWS credentials for `npm run config`. That file holds the API URL and the Cognito IDs, is ignored by git, and is what the app reads at startup; without it the app says so instead of starting. `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
 
+The exercise pictures are not in the repo. To see them, point the dev server at the folder that holds `exercises/` with an absolute path: `ART_DIR=<folder> npm run dev`. Without it the picker shows no pictures. The preview server does not serve them.
+
 `npm run build` checks the types and writes `web/dist`, including the service worker and every icon size, generated from `public/icon.svg`. The service worker only runs in a production build, so test installation and offline behavior with:
 ```bash
 npm run build && npm run preview     # http://localhost:3000, the other origin CORS allows

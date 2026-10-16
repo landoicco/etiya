@@ -6,6 +6,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Only what main holds reaches the bucket. The build copies public/ whole, ignored files too
+fail() { echo "Not deploying: $1" >&2; exit 1; }
+git fetch --quiet origin main
+[ "$(git rev-parse --abbrev-ref HEAD)" = main ] || fail "check out main first"
+[ -z "$(git status --porcelain --untracked-files=no)" ] || fail "main has uncommitted changes"
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || fail "main differs from origin/main"
+extra="$(git ls-files --others public | grep -vx public/config.json || true)"
+[ -z "$extra" ] || fail "public/ holds files git does not track:"$'\n'"$extra"
+
 # Read before building, so a missing stack fails fast
 bucket="$(scripts/stack-output.sh WebBucketName)"
 

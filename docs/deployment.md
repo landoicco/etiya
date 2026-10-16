@@ -96,6 +96,8 @@ cd web && npm run deploy
 
 [`web/scripts/deploy.sh`](../web/scripts/deploy.sh) reads the outputs of the stack, builds the app, writes `dist/config.json` with the API URL and the Cognito IDs, and syncs `dist/` to the bucket. The app is then at `WebUrl`.
 
+**It only deploys `main`, as pushed.** It stops before building on any other branch, with uncommitted changes, when `main` differs from `origin/main`, or when `web/public/` holds a file git does not track (`config.json` aside). Vite copies `public/` whole into `dist/`, ignored files included, so a local file there would otherwise reach the bucket.
+
 `STACK` selects the stack for this and for `npm run config`, and **defaults to `EtiyaProd`**, the only one with a bucket to upload to. To point a local `npm run dev` at the dev API instead, write its config explicitly:
 ```bash
 cd web && STACK=EtiyaDev npm run config
@@ -117,7 +119,7 @@ cd web && ART_DIR=<folder> npm run deploy:art
 * [`web/scripts/deploy-art.sh`](../web/scripts/deploy-art.sh) checks the index, uploads the pictures and then the index, so it never names a picture that is not there yet. Nothing is deleted.
 * Uploading needs no new build and no release: phones show the new pictures after their next launch, and the service worker keeps them for offline use.
 * The bucket is **versioned**, and that is the only backup the pictures have: a replaced or deleted one can be restored for 90 days.
-* For `npm run dev`, copy the same folder to `web/public/art/exercises/`, which git ignores.
+* `npm run dev` serves them from the same folder: `ART_DIR=<folder> npm run dev`. Never copy them into `web/public/`: the build would take them into the next `npm run deploy`, which now refuses to run.
 
 ## Creating the first user
 
