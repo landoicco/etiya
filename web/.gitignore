@@ -6,6 +6,3 @@ dist/
 
 # API URL and Cognito IDs of a deployed stack, written by npm run config
 public/config.json
-
-# Exercise pictures, each deployment brings its own; a copy here is for npm run dev
-public/art/
