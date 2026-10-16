@@ -16,6 +16,8 @@ import {
 } from "./catalog";
 import { normalize } from "@/platform/slugs";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
+import { useExerciseArt } from "./artIndex";
+import { ArtSheet, ArtThumbnail } from "./ExerciseArt";
 import type { Router } from "@/app/router";
 import type { ExerciseChoice } from "@/workout/workout";
 
@@ -35,9 +37,14 @@ export function ExercisePicker({ api, router, onPick }: Props) {
   const [category, setCategory] = useState<ExerciseCategory | null>(null);
 
   const { data, error, fetchStatus } = useExerciseCatalog(api);
+  const art = useExerciseArt();
   const catalog = data ?? [];
   const typed = query.trim();
   const results = searchCatalog(catalog, { query, category });
+  const { route } = router;
+  // Missing for a link to an exercise this phone does not know, which then shows nothing
+  const inArt =
+    route.name === "exerciseArt" ? catalog.find((item) => item.id === route.exercise) : undefined;
 
   // Adding is its own entry, so the back gesture returns to the search rather than closing
   // the picker. The name travels in the entry, since a reload has nothing else to go on
@@ -100,7 +107,9 @@ export function ExercisePicker({ api, router, onPick }: Props) {
               <li key={item.id}>
                 <ExerciseRow
                   item={item}
+                  hasArt={art.has(item.id)}
                   onSelect={() => onPick({ exerciseCatalogItemId: item.id, name: item.name })}
+                  onShowArt={() => router.open({ name: "exerciseArt", exercise: item.id })}
                 />
               </li>
             ))}
@@ -121,6 +130,15 @@ export function ExercisePicker({ api, router, onPick }: Props) {
           </button>
         </div>
       )}
+
+      {inArt && (
+        <ArtSheet
+          exerciseId={inArt.id}
+          name={inArt.name}
+          description={art.get(inArt.id) ?? ""}
+          onClose={() => router.close()}
+        />
+      )}
     </Sheet>
   );
 }
@@ -129,18 +147,38 @@ function Sheet({ children }: { children: React.ReactNode }) {
   return <div className="fixed inset-0 z-10 flex h-dvh flex-col bg-surface">{children}</div>;
 }
 
-function ExerciseRow({ item, onSelect }: { item: CatalogExercise; onSelect: () => void }) {
+// The name adds the exercise and the picture opens it larger: two targets, so looking never adds.
+// Without a picture the row is the name alone, the same as before there were any
+function ExerciseRow({
+  item,
+  hasArt,
+  onSelect,
+  onShowArt,
+}: {
+  item: CatalogExercise;
+  hasArt: boolean;
+  onSelect: () => void;
+  onShowArt: () => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className="w-full rounded-2xl border border-line bg-raised p-4 text-left"
-    >
-      <p className="font-semibold">{item.name}</p>
-      <p className="mt-1 text-sm text-muted">
-        {MUSCLE_GROUP_LABELS[item.muscleGroup]} · {CATEGORY_LABELS[item.category]}
-      </p>
-    </button>
+    <div className="flex rounded-2xl border border-line bg-raised">
+      <button type="button" onClick={onSelect} className="min-w-0 flex-1 p-4 text-left">
+        <p className="font-semibold">{item.name}</p>
+        <p className="mt-1 text-sm text-muted">
+          {MUSCLE_GROUP_LABELS[item.muscleGroup]} · {CATEGORY_LABELS[item.category]}
+        </p>
+      </button>
+      {hasArt && (
+        <button
+          type="button"
+          onClick={onShowArt}
+          aria-label={`Show ${item.name}`}
+          className="flex shrink-0 items-center px-4"
+        >
+          <ArtThumbnail exerciseId={item.id} />
+        </button>
+      )}
+    </div>
   );
 }
 

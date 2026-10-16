@@ -105,6 +105,20 @@ cd web && STACK=EtiyaDev npm run config
 * Files under `assets/` have a content hash in their name and are cached for a year. Everything else, including `index.html`, the service worker and `config.json`, is never cached, so a deploy reaches the phones on their next launch and no CloudFront invalidation is needed.
 * `assets/` is uploaded first, so a phone that fetches the new `index.html` mid-upload finds every file it points to. Old hashed files are not deleted, for phones still running the previous build.
 
+### The exercise pictures
+
+The pictures shown in the exercise picker are not in the repo: each deployment brings its own (see [decisions](decisions.md#the-frontend-is-a-pwa)). They are uploaded apart from the app, from a folder outside the repo:
+```bash
+cd web && ART_DIR=<folder> npm run deploy:art
+```
+
+* `<folder>/exercises/` holds one `<exercise id>.svg` per picture and an `index.json` mapping each id to a short description, which the app shows under the picture. An exercise missing from the index shows no picture, so the app looks as it did before there were any.
+* Each SVG is one colour on a transparent background, used as a mask and painted with the app's colour tokens, and holds two phases side by side: start on the left, end on the right. The thumbnail shows the right half.
+* [`web/scripts/deploy-art.sh`](../web/scripts/deploy-art.sh) checks the index, uploads the pictures and then the index, so it never names a picture that is not there yet. Nothing is deleted.
+* Uploading needs no new build and no release: phones show the new pictures after their next launch, and the service worker keeps them for offline use.
+* The bucket is **versioned**, and that is the only backup the pictures have: a replaced or deleted one can be restored for 90 days.
+* For `npm run dev`, copy the same folder to `web/public/art/exercises/`, which git ignores.
+
 ## Creating the first user
 
 Users cannot sign themselves up, so an administrator creates them. This is for your own account and the test users Bruno signs in as; to let someone else in, [invite them](#inviting-someone) instead:
@@ -192,7 +206,7 @@ Its table, user pool and log groups use `RemovalPolicy.DESTROY`, so nothing is l
 
 `EtiyaProd` resists the same command on purpose: the table has deletion protection and both it and the user pool are `RETAIN`, so a destroy would fail on the table and, if forced, would leave the data and the accounts behind rather than delete them. Removing production for real means turning deletion protection off by hand first — which is the point.
 
-> If a stack ever does own a bucket that CloudFormation refuses to delete, empty it first with `aws s3 rm "s3://<WebBucketName>" --recursive` and run the destroy again.
+> If a stack ever does own a bucket that CloudFormation refuses to delete, empty it first and run the destroy again. Production's bucket is versioned, so `aws s3 rm --recursive` is not enough: it leaves the old versions behind. **Empty** in the S3 console removes those too.
 
 ## Cost
 
