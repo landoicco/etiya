@@ -128,4 +128,14 @@ This project is developed alongside [Claude Code](https://claude.com/claude-code
 
 Both halves are in production since September 2026: the API at `api-v1.0.0`, the web app at `web-v1.3.0`. The API covers gyms, exercises and workouts, with authentication, pagination and validation. The web app logs a workout end to end — gym, exercises, sets, finish, history — installs on a phone and works without a connection. Access is by invitation: an invited user sets their own password on first sign-in, and can reset it by email. The home screen says what was trained last ("Push · Tuesday, 3 days ago"), the history labels each workout by its split, and every exercise in a workout opens its last 30 days: the average and the max of each session's heaviest set. The exercise picker shows a picture of each exercise, start and end, with a sentence on how it is done. Releases track what each version added.
 
-Next, one release at a time and each used for a few days before the next: a final palette with light and dark modes, the project's own domain, a page that explains the app before signing in, a workout clock that pauses when it is forgotten, and a new icon. After that come the things the app has already asked for while being used: the first set of an exercise starting from last session's numbers, and cardio logged as time rather than reps. What comes later, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
+Next, in this order, one release at a time and each used for a few days before the next:
+
+1. **A new look** (`web-v1.4.0`, in progress): a final palette in light and dark, a greeting by name, and a new icon, favicon and splash to match. Then fresh showcase images and a banner for the repository.
+2. **The project's own domain**, `etiya.licaza.dev`, instead of CloudFront's. Installed apps are reinstalled once, so it comes after the new icon.
+3. **A page that explains the app before signing in**: what it is for and what it does, shown as a carousel, with the sign-in button always in reach. About moves there, and a shared link previews the same pictures.
+4. **A workout clock that pauses when it is forgotten**: after 10 minutes without a set it stops, and asks whether to resume or finish.
+5. **Removing an exercise during a workout** by swiping it away, after a confirmation. To be evaluated.
+6. **Correcting a logged set**, so a typo does not skew an exercise's average. To be evaluated: workouts are deliberately not editable today.
+7. **Java packages under `dev.licaza`**, matching the domain, with its URL in the project's metadata.
+
+After that come the things the app has already asked for while being used: the first set of an exercise starting from last session's numbers, and cardio logged as time rather than reps. What comes later, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
