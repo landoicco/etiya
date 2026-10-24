@@ -5,6 +5,7 @@ const ROUTES: Route[] = [
   { name: "home" },
   { name: "history" },
   { name: "about" },
+  { name: "account" },
   { name: "workout", id: "01KZ8BHKC0N761RDSJY0HMX246" },
   { name: "start" },
   { name: "logging" },

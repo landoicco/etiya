@@ -13,7 +13,7 @@ const DAYS = 30;
 const PAGE = 100;
 
 // What the stats and the home screen read: a stored workout, or a queued one not sent yet
-export type PastWorkout = Pick<Workout, "id" | "startedAt" | "exercises">;
+export type PastWorkout = Pick<Workout, "id" | "startedAt" | "endedAt" | "exercises">;
 
 export function monthBefore(now: Date): Date {
   return new Date(now.getTime() - DAYS * 24 * 60 * 60 * 1000);

@@ -7,7 +7,7 @@ const SINCE = new Date("2026-09-04T12:00:00Z");
 const BENCH = "barbell-bench-press";
 
 function session(startedAt: string, ...exercises: Exercise[]): PastWorkout {
-  return { id: startedAt, startedAt, exercises };
+  return { id: startedAt, startedAt, endedAt: startedAt, exercises };
 }
 
 function bench(...sets: GymSet[]): Exercise {

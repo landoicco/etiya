@@ -45,12 +45,12 @@ function findLoaded(queryClient: QueryClient, id: string): Workout | undefined {
   return history?.pages.flatMap((page) => page.items).find((workout) => workout.id === id);
 }
 
-export function minutesOf(workout: Workout): number {
+export function minutesOf(workout: Pick<Workout, "startedAt" | "endedAt">): number {
   return Math.round((Date.parse(workout.endedAt) - Date.parse(workout.startedAt)) / 60_000);
 }
 
 // "45 min" up to an hour, "1 h 15 min" past it, because "95 min" reads as arithmetic
-export function durationLabel(workout: Workout): string {
+export function durationLabel(workout: Pick<Workout, "startedAt" | "endedAt">): string {
   const minutes = minutesOf(workout);
   if (minutes < 60) {
     return `${minutes} min`;
@@ -59,7 +59,7 @@ export function durationLabel(workout: Workout): string {
   return rest === 0 ? `${(minutes - rest) / 60} h` : `${(minutes - rest) / 60} h ${rest} min`;
 }
 
-export function totalSets(workout: Workout): number {
+export function totalSets(workout: Pick<Workout, "exercises">): number {
   return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
 }
 

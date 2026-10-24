@@ -5,6 +5,8 @@ export type Route =
   | { name: "home" }
   | { name: "history" }
   | { name: "about" }
+  // The sheet behind the avatar, with sign-out
+  | { name: "account" }
   // A workout already saved, opened from the history or from a link
   | { name: "workout"; id: string }
   // Choosing a gym, which is how a workout starts
@@ -30,6 +32,9 @@ export function parseRoute(pathname: string, state: unknown): Route {
   }
   if (parts[0] === "about") {
     return { name: "about" };
+  }
+  if (parts[0] === "account") {
+    return { name: "account" };
   }
   if (parts[0] === "workouts" && parts[1] !== undefined) {
     return { name: "workout", id: parts[1] };
@@ -65,6 +70,8 @@ export function routePath(route: Route): string {
       return "/history";
     case "about":
       return "/about";
+    case "account":
+      return "/account";
     case "workout":
       return `/workouts/${route.id}`;
     case "start":
