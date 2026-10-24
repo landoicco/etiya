@@ -1,5 +1,7 @@
 # Etiya
 
+![Etiya](docs/images/banner.png)
+
 **A gym tracker you can use with one hand, mid-set.** Log your workouts, keep a history, and pay nothing to run it.
 
 [![CI](https://github.com/landoicco/etiya/actions/workflows/ci.yml/badge.svg)](https://github.com/landoicco/etiya/actions/workflows/ci.yml)
