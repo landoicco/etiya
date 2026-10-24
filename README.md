@@ -122,7 +122,7 @@ flake.nix     the whole toolchain
 
 ## Built with Claude Code
 
-This project is developed alongside [Claude Code](https://claude.com/claude-code) as a pair-programming partner: options are weighed before any code is written, changes land in small reviewable steps, and the reasoning behind each one ends up in [docs/decisions.md](docs/decisions.md) instead of being lost. Every change is reviewed and committed by a human. The `dev` Nix shell ships the CLI, so the setup is part of the toolchain rather than a personal detail.
+This project is developed alongside [Claude Code](https://claude.com/claude-code) as a pair-programming partner: options are weighed before any code is written, changes land in small reviewable steps, and the reasoning behind each one ends up in [docs/decisions.md](docs/decisions.md) instead of being lost. Every change is reviewed and committed by a human. The `dev` Nix shell ships the CLI, so the setup is part of the toolchain rather than a personal detail, and [CLAUDE.md](CLAUDE.md) holds the working rules it follows.
 
 ## Status and roadmap
 

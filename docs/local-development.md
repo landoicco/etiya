@@ -79,7 +79,7 @@ The whole toolchain is defined in `flake.nix`. With Nix installed there is no ne
 ```bash
 nix develop
 ```
-*This loads OpenJDK 21, Maven, AWS CLI, AWS CDK CLI, Node.js, Docker, the Bruno CLI (`bru`) and the Claude CLI.*
+*This loads OpenJDK 21, Maven, AWS CLI, AWS CDK CLI, Node.js, Docker, the Bruno CLI (`bru`), the GitHub CLI (`gh`) and the Claude CLI.*
 
 ### Picking a shell for the task at hand
 
@@ -88,10 +88,10 @@ Not every task needs every tool, so the flake exposes one shell per use case. Pi
 | Shell | Tools | Use it to |
 |---|---|---|
 | `default` | Everything | Anything, or when in doubt |
-| `dev` | Java, Maven, Docker, Bruno, Node.js, Claude | Write code, run it locally, run the test suite |
+| `dev` | Java, Maven, Docker, Bruno, Node.js, Claude, GitHub CLI | Write code, run it locally, run the test suite |
 | `infra` | Java, Maven, CDK, Node.js, AWS CLI | `cdk synth`, `cdk deploy`, inspect AWS |
 | `run` | Docker, Docker Compose | Only start the app: `docker compose up --build` |
-| `ci` | Java, Maven, Bruno, CDK, Node.js | What GitHub Actions runs; Docker comes from the runner |
+| `ci` | Java, Maven, Bruno, CDK, Node.js | What GitHub Actions runs; Docker and `gh` come from the runner |
 
 ```bash
 nix develop .#dev     # daily development
