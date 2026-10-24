@@ -37,6 +37,7 @@ API Gateway validates it and passes the claims to the Lambda, which reads `sub` 
 | `201` | Resource created |
 | `400` | Validation error (`VALIDATION_ERROR`, `BAD_REQUEST`) |
 | `401` | Missing or invalid token (`UNAUTHORIZED`) |
+| `403` | A route limited to a Cognito group, called from outside it |
 | `404` | Resource not found, or owned by another user |
 | `409` | A catalog entry with the same generated ID already exists |
 | `500` | Unexpected server error |

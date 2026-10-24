@@ -20,8 +20,9 @@ Two halves. A serverless API in Java and Spring Cloud Function on AWS Lambda, be
 flowchart LR
     Phone["PWA on a phone<br/>logs sets offline"]
     Phone -->|"app shell"| CF["CloudFront + S3"]
+    Phone -->|"sign-in (SRP)"| Cognito["Cognito<br/>user pool"]
     Phone -->|"Bearer token"| API["HTTP API<br/>JWT authorizer"]
-    Cognito["Cognito<br/>user pool"] -. "validates tokens" .-> API
+    Cognito -. "validates tokens" .-> API
     API --> Gyms["gymsApi<br/>Lambda"]
     API --> Exercises["exercisesApi<br/>Lambda"]
     API --> Workouts["workoutsApi<br/>Lambda"]
@@ -132,12 +133,11 @@ Both halves are in production since September 2026: the API at `api-v1.0.0`, the
 
 Next, in this order, one release at a time and each used for a few days before the next:
 
-1. **Fresh showcase images and a banner for the repository**, with the look of `web-v1.4.0`.
-2. **The project's own domain**, `etiya.licaza.dev`, instead of CloudFront's. Installed apps are reinstalled once, so it comes after the new icon.
-3. **A page that explains the app before signing in**: what it is for and what it does, shown as a carousel, with the sign-in button always in reach. About moves there, and a shared link previews the same pictures.
-4. **A workout clock that pauses when it is forgotten**: after 10 minutes without a set it stops, and asks whether to resume or finish.
-5. **Removing an exercise during a workout** by swiping it away, after a confirmation. To be evaluated.
-6. **Correcting a logged set**, so a typo does not skew an exercise's average. To be evaluated: workouts are deliberately not editable today.
-7. **Java packages under `dev.licaza`**, matching the domain, with its URL in the project's metadata.
+1. **The project's own domain**, `etiya.licaza.dev`, instead of CloudFront's. Installed apps are reinstalled once, so it comes after the new icon.
+2. **A page that explains the app before signing in**: what it is for and what it does, shown as a carousel, with the sign-in button always in reach. About moves there, and a shared link previews the same pictures.
+3. **A workout clock that pauses when it is forgotten**: after 10 minutes without a set it stops, and asks whether to resume or finish.
+4. **Removing an exercise during a workout** by swiping it away, after a confirmation. To be evaluated.
+5. **Correcting a logged set**, so a typo does not skew an exercise's average. To be evaluated: workouts are deliberately not editable today.
+6. **Java packages under `dev.licaza`**, matching the domain, with its URL in the project's metadata.
 
 After that come the things the app has already asked for while being used: the first set of an exercise starting from last session's numbers, and cardio logged as time rather than reps. What comes later, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.

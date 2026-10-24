@@ -232,7 +232,7 @@ Everything here fits the AWS free tier, with three exceptions worth knowing abou
 | Cognito | Free monthly active users far above what this project needs |
 | CloudWatch Logs | 5 GB per month; log groups, including the API access logs, keep 14 days, since the default is to keep them forever |
 | HTTP API | ⚠️ ~$1 per million requests. Its free tier only lasts 12 months |
-| S3 (CDK assets) | ⚠️ Each deploy uploads the ~52 MB jar. Cents per month, but old assets accumulate |
+| S3 (CDK assets) | ⚠️ Each deploy uploads the ~54 MB jar. Cents per month, but old assets accumulate |
 | CloudFront | 1 TB of transfer and 10M requests per month, always free. Cache and header policies, Origin Access Control and error pages cost nothing. No invalidations are used |
 | S3 (web bucket) | ⚠️ Not in the always-free tier: a few hundred KB per build, plus one GET per app launch for the uncached files. A fraction of a cent per month |
 

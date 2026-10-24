@@ -46,6 +46,7 @@ The screens are not tested; what is, is the logic underneath them, which is writ
 | `catalog.test.ts` | The catalog search: matching anywhere in the name, names starting with what was typed coming first, accents and spacing ignored, the category filter, and recognizing an exercise the catalog already holds |
 | `lastMonth.test.ts` | Which workouts the phone keeps: the last 30 days, asking for another page only while the last one ended inside them, the latest workout alone after a longer break, and queued workouts merged in newest first, once each, leaving out the ones the API refused |
 | `exerciseStats.test.ts` | An exercise's last 30 days: the average and the max of each session's heaviest set, from a single session up, kilograms and pounds converted to one decimal, reps for a set without weight and never mixed with weighted ones, an exercise typed offline matching its catalog entry, and the unit it was last logged in |
+| `artIndex.test.ts` | Reading the pictures' index: each exercise id with its description, and no pictures at all from the page CloudFront answers for a missing file or from JSON of another shape |
 | `dayCategory.test.ts` | A day's split: push, pull or legs by most sets, core and cardio only when alone, ties naming both, exercises missing from the catalog left out |
 | `passwordRules.test.ts` | The checklist under a new password: each of Cognito's five rules named when it is missing, and only the letters and symbols Cognito counts ticking a rule, so `Ñ` is not an uppercase letter and `¡` is not a symbol |
 

@@ -8,7 +8,7 @@
 
 It has no Cognito, no API Gateway, no Lambda runtime and no SnapStart, so it cannot tell you anything about token validation, a `401` from the authorizer, CORS, throttling or cold starts. Those are only answered by [running the suite against a deployed stack](testing.md). It does not even run the jar Lambda runs: the Docker image builds the `local` Maven profile, while the `prod` jar is built in CI and never executed there.
 
-What it does cover is where the bugs actually are: the handlers, the service layer, validation, the DynamoDB repository and its key design, slug generation, `409` conditional writes, idempotent retries and pagination cursors. Of the 40 Bruno requests, only two are tagged `local-only`, so the same suite validates both environments.
+What it does cover is where the bugs actually are: the handlers, the service layer, validation, the DynamoDB repository and its key design, slug generation, `409` conditional writes, idempotent retries and pagination cursors. Of the 45 Bruno requests, only four are tagged `local-only`, so the same suite validates both environments.
 
 That is also why it is load-bearing rather than a convenience. [CI runs it on every pull request](../.github/workflows/ci.yml) with **no AWS credentials at all**, which is what keeps the workflow unable to deploy or spend anything. And since `EtiyaDev` is [raised on demand and destroyed afterwards](deployment.md#two-environments), the local stack is usually the only integration environment that exists.
 
@@ -59,7 +59,7 @@ npm run config       # once per stack: writes public/config.json from its output
 npm run dev          # http://localhost:5173, reloads on every change
 ```
 
-The web app is developed against the dev API on AWS with a real Cognito login, not against the Docker stack, so it needs a [deployed stack](deployment.md) and AWS credentials for `npm run config`. That file holds the API URL and the Cognito IDs, is ignored by git, and is what the app reads at startup; without it the app says so instead of starting. `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
+The web app is developed against a deployed API with a real Cognito login, not against the Docker stack, so it needs a [deployed stack](deployment.md) and AWS credentials for `npm run config`. That is production unless `STACK=EtiyaDev` is given, since dev is usually not up. That file holds the API URL and the Cognito IDs, is ignored by git, and is what the app reads at startup; without it the app says so instead of starting. `localhost:5173` is already an allowed CORS origin. See [decisions](decisions.md#the-frontend-is-a-pwa).
 
 The exercise pictures are not in the repo. To see them, point the dev server at the folder that holds `exercises/` with an absolute path: `ART_DIR=<folder> npm run dev`. Without it the picker shows no pictures. The preview server does not serve them.
 
