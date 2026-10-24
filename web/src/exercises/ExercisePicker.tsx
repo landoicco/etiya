@@ -16,6 +16,7 @@ import {
 } from "./catalog";
 import { normalize } from "@/platform/slugs";
 import { Button } from "@/ui/Button";
+import { SearchField } from "@/ui/SearchField";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
 import { useExerciseArt } from "./artIndex";
 import { ArtSheet, ArtThumbnail } from "./ExerciseArt";
@@ -66,19 +67,15 @@ export function ExercisePicker({ api, router, onPick }: Props) {
   return (
     <Sheet>
       <div className="safe-x safe-top flex gap-2 pb-3">
-        <input
+        <SearchField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search exercises"
           aria-label="Search exercises"
-          type="search"
-          enterKeyHint="search"
-          autoCapitalize="words"
-          autoCorrect="off"
           // Searching is the reason this screen was opened, so it takes the keyboard
           // straight away rather than asking for one more tap
           autoFocus
-          className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-raised px-4 placeholder:text-muted"
+          className="flex-1"
         />
         <button
           type="button"
@@ -103,7 +100,7 @@ export function ExercisePicker({ api, router, onPick }: Props) {
 
       <div className="safe-x min-h-0 flex-1 overflow-y-auto">
         {results.length > 0 ? (
-          <ul className="space-y-2 pb-4">
+          <ul className="space-y-2 pt-1 pb-4">
             {results.map((item) => (
               <li key={item.id}>
                 <ExerciseRow
@@ -158,23 +155,32 @@ function ExerciseRow({
   onShowArt: () => void;
 }) {
   return (
-    <div className="flex rounded-2xl border border-line bg-raised">
-      <button type="button" onClick={onSelect} className="min-w-0 flex-1 p-4 text-left">
-        <p className="font-semibold">{item.name}</p>
-        <p className="mt-1 text-sm text-muted">
-          {MUSCLE_GROUP_LABELS[item.muscleGroup]} · {CATEGORY_LABELS[item.category]}
-        </p>
-      </button>
+    <div className="flex items-center rounded-card border border-line bg-raised shadow-card">
       {hasArt && (
         <button
           type="button"
           onClick={onShowArt}
           aria-label={`Show ${item.name}`}
-          className="flex shrink-0 items-center px-4"
+          className="shrink-0 py-2 pl-2"
         >
           <ArtThumbnail exerciseId={item.id} />
         </button>
       )}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 items-center gap-3 py-3.5 pr-4 pl-4 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">{item.name}</span>
+          <span className="mt-0.5 block text-sm text-muted">
+            {MUSCLE_GROUP_LABELS[item.muscleGroup]} · {CATEGORY_LABELS[item.category]}
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-2xl text-accent-ink">
+          +
+        </span>
+      </button>
     </div>
   );
 }
@@ -207,7 +213,7 @@ function Empty({
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-2xl border border-line bg-raised p-5 text-sm text-muted">{children}</p>
+    <p className="rounded-card border border-line bg-raised p-5 text-sm text-muted shadow-card">{children}</p>
   );
 }
 
@@ -263,7 +269,7 @@ function NewExercise({
       <div className="safe-x safe-top flex items-start justify-between gap-4 pb-3">
         <div className="min-w-0">
           <p className="text-sm text-muted">Add to the catalog</p>
-          <h2 className="truncate text-2xl font-bold">{name}</h2>
+          <h2 className="truncate text-2xl font-bold tracking-tight">{name}</h2>
         </div>
         <button type="button" onClick={onCancel} className="h-11 shrink-0 px-2 text-sm text-muted">
           Back
@@ -314,7 +320,7 @@ function Choices<T extends string>({
 }) {
   return (
     <fieldset className="mt-4 border-0 p-0">
-      <legend className="text-sm font-semibold text-muted">{legend}</legend>
+      <legend className="text-xs font-bold tracking-wider text-muted uppercase">{legend}</legend>
       <div className="mt-2 grid grid-cols-3 gap-2">
         {options.map((option) => (
           <button
@@ -322,8 +328,8 @@ function Choices<T extends string>({
             type="button"
             onClick={() => onSelect(option)}
             aria-pressed={option === selected}
-            className={`h-12 rounded-xl px-1 text-sm font-semibold ${
-              option === selected ? "bg-accent text-on-accent" : "border border-line text-muted"
+            className={`h-12 rounded-[14px] border px-1 text-sm font-semibold ${
+              option === selected ? "border-ink bg-ink text-surface" : "border-line bg-raised text-muted"
             }`}
           >
             {labels[option]}
@@ -348,8 +354,8 @@ function Chip({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${
-        selected ? "bg-accent text-on-accent" : "border border-line text-muted"
+      className={`h-10 shrink-0 rounded-full border px-4 text-sm font-semibold ${
+        selected ? "border-ink bg-ink text-surface" : "border-line text-muted"
       }`}
     >
       {label}

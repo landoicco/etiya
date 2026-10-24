@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { CloseButton } from "@/ui/CloseButton";
 import { artUrl } from "./artIndex";
 
 // Each picture is one colour used as a mask, so it is painted with the theme's tokens.
@@ -20,11 +21,9 @@ function mask(exerciseId: string, position: string, size: string): CSSProperties
 // The end phase alone, which is enough to recognise the exercise
 export function ArtThumbnail({ exerciseId }: { exerciseId: string }) {
   return (
-    <span
-      aria-hidden="true"
-      className="block size-12 bg-muted"
-      style={mask(exerciseId, "right", "auto 100%")}
-    />
+    <span aria-hidden="true" className="grid size-13 place-items-center rounded-[14px] bg-soft">
+      <span className="block size-10 bg-accent-ink" style={mask(exerciseId, "right", "auto 100%")} />
+    </span>
   );
 }
 
@@ -47,22 +46,22 @@ export function ArtSheet({
       onClick={onClose}
     >
       <section
-        className="w-full max-w-md rounded-3xl bg-surface px-5 pt-4"
+        className="w-full max-w-md rounded-[26px] bg-raised px-5 pt-4 pb-5 shadow-card"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="min-w-0 truncate text-xl font-bold">{name}</h2>
-          <button type="button" onClick={onClose} className="h-11 shrink-0 px-2 text-sm text-muted">
-            Close
-          </button>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="min-w-0 truncate text-xl font-bold tracking-tight">{name}</h2>
+          <CloseButton onClose={onClose} />
         </div>
-        <div
-          role="img"
-          aria-label={`${name}, start and end`}
-          className="mt-2 mb-6 aspect-[2/1] max-h-[40dvh] w-full bg-ink"
-          style={mask(exerciseId, "center", "contain")}
-        />
-        {description && <p className="-mt-2 mb-6 text-sm text-muted">{description}</p>}
+        <div className="mt-3 rounded-[14px] border border-line bg-surface p-3">
+          <div
+            role="img"
+            aria-label={`${name}, start and end`}
+            className="aspect-[2/1] max-h-[40dvh] w-full bg-ink"
+            style={mask(exerciseId, "center", "contain")}
+          />
+        </div>
+        {description && <p className="mt-3 text-sm text-muted">{description}</p>}
       </section>
     </div>
   );

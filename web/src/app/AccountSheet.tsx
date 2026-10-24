@@ -1,7 +1,7 @@
 import type { User } from "@/auth/auth";
 import { BottomSheet } from "@/ui/BottomSheet";
 import { Button } from "@/ui/Button";
-import { Icon } from "@/ui/Icon";
+import { CloseButton } from "@/ui/CloseButton";
 import { initialOf } from "./greeting";
 
 interface Props {
@@ -24,14 +24,7 @@ export function AccountSheet({ user, canSignOut, onSignOut, onClose }: Props) {
           {user.name && <p className="truncate text-lg font-bold">{user.name}</p>}
           <p className="truncate text-sm text-muted">{user.email ?? "Offline"}</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-ink"
-        >
-          <Icon name="close" className="size-4" />
-        </button>
+        <CloseButton onClose={onClose} />
       </div>
 
       <Button variant="secondary" icon="signOut" onClick={onSignOut} disabled={!canSignOut} className="mt-5">

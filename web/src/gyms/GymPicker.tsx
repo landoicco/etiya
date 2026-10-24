@@ -2,6 +2,8 @@ import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { type Api, ApiError, type Gym, type NewGym } from "@/platform/api";
 import { slugOf } from "@/platform/slugs";
 import { Button } from "@/ui/Button";
+import { Icon } from "@/ui/Icon";
+import { SearchField } from "@/ui/SearchField";
 import {
   findGym,
   gymLabel,
@@ -63,23 +65,18 @@ export function GymPicker({ api, onStart, onCancel }: Props) {
   return (
     <Sheet>
       <div className="safe-x safe-top flex items-start justify-between gap-4 pb-3">
-        <h2 className="text-2xl font-bold">Where are you training?</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Where are you training?</h2>
         <button type="button" onClick={onCancel} className="h-11 shrink-0 px-2 text-sm text-muted">
           Cancel
         </button>
       </div>
 
       <div className="safe-x pb-3">
-        <input
+        <SearchField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search gyms"
           aria-label="Search gyms"
-          type="search"
-          enterKeyHint="search"
-          autoCapitalize="words"
-          autoCorrect="off"
-          className="h-14 w-full rounded-2xl border border-line bg-raised px-4 placeholder:text-muted"
         />
       </div>
 
@@ -150,12 +147,21 @@ function Row({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full rounded-2xl border bg-raised p-4 text-left ${
-        highlighted ? "border-accent-ink" : "border-line"
+      className={`flex w-full items-center gap-3 rounded-card border bg-raised p-3.5 text-left shadow-card ${
+        highlighted ? "border-accent-ink ring-1 ring-accent-ink" : "border-line"
       }`}
     >
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-muted">{subtitle}</p>
+      <span
+        className={`grid size-9 shrink-0 place-items-center rounded-[14px] ${
+          highlighted ? "bg-soft text-accent-ink" : "border border-line bg-surface text-muted"
+        }`}
+      >
+        <Icon name="pin" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-bold">{title}</span>
+        <span className="block truncate text-sm text-muted">{subtitle}</span>
+      </span>
     </button>
   );
 }
@@ -187,7 +193,7 @@ function Empty({
 
 function Notice({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-2 rounded-2xl border border-line bg-raised p-5 text-sm text-muted">
+    <p className="mt-2 rounded-card border border-line bg-raised p-5 text-sm text-muted shadow-card">
       {children}
     </p>
   );
@@ -257,7 +263,7 @@ function NewGymForm({
       <div className="safe-x safe-top flex items-start justify-between gap-4 pb-3">
         <div className="min-w-0">
           <p className="text-sm text-muted">Add to the catalog</p>
-          <h2 className="truncate text-2xl font-bold">{name}</h2>
+          <h2 className="truncate text-2xl font-bold tracking-tight">{name}</h2>
         </div>
         <button type="button" onClick={onCancel} className="h-11 shrink-0 px-2 text-sm text-muted">
           Back
@@ -305,7 +311,7 @@ function Field({
         autoCapitalize="words"
         autoCorrect="off"
         enterKeyHint="next"
-        className="mt-1 h-14 w-full rounded-2xl border border-line bg-raised px-4"
+        className="mt-1 h-14 w-full rounded-[14px] border border-line bg-raised px-4 text-base outline-none focus:border-accent-ink"
       />
     </label>
   );
