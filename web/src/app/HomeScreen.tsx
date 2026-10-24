@@ -10,6 +10,7 @@ import { useLastMonth, withQueued } from "@/history/lastMonth";
 import { agoLabel, durationLabel, totalSets } from "@/history/workouts";
 import { useNow } from "@/platform/useNow";
 import type { WorkoutGym } from "@/workout/workout";
+import { Barbell } from "@/ui/Barbell";
 import { Button } from "@/ui/Button";
 import { Icon, type IconName } from "@/ui/Icon";
 import { AccountSheet } from "./AccountSheet";
@@ -162,17 +163,7 @@ function LastWorkout({ api, queue, now }: { api: Api; queue: SendQueue; now: Dat
     const category = dayCategoryLabel(last.exercises, catalog);
     return (
       <section className="relative mt-5 overflow-hidden rounded-card bg-brasa p-5 text-on-accent shadow-glow">
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="absolute -top-3 -right-4 size-32 opacity-15"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />
-        </svg>
+        <Barbell className="absolute -top-4 -right-6 size-36 opacity-15" />
         <p className="text-xs font-bold tracking-wider uppercase opacity-75">Last workout</p>
         <p className="mt-1.5 text-4xl font-bold tracking-tight">{category || "Workout"}</p>
         <p className="mt-0.5 text-sm opacity-85">{agoLabel(last.startedAt, now)}</p>
