@@ -91,10 +91,27 @@ export function routePath(route: Route): string {
   }
 }
 
+// Going back is only safe to an entry this page load pushed: an older one belongs to an
+// earlier load, and the browser reloads the whole site to reach it
+export function canGoBack(state: unknown, load: string, entries: number): boolean {
+  const entry = state as { load?: unknown; depth?: unknown } | null;
+  return entry?.load === load && typeof entry.depth === "number" && entry.depth >= entries;
+}
+
+// Where closing lands when it cannot go back: the workout for its sheets, home for the rest
+export function parentOf(route: Route): Route {
+  return routePath(route).startsWith("/workout/") ? { name: "logging" } : HOME;
+}
+
+// Tells this page load's entries apart from those of an earlier one, which survive a reload
+const LOAD = Math.random().toString(36).slice(2);
+
 export function useRouter() {
   const [route, setRoute] = useState(() => read());
 
   useEffect(() => {
+    // The entry the app opened on, whatever came before it
+    window.history.replaceState(stateOf(read(), 0), "");
     const onPopState = () => setRoute(read());
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -102,21 +119,30 @@ export function useRouter() {
 
   // Opening something is a new entry, so the back gesture closes it
   const open = useCallback((next: Route) => {
-    window.history.pushState(stateOf(next), "", routePath(next));
+    window.history.pushState(stateOf(next, currentDepth() + 1), "", routePath(next));
+    setRoute(next);
+  }, []);
+
+  // Replaces the current entry, for a screen the user should not be able to go back into:
+  // the workout that has just been saved, or one that is no longer in progress
+  const replace = useCallback((next: Route) => {
+    window.history.replaceState(stateOf(next, currentDepth()), "", routePath(next));
     setRoute(next);
   }, []);
 
   // Closing one is the same as pressing back, so a sheet opened and closed by hand leaves no
   // entry behind for a later back press to land on. Adding an exercise to the catalog opens
   // two entries, the search and the form, and finishing there is done with both
-  const close = useCallback((entries = 1) => window.history.go(-entries), []);
-
-  // Replaces the current entry, for a screen the user should not be able to go back into:
-  // the workout that has just been saved, or one that is no longer in progress
-  const replace = useCallback((next: Route) => {
-    window.history.replaceState(stateOf(next), "", routePath(next));
-    setRoute(next);
-  }, []);
+  const close = useCallback(
+    (entries = 1) => {
+      if (canGoBack(window.history.state, LOAD, entries)) {
+        window.history.go(-entries);
+      } else {
+        replace(parentOf(read()));
+      }
+    },
+    [replace],
+  );
 
   // One stable object, so an effect that depends on the router does not run on every render
   return useMemo(() => ({ route, open, close, replace }), [route, open, close, replace]);
@@ -128,8 +154,15 @@ function read(): Route {
   return parseRoute(window.location.pathname, window.history.state);
 }
 
-function stateOf(route: Route): unknown {
-  return route.name === "newExercise" ? { exerciseName: route.exerciseName } : null;
+function stateOf(route: Route, depth: number): unknown {
+  const entry = { load: LOAD, depth };
+  return route.name === "newExercise" ? { ...entry, exerciseName: route.exerciseName } : entry;
+}
+
+// How many entries this page load has pushed below the current one
+function currentDepth(): number {
+  const state = window.history.state as { load?: unknown; depth?: unknown } | null;
+  return state?.load === LOAD && typeof state.depth === "number" ? state.depth : 0;
 }
 
 function nameFrom(state: unknown): string {
