@@ -111,3 +111,39 @@ export function agoLabel(isoTime: string, now: Date): string {
   const day = days < 7 ? WEEKDAY.format(new Date(isoTime)) : DATE.format(new Date(isoTime));
   return `${day}, ${days} days ago`;
 }
+
+const MONTH = new Intl.DateTimeFormat(undefined, { month: "long" });
+const MONTH_YEAR = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+
+export interface MonthGroup<T> {
+  label: string;
+  workouts: T[];
+}
+
+// Keeps the order it is given; a month of another year says which one
+export function byMonth<T extends Pick<Workout, "startedAt">>(workouts: T[], now: Date): MonthGroup<T>[] {
+  const groups: MonthGroup<T>[] = [];
+  let current: MonthGroup<T> | null = null;
+  let key = "";
+  for (const workout of workouts) {
+    const date = new Date(workout.startedAt);
+    const next = `${date.getFullYear()}-${date.getMonth()}`;
+    if (current === null || next !== key) {
+      const format = date.getFullYear() === now.getFullYear() ? MONTH : MONTH_YEAR;
+      current = { label: format.format(date), workouts: [] };
+      groups.push(current);
+      key = next;
+    }
+    current.workouts.push(workout);
+  }
+  return groups;
+}
+
+const DAY_OF_MONTH = new Intl.DateTimeFormat(undefined, { day: "numeric" });
+const SHORT_WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+
+// The two lines of the date tile on a history card, e.g. "21" over "Tue"
+export function dateTile(isoTime: string): { day: string; weekday: string } {
+  const date = new Date(isoTime);
+  return { day: DAY_OF_MONTH.format(date), weekday: SHORT_WEEKDAY.format(date) };
+}

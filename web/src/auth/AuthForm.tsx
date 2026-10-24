@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import { BrandMark } from "@/ui/BrandMark";
 import { Button } from "@/ui/Button";
 
 interface Props {
@@ -23,9 +24,10 @@ export function AuthForm({ title, subtitle, onBack, onSubmit, error, submitLabel
 
   return (
     <main className="safe-padding flex min-h-dvh flex-col">
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex items-start justify-between gap-4 pt-6">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <BrandMark />
+          <h1 className="mt-5 text-3xl font-bold tracking-tight">{title}</h1>
           <p className="mt-1 text-muted">{subtitle}</p>
         </div>
         {onBack && (
@@ -55,4 +57,4 @@ export function AuthForm({ title, subtitle, onBack, onSubmit, error, submitLabel
 
 // 16px text at least: iOS zooms into any smaller input when it gets focus
 export const FIELD =
-  "mt-1 h-14 w-full rounded-xl border border-line bg-raised px-4 text-base outline-none focus:border-accent-ink";
+  "mt-1 h-14 w-full rounded-[14px] border border-line bg-raised px-4 text-base outline-none focus:border-accent-ink focus:ring-3 focus:ring-soft";
