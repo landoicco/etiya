@@ -28,6 +28,8 @@
           # graphviz renders the architecture diagram from the synthesized stack
           cloud = with pkgs; [ aws-cdk-cli nodejs awscli2 graphviz ];
           claude = [ nix-claude-code.packages.${system}.default ];
+          # Pull requests, CI runs and releases from the terminal
+          github = [ pkgs.gh ];
         };
 
         # What each group reports when entering a shell
@@ -51,6 +53,9 @@
           '';
           claude = ''
             echo "🤖 Claude CLI: Ready $(claude --version)"
+          '';
+          github = ''
+            echo "🐙 GitHub CLI: $(gh --version | head -n 1)"
           '';
         };
 
@@ -76,13 +81,13 @@
           default = mkEtiyaShell {
             name = "default";
             purpose = "every tool";
-            groups = [ "java" "container" "testing" "web" "cloud" "claude" ];
+            groups = [ "java" "container" "testing" "web" "cloud" "claude" "github" ];
           };
 
           dev = mkEtiyaShell {
             name = "dev";
             purpose = "build, run and test locally";
-            groups = [ "java" "container" "testing" "web" "claude" ];
+            groups = [ "java" "container" "testing" "web" "claude" "github" ];
           };
 
           infra = mkEtiyaShell {
@@ -97,7 +102,7 @@
             groups = [ "container" ];
           };
 
-          # Used by GitHub Actions. Docker comes from the runner, and Claude is left out
+          # Used by GitHub Actions. Docker and gh come from the runner, and Claude is left out
           ci = mkEtiyaShell {
             name = "ci";
             purpose = "what GitHub Actions runs";
