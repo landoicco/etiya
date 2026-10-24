@@ -32,7 +32,7 @@ export function ExerciseHistory({
   const label = UNIT_LABELS[shown];
 
   return (
-    <div className="fixed inset-0 z-10 flex flex-col justify-end bg-ink/40" onClick={onClose}>
+    <div className="fixed inset-0 z-10 flex flex-col justify-end bg-scrim" onClick={onClose}>
       <section
         className="safe-x safe-bottom max-h-[80dvh] overflow-y-auto rounded-t-3xl bg-surface pt-5"
         onClick={(event) => event.stopPropagation()}

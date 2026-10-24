@@ -8,8 +8,11 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="description" content="Log your workouts, one set at a time" />
-    <!-- iOS: status bar over the app's own dark background once added to the home screen -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- The phone's bar takes the app's background, light or dark. Must match --color-surface -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6efe4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16120f" />
+    <!-- iOS: a solid bar with dark text; black-translucent forced white text over the light app -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Etiya</title>
   </head>
   <body>

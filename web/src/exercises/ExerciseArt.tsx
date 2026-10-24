@@ -43,7 +43,7 @@ export function ArtSheet({
 }) {
   return (
     <div
-      className="safe-x fixed inset-0 z-20 flex items-center justify-center bg-ink/40"
+      className="safe-x fixed inset-0 z-20 flex items-center justify-center bg-scrim"
       onClick={onClose}
     >
       <section
