@@ -159,7 +159,8 @@ Anyone else gets an invitation instead, and chooses their own password in the ap
 ```bash
 aws cognito-idp admin-create-user --user-pool-id <POOL_ID> \
   --username friend@example.com \
-  --user-attributes Name=email,Value=friend@example.com Name=email_verified,Value=true
+  --user-attributes Name=email,Value=friend@example.com Name=email_verified,Value=true \
+    Name=name,Value=Maria
 ```
 
 * Cognito emails them the app's link, their email and a temporary password. On their first sign-in the app asks for a new password and signs them in with it. The text of that email is in [`Auth.java`](../infra/src/main/java/licaza/etiya/infra/Auth.java).
@@ -167,6 +168,15 @@ aws cognito-idp admin-create-user --user-pool-id <POOL_ID> \
 * The email comes from Cognito's own address and may land in spam: tell them to look there.
 * The temporary password expires after **7 days**. Past that, the app tells them to ask for a new one, which is the same command with `--message-action RESEND` added.
 * Cognito's own sender allows 50 emails a day, invitations and reset codes together.
+* `name` is their **first name**, for the greeting on the home screen. It is optional: without it the app greets without a name and the avatar shows the email's initial.
+
+To give an existing user a name, use their `Username` from `list-users` (the `sub`):
+```bash
+aws cognito-idp admin-update-user-attributes --user-pool-id <POOL_ID> \
+  --username <USERNAME> --user-attributes Name=name,Value=Maria
+```
+
+It reaches the app with the next ID token: on the next sign-in, or within the hour when the token renews itself.
 
 ## Seeding the exercise catalog
 
@@ -222,7 +232,7 @@ Everything here fits the AWS free tier, with three exceptions worth knowing abou
 | Cognito | Free monthly active users far above what this project needs |
 | CloudWatch Logs | 5 GB per month; log groups, including the API access logs, keep 14 days, since the default is to keep them forever |
 | HTTP API | ⚠️ ~$1 per million requests. Its free tier only lasts 12 months |
-| S3 (CDK assets) | ⚠️ Each deploy uploads the ~52 MB jar. Cents per month, but old assets accumulate |
+| S3 (CDK assets) | ⚠️ Each deploy uploads the ~54 MB jar. Cents per month, but old assets accumulate |
 | CloudFront | 1 TB of transfer and 10M requests per month, always free. Cache and header policies, Origin Access Control and error pages cost nothing. No invalidations are used |
 | S3 (web bucket) | ⚠️ Not in the always-free tier: a few hundred KB per build, plus one GET per app launch for the uncached files. A fraction of a cent per month |
 

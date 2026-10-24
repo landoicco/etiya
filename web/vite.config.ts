@@ -5,9 +5,9 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import pkg from "./package.json" with { type: "json" };
 
-// Background of the app and of the splash screen while it opens. Must match --color-surface
-// in index.css, or opening the app flashes the wrong colour before the CSS lands
-const BACKGROUND = "#f4ece0";
+// Background of the app and of the splash screen while it opens. Must match the light
+// --color-surface in index.css; the manifest takes one colour, so the splash is always light
+const BACKGROUND = "#f6efe4";
 
 // npm run dev serves /art/ from ART_DIR. The pictures never pass through public/,
 // so no build can carry them into a deploy
@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => {
         // the workout in progress lives in IndexedDB, not in the page
         registerType: "autoUpdate",
         workbox: {
+          // Only the Latin font file: the other scripts download on demand and never appear in the UI
+          globPatterns: ["**/*.{js,css,html}", "**/inter-latin-wght-normal-*.woff2"],
           runtimeCaching: [
             {
               // Written after the build, so it is not precached with the rest. The latest one

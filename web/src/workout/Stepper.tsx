@@ -18,7 +18,7 @@ export function Stepper({
 }) {
   return (
     <div className="min-w-0 flex-1">
-      <p className="text-center text-xs text-muted">{label}</p>
+      <p className="text-center text-xs font-bold tracking-wider text-muted uppercase">{label}</p>
       <div className="mt-1 flex items-center gap-1">
         <StepButton label={`Less ${label}`} onStep={() => onStep(-1)}>
           −
@@ -46,7 +46,7 @@ function StepButton({
       type="button"
       onClick={onStep}
       aria-label={label}
-      className="h-14 w-14 shrink-0 rounded-2xl border border-line text-2xl active:bg-line"
+      className="h-14 w-13 shrink-0 rounded-[14px] border border-line text-2xl active:bg-soft active:text-accent-ink"
     >
       {children}
     </button>

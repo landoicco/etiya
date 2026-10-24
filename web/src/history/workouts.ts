@@ -45,12 +45,12 @@ function findLoaded(queryClient: QueryClient, id: string): Workout | undefined {
   return history?.pages.flatMap((page) => page.items).find((workout) => workout.id === id);
 }
 
-export function minutesOf(workout: Workout): number {
+export function minutesOf(workout: Pick<Workout, "startedAt" | "endedAt">): number {
   return Math.round((Date.parse(workout.endedAt) - Date.parse(workout.startedAt)) / 60_000);
 }
 
 // "45 min" up to an hour, "1 h 15 min" past it, because "95 min" reads as arithmetic
-export function durationLabel(workout: Workout): string {
+export function durationLabel(workout: Pick<Workout, "startedAt" | "endedAt">): string {
   const minutes = minutesOf(workout);
   if (minutes < 60) {
     return `${minutes} min`;
@@ -59,7 +59,7 @@ export function durationLabel(workout: Workout): string {
   return rest === 0 ? `${(minutes - rest) / 60} h` : `${(minutes - rest) / 60} h ${rest} min`;
 }
 
-export function totalSets(workout: Workout): number {
+export function totalSets(workout: Pick<Workout, "exercises">): number {
   return workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
 }
 
@@ -110,4 +110,40 @@ export function agoLabel(isoTime: string, now: Date): string {
   }
   const day = days < 7 ? WEEKDAY.format(new Date(isoTime)) : DATE.format(new Date(isoTime));
   return `${day}, ${days} days ago`;
+}
+
+const MONTH = new Intl.DateTimeFormat(undefined, { month: "long" });
+const MONTH_YEAR = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+
+export interface MonthGroup<T> {
+  label: string;
+  workouts: T[];
+}
+
+// Keeps the order it is given; a month of another year says which one
+export function byMonth<T extends Pick<Workout, "startedAt">>(workouts: T[], now: Date): MonthGroup<T>[] {
+  const groups: MonthGroup<T>[] = [];
+  let current: MonthGroup<T> | null = null;
+  let key = "";
+  for (const workout of workouts) {
+    const date = new Date(workout.startedAt);
+    const next = `${date.getFullYear()}-${date.getMonth()}`;
+    if (current === null || next !== key) {
+      const format = date.getFullYear() === now.getFullYear() ? MONTH : MONTH_YEAR;
+      current = { label: format.format(date), workouts: [] };
+      groups.push(current);
+      key = next;
+    }
+    current.workouts.push(workout);
+  }
+  return groups;
+}
+
+const DAY_OF_MONTH = new Intl.DateTimeFormat(undefined, { day: "numeric" });
+const SHORT_WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+
+// The two lines of the date tile on a history card, e.g. "21" over "Tue"
+export function dateTile(isoTime: string): { day: string; weekday: string } {
+  const date = new Date(isoTime);
+  return { day: DAY_OF_MONTH.format(date), weekday: SHORT_WEEKDAY.format(date) };
 }

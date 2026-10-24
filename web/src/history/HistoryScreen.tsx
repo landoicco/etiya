@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import type { Api, Workout } from "@/platform/api";
 import type { Router } from "@/app/router";
 import { dayCategoryLabel } from "@/exercises/dayCategory";
 import { useExerciseCatalog } from "@/exercises/exerciseCatalog";
-import { dayLabel, summaryLine, useWorkoutHistory } from "./workouts";
+import { Button } from "@/ui/Button";
+import { byMonth, dateTile, summaryLine, useWorkoutHistory } from "./workouts";
 
 // Pages are asked for one at a time, by a button rather than by scrolling: a tap is honest
 // about costing a request, and an infinite scroll on a phone is easy to trigger by accident
@@ -11,13 +12,15 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
   const { data, error, isPending, fetchStatus, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useWorkoutHistory(api);
   const catalog = useExerciseCatalog(api).data ?? [];
+  // Only decides whether a month needs its year
+  const [now] = useState(() => new Date());
 
   const workouts = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
     <main className="flex h-dvh flex-col">
       <div className="safe-x safe-top flex items-center justify-between gap-4 pb-3">
-        <h1 className="text-2xl font-bold">History</h1>
+        <h1 className="text-2xl font-bold tracking-tight">History</h1>
         <button type="button" onClick={() => router.close()} className="h-11 shrink-0 px-2 text-sm text-muted">
           Back
         </button>
@@ -38,27 +41,32 @@ export function HistoryScreen({ api, router }: { api: Api; router: Router }) {
           <Notice>No workouts yet. The first one shows up here once it is sent.</Notice>
         )}
 
-        <ul className="space-y-3">
-          {workouts.map((workout) => (
-            <li key={workout.id}>
-              <WorkoutCard
-                workout={workout}
-                category={dayCategoryLabel(workout.exercises, catalog)}
-                onOpen={() => router.open({ name: "workout", id: workout.id })}
-              />
-            </li>
-          ))}
-        </ul>
+        {byMonth(workouts, now).map((month) => (
+          <section key={month.label} className="not-first:mt-5">
+            <h2 className="px-0.5 pb-2 text-xs font-bold tracking-wider text-muted uppercase">{month.label}</h2>
+            <ul className="space-y-2.5">
+              {month.workouts.map((workout) => (
+                <li key={workout.id}>
+                  <WorkoutCard
+                    workout={workout}
+                    category={dayCategoryLabel(workout.exercises, catalog)}
+                    onOpen={() => router.open({ name: "workout", id: workout.id })}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
         {hasNextPage && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={() => void fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="mt-3 h-14 w-full rounded-2xl border border-line font-semibold disabled:opacity-40"
+            className="mt-4"
           >
             {isFetchingNextPage ? "Loading…" : "Load older workouts"}
-          </button>
+          </Button>
         )}
       </div>
     </main>
@@ -76,22 +84,31 @@ function WorkoutCard({
   category: string;
   onOpen: () => void;
 }) {
-  const day = dayLabel(workout.startedAt);
+  const tile = dateTile(workout.startedAt);
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="w-full rounded-2xl border border-line bg-raised p-4 text-left"
+      className="flex w-full items-center gap-3 rounded-card border border-line bg-raised p-3 text-left shadow-card"
     >
-      <p className="font-semibold">{category ? `${category} · ${day}` : day}</p>
-      <p className="mt-1 text-sm text-muted">{summaryLine(workout)}</p>
+      <span className="grid h-13 w-12 shrink-0 place-content-center rounded-[14px] border border-line bg-surface text-center">
+        <span className="text-lg leading-none font-bold">{tile.day}</span>
+        <span className="mt-0.5 text-[10.5px] font-bold tracking-wider text-muted uppercase">{tile.weekday}</span>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold">{category || "Workout"}</span>
+        <span className="block truncate text-sm text-muted">{summaryLine(workout)}</span>
+      </span>
+      <span aria-hidden="true" className="text-muted">
+        ›
+      </span>
     </button>
   );
 }
 
 function Notice({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-2xl border border-line bg-raised p-5 text-sm text-muted">{children}</p>
+    <p className="rounded-card border border-line bg-raised p-5 text-sm text-muted shadow-card">{children}</p>
   );
 }

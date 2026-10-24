@@ -10,8 +10,8 @@ export function DiscardButton({ onDiscard }: { onDiscard: () => void }) {
       onClick={onClick}
       className={
         armed
-          ? "h-12 w-full rounded-xl bg-danger text-sm font-semibold text-raised"
-          : "h-12 w-full text-sm text-muted"
+          ? "h-12 w-full rounded-btn bg-danger text-sm font-semibold text-raised"
+          : "h-12 w-full text-sm font-semibold text-muted"
       }
     >
       {armed ? "Tap again to discard this workout" : "Discard workout"}

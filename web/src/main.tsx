@@ -78,6 +78,7 @@ function App({ auth, api, initialUser, initialWorkout, initialPending }: AppProp
       <WorkoutScreen
         api={api}
         workout={workout}
+        userName={user.name}
         router={router}
         pending={queue.pending}
         onChange={update}

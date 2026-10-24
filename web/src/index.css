@@ -1,22 +1,60 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
 
 @theme {
-  --color-surface: #f4ece0;
-  --color-raised: #fffcf7;
-  --color-line: #e0d5c3;
-  --color-ink: #2f2925;
-  --color-muted: #6d6459;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: #f6efe4;
+  --color-raised: #fffaf3;
+  --color-line: #eadfcd;
+  --color-ink: #2a2420;
+  --color-muted: #75695c;
   /* Bright enough to fill a button, too pale to read as text on this background */
   --color-accent: #f97316;
-  --color-accent-ink: #bd3f08;
+  --color-accent-ink: #b6400a;
   --color-on-accent: #2b1a0e;
+  /* Behind chips and icon tiles; tint marks a selected row */
+  --color-soft: #fbe3cc;
+  --color-tint: #fff1e3;
   --color-danger: #a81f18;
+  --color-scrim: rgb(42 36 32 / 0.35);
+
+  --radius-btn: 18px;
+  --radius-card: 22px;
+
+  --shadow-card: 0 1px 2px rgb(60 30 0 / 0.06), 0 8px 24px rgb(60 30 0 / 0.08);
+  --shadow-glow: 0 6px 18px rgb(234 88 12 / 0.28);
+}
+
+/* Warm charcoal, following the phone's setting */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #16120f;
+    --color-raised: #211b17;
+    --color-line: #33291f;
+    --color-ink: #f5ece1;
+    --color-muted: #a8998a;
+    --color-accent: #fb8a3c;
+    --color-accent-ink: #fdac72;
+    --color-on-accent: #1f1209;
+    --color-soft: #3a2616;
+    --color-tint: #2a1f17;
+    --color-danger: #f87171;
+    --color-scrim: rgb(0 0 0 / 0.55);
+    --shadow-card: 0 8px 24px rgb(0 0 0 / 0.35);
+    --shadow-glow: 0 6px 18px rgb(0 0 0 / 0.4);
+  }
+}
+
+/* The main buttons and the last-workout card; the same in both modes */
+@utility bg-brasa {
+  background-image: linear-gradient(135deg, #fb923c, #ea580c);
 }
 
 html {
   background-color: var(--color-surface);
   color: var(--color-ink);
-  color-scheme: light;
+  color-scheme: light dark;
   /* No text resizing on rotation, no grey flash when tapping */
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -24,7 +62,9 @@ html {
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  /* Weights, reps and timers keep their width while they change */
+  font-variant-numeric: tabular-nums;
   /* A pull past the edge must not reload the page in the middle of a workout */
   overscroll-behavior: none;
 }

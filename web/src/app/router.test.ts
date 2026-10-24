@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseRoute, type Route, routePath } from "./router";
+import { canGoBack, parentOf, parseRoute, type Route, routePath } from "./router";
 
 const ROUTES: Route[] = [
   { name: "home" },
   { name: "history" },
   { name: "about" },
+  { name: "account" },
   { name: "workout", id: "01KZ8BHKC0N761RDSJY0HMX246" },
   { name: "start" },
   { name: "logging" },
@@ -42,5 +43,40 @@ describe("parseRoute and routePath", () => {
     expect(parseRoute("/", null)).toEqual({ name: "home" });
     expect(parseRoute("/nonsense", null)).toEqual({ name: "home" });
     expect(parseRoute("/workouts", null)).toEqual({ name: "home" });
+  });
+});
+
+describe("canGoBack", () => {
+  it("goes back to an entry this page load pushed", () => {
+    expect(canGoBack({ load: "a", depth: 1 }, "a", 1)).toBe(true);
+    expect(canGoBack({ load: "a", depth: 2, exerciseName: "Landmine Press" }, "a", 2)).toBe(true);
+  });
+
+  it("does not go back further than this page load pushed", () => {
+    expect(canGoBack({ load: "a", depth: 0 }, "a", 1)).toBe(false);
+    expect(canGoBack({ load: "a", depth: 1 }, "a", 2)).toBe(false);
+  });
+
+  it("does not trust an entry from an earlier load, which a reload keeps", () => {
+    expect(canGoBack({ load: "b", depth: 3 }, "a", 1)).toBe(false);
+  });
+
+  it("does not trust an entry with no state, as a link opened from outside has", () => {
+    expect(canGoBack(null, "a", 1)).toBe(false);
+    expect(canGoBack({ exerciseName: "Landmine Press" }, "a", 1)).toBe(false);
+  });
+});
+
+describe("parentOf", () => {
+  it("lands a workout's sheets on the workout", () => {
+    expect(parentOf({ name: "finish" })).toEqual({ name: "logging" });
+    expect(parentOf({ name: "exerciseHistory", exercise: "barbell-bench-press" })).toEqual({ name: "logging" });
+    expect(parentOf({ name: "newExercise", exerciseName: "" })).toEqual({ name: "logging" });
+  });
+
+  it("lands everything else home", () => {
+    expect(parentOf({ name: "account" })).toEqual({ name: "home" });
+    expect(parentOf({ name: "history" })).toEqual({ name: "home" });
+    expect(parentOf({ name: "workout", id: "01KZ8BHKC0N761RDSJY0HMX246" })).toEqual({ name: "home" });
   });
 });

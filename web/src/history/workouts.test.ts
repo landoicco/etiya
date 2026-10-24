@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Workout } from "@/platform/api";
-import { agoLabel, daysAgo, durationLabel, minutesOf, summaryLine, totalSets } from "./workouts";
+import {
+  agoLabel,
+  byMonth,
+  dateTile,
+  daysAgo,
+  durationLabel,
+  minutesOf,
+  summaryLine,
+  totalSets,
+} from "./workouts";
 
 // Only the times, the gym and the sets are read here, so the rest stays out of the way
 function workout(minutes: number, gymName: string | null, ...sets: number[]): Workout {
@@ -81,5 +90,48 @@ describe("agoLabel", () => {
   it("counts the days after that", () => {
     expect(agoLabel(at(1, 18).toISOString(), at(4, 9))).toMatch(/, 3 days ago$/);
     expect(agoLabel(at(1, 18).toISOString(), at(20, 9))).toMatch(/, 19 days ago$/);
+  });
+});
+
+function startedOn(year: number, month: number, day: number) {
+  return { startedAt: new Date(year, month, day, 18).toISOString() };
+}
+
+// Labels follow the phone's language, so these check the grouping, not the month's name
+describe("byMonth", () => {
+  const now = new Date(2026, 9, 24);
+
+  it("puts consecutive workouts of one month together, in the order given", () => {
+    const october = [startedOn(2026, 9, 21), startedOn(2026, 9, 3)];
+    const september = [startedOn(2026, 8, 29)];
+
+    const groups = byMonth([...october, ...september], now);
+
+    expect(groups.map((group) => group.workouts)).toEqual([october, september]);
+    expect(groups[0]?.label).not.toBe(groups[1]?.label);
+  });
+
+  it("names the year only for a month of another year", () => {
+    const groups = byMonth([startedOn(2026, 0, 5), startedOn(2025, 11, 30)], now);
+
+    expect(groups[0]?.label).not.toMatch(/2026/);
+    expect(groups[1]?.label).toMatch(/2025/);
+  });
+
+  it("tells the same month of two years apart", () => {
+    expect(byMonth([startedOn(2026, 9, 1), startedOn(2025, 9, 1)], now)).toHaveLength(2);
+  });
+
+  it("has nothing to group in an empty history", () => {
+    expect(byMonth([], now)).toEqual([]);
+  });
+});
+
+describe("dateTile", () => {
+  it("gives the day of the month and the weekday", () => {
+    const tile = dateTile(new Date(2026, 9, 21, 18).toISOString());
+
+    expect(tile.day).toBe("21");
+    expect(tile.weekday).not.toBe("");
   });
 });

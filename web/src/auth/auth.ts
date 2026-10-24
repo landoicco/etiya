@@ -11,10 +11,15 @@ import {
 import type { Config } from "@/platform/config";
 
 export interface User {
-  // Unknown when the app opens offline with an expired token: the session is still valid,
-  // but reading it needs a refresh, which needs the network
+  // Unknown only on a phone that has never been online with this session
   email: string | null;
+  // The first word of Cognito's optional `name` attribute, for the greeting
+  name: string | null;
 }
+
+// The last user read online, for when the app opens offline with an expired token: the
+// session is still valid, but reading it needs a refresh, which needs the network
+const REMEMBERED = "etiya-user";
 
 // What the app needs from a login. Screens only see this, never Amplify
 export interface Auth {
@@ -73,7 +78,7 @@ export function cognitoAuth(config: Config): Auth {
     try {
       const { isSignedIn, nextStep } = await signIn({ username: email, password });
       if (isSignedIn) {
-        return { kind: "signed-in", user: { email } };
+        return { kind: "signed-in", user: await signedIn(email) };
       }
       if (nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
         // Amplify keeps the challenge in memory; confirmNewPassword answers it
@@ -91,12 +96,12 @@ export function cognitoAuth(config: Config): Auth {
     async currentUser() {
       try {
         const user = await getCurrentUser();
-        return { email: user.signInDetails?.loginId ?? null };
+        return await signedIn(user.signInDetails?.loginId ?? null);
       } catch (error) {
         // An expired token that cannot be refreshed offline. Amplify keeps the session, and
         // sending the user to the login form in the middle of a workout would be worse
         if (isNetworkError(error)) {
-          return { email: null };
+          return remembered();
         }
         // No session, or Cognito rejected it
         return null;
@@ -111,7 +116,7 @@ export function cognitoAuth(config: Config): Auth {
         if (!isSignedIn) {
           throw unsupported(nextStep.signInStep);
         }
-        return { email: pendingEmail };
+        return await signedIn(pendingEmail);
       } catch (error) {
         throw toAuthError(error, "Could not save your password. Try again");
       }
@@ -151,6 +156,7 @@ export function cognitoAuth(config: Config): Auth {
 
     async signOut() {
       await signOut();
+      forget();
     },
 
     async getAccessToken() {
@@ -161,6 +167,41 @@ export function cognitoAuth(config: Config): Auth {
       return tokens.accessToken.toString();
     },
   };
+}
+
+// The ID token carries the name; the access token, the one the API reads, does not
+async function signedIn(email: string | null): Promise<User> {
+  const { tokens } = await fetchAuthSession();
+  const name = tokens?.idToken?.payload.name;
+  const first = typeof name === "string" ? (name.trim().split(/\s+/)[0] ?? "") : "";
+  return remember({ email, name: first === "" ? null : first });
+}
+
+// Storage can be off or full; the greeting is not worth failing a sign-in over
+function remember(user: User): User {
+  try {
+    localStorage.setItem(REMEMBERED, JSON.stringify(user));
+  } catch {
+    // Nothing to do
+  }
+  return user;
+}
+
+function remembered(): User {
+  try {
+    const user = JSON.parse(localStorage.getItem(REMEMBERED) ?? "null") as Partial<User> | null;
+    return { email: user?.email ?? null, name: user?.name ?? null };
+  } catch {
+    return { email: null, name: null };
+  }
+}
+
+function forget() {
+  try {
+    localStorage.removeItem(REMEMBERED);
+  } catch {
+    // Nothing to do
+  }
 }
 
 function unsupported(step: string): AuthError {
