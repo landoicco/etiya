@@ -10,6 +10,7 @@ import { useLastMonth, withQueued } from "@/history/lastMonth";
 import { agoLabel } from "@/history/workouts";
 import { useNow } from "@/platform/useNow";
 import type { WorkoutGym } from "@/workout/workout";
+import { Button } from "@/ui/Button";
 
 interface Props {
   api: Api;
@@ -56,13 +57,9 @@ export function HomeScreen({ api, user, queue, persisted, router, onSignOut, onS
       </nav>
 
       <footer className="mt-auto pt-6">
-        <button
-          type="button"
-          onClick={() => router.open({ name: "start" })}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent"
-        >
+        <Button icon="play" onClick={() => router.open({ name: "start" })}>
           Start workout
-        </button>
+        </Button>
       </footer>
 
       {/* Starting asks where first, which is the one thing about a workout that is known

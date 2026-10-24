@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import { Button } from "@/ui/Button";
 
 interface Props {
   title: string;
@@ -43,13 +44,9 @@ export function AuthForm({ title, subtitle, onBack, onSubmit, error, submitLabel
         </p>
 
         <footer className="mt-auto pt-6">
-          <button
-            type="submit"
-            disabled={submitDisabled}
-            className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
-          >
+          <Button type="submit" disabled={submitDisabled}>
             {submitLabel}
-          </button>
+          </Button>
         </footer>
       </form>
     </main>

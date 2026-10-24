@@ -1,6 +1,7 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { type Api, ApiError, type Gym, type NewGym } from "@/platform/api";
 import { slugOf } from "@/platform/slugs";
+import { Button } from "@/ui/Button";
 import {
   findGym,
   gymLabel,
@@ -117,22 +118,14 @@ export function GymPicker({ api, onStart, onCancel }: Props) {
         {/* Offered on the name alone: whether it is already there depends on the branch and
             city too, which are asked for on the next screen, and settled by the API's 409 */}
         {typed.length >= MIN_NAME && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="h-14 w-full truncate rounded-2xl border border-accent-ink px-4 font-semibold text-accent-ink"
-          >
+          <Button variant="accent" onClick={() => setAdding(true)}>
             + Add “{typed}”
-          </button>
+          </Button>
         )}
         {/* Training at home, or somewhere not worth cataloguing, must not be a dead end */}
-        <button
-          type="button"
-          onClick={() => start(null)}
-          className="h-14 w-full rounded-2xl border border-line font-semibold"
-        >
+        <Button variant="secondary" onClick={() => start(null)}>
           Start without a gym
-        </button>
+        </Button>
       </div>
     </Sheet>
   );
@@ -283,13 +276,9 @@ function NewGymForm({
       </div>
 
       <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
-        <button
-          type="submit"
-          disabled={input.city === "" || sending}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
-        >
+        <Button type="submit" disabled={input.city === "" || sending}>
           {sending ? "Adding…" : "Add and start"}
-        </button>
+        </Button>
       </div>
     </form>
   );

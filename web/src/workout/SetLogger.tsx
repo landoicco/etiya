@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GymSet, WeightUnit } from "@/platform/api";
+import { Button } from "@/ui/Button";
 import { Stepper } from "./Stepper";
 import { useConfirm } from "./useConfirm";
 import {
@@ -66,13 +67,9 @@ export function SetLogger({
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={() => onLog(set)}
-        className="mt-3 h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent"
-      >
+      <Button icon="check" onClick={() => onLog(set)} className="mt-3">
         Log set
-      </button>
+      </Button>
     </section>
   );
 }

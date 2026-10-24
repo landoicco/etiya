@@ -15,6 +15,7 @@ import {
   searchCatalog,
 } from "./catalog";
 import { normalize } from "@/platform/slugs";
+import { Button } from "@/ui/Button";
 import { useExerciseCatalog, useRegisterExercise } from "./exerciseCatalog";
 import { useExerciseArt } from "./artIndex";
 import { ArtSheet, ArtThumbnail } from "./ExerciseArt";
@@ -121,13 +122,9 @@ export function ExercisePicker({ api, router, onPick }: Props) {
 
       {typed.length >= MIN_NAME && findByName(catalog, typed) === null && (
         <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
-          <button
-            type="button"
-            onClick={() => router.open({ name: "newExercise", exerciseName: typed })}
-            className="h-14 w-full truncate rounded-2xl border border-accent-ink px-4 font-semibold text-accent-ink"
-          >
+          <Button variant="accent" onClick={() => router.open({ name: "newExercise", exerciseName: typed })}>
             + Add “{typed}”
-          </button>
+          </Button>
         </div>
       )}
 
@@ -292,13 +289,9 @@ function NewExercise({
       </div>
 
       <div className="safe-x safe-bottom border-t border-line bg-raised pt-3">
-        <button
-          type="submit"
-          disabled={muscleGroup === null || category === null || sending}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
-        >
+        <Button type="submit" disabled={muscleGroup === null || category === null || sending}>
           {sending ? "Adding…" : "Add exercise"}
-        </button>
+        </Button>
       </div>
     </form>
   );

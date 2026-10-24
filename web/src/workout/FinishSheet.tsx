@@ -1,6 +1,7 @@
 import { DiscardButton } from "./DiscardButton";
 import { Summary } from "./Summary";
 import { useNow } from "@/platform/useNow";
+import { Button } from "@/ui/Button";
 import {
   type ActiveWorkout,
   elapsedLabel,
@@ -59,14 +60,9 @@ export function FinishSheet({
       </div>
 
       <div className="safe-x safe-bottom space-y-2 border-t border-line bg-raised pt-3">
-        <button
-          type="button"
-          onClick={() => request && onSave(request)}
-          disabled={request === null}
-          className="h-16 w-full rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-40"
-        >
+        <Button onClick={() => request && onSave(request)} disabled={request === null}>
           Save workout
-        </button>
+        </Button>
         <DiscardButton onDiscard={onDiscard} />
       </div>
     </div>
