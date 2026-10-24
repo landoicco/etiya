@@ -28,6 +28,8 @@ CI runs the same: [.github/workflows/ci.yml](.github/workflows/ci.yml). The web 
 
 ## How we work
 
+- **Every session starts with a conversation, not code.** The user brings notes;
+  we go through them and agree on a plan and where to start before anything is edited.
 - **Discuss first, then write.** Propose the change, wait for agreement, then edit.
 - **Small steps: at most 10 files each.** A larger change is split, and every step leaves the checks green.
 - **When two steps are pending, ask which one is next.** An ambiguous "go on" is not an answer.
