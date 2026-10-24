@@ -6,3 +6,6 @@ bruno-tests/environments/Dev.bru
 # production credentials never go in a file, they are exported for the command that needs them.
 # The pattern is deliberately wide: no .env of any name is ever meant to be committed
 .env*
+
+# Draft of a pull request's description, read by `gh pr create --body-file`
+pr-body.md

@@ -35,6 +35,8 @@ CI runs the same: [.github/workflows/ci.yml](.github/workflows/ci.yml). The web 
 - **When two steps are pending, ask which one is next.** An ambiguous "go on" is not an answer.
 - **The user runs git and `gh`.** Commits, pushes, merges, tags and releases are theirs. Suggest commit messages in their style: a title line, then ` - ` bullet lines, in English. Separate commits over one mixed commit.
 - **`gh` is read-only here, and asked first.** PR status, CI runs, releases; nothing that writes.
+- **PR descriptions go in `pr-body.md`** at the repo root (gitignored), for the user's `gh pr create --body-file pr-body.md`. Overwritten for each PR.
+- **Push every 3 commits.** The PR is opened with the first push; at every third commit Claude reminds the user and updates `pr-body.md`, which they apply with `gh pr edit --body-file pr-body.md`.
 - **Every `cdk` or `aws` command needs an explicit yes, per command.** `cdk diff` is run by Claude with the account ID masked; `cdk deploy`, `npm run deploy` and `npm run deploy:art` are run by the user.
 - **Deploy scripts are tested offline**: a fake `aws` on `PATH` and no credentials, never a real run.
 - **Simple first.** A working app over future-proofing; add the abstraction when it is needed.
