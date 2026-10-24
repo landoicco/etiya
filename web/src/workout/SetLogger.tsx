@@ -31,13 +31,16 @@ export function SetLogger({
   const [set, setSet] = useState(draft);
 
   return (
-    <section className="safe-x safe-bottom border-t border-line bg-raised pt-4">
+    <section className="safe-x safe-bottom rounded-t-[26px] border-t border-line bg-raised pt-4 shadow-[0_-10px_30px_rgb(0_0_0/0.08)]">
       <div className="flex items-center justify-between gap-3">
-        <p className="truncate text-sm font-semibold text-muted">{exercise.name}</p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold">{exercise.name}</p>
+          <p className="text-xs text-muted">Set {exercise.sets.length + 1}</p>
+        </div>
         <UndoButton sets={exercise.sets.length} onUndo={onUndo} />
       </div>
 
-      <div className="mt-2 flex gap-3">
+      <div className="mt-3 flex gap-3">
         <Stepper
           label="Reps"
           value={set.count}
@@ -56,7 +59,7 @@ export function SetLogger({
         )}
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex gap-1 rounded-btn border border-line bg-surface p-1">
         {WEIGHT_UNITS.map((unit) => (
           <UnitButton
             key={unit}
@@ -84,7 +87,7 @@ function UndoButton({ sets, onUndo }: { sets: number; onUndo: () => void }) {
       type="button"
       onClick={onClick}
       disabled={sets === 0}
-      className={`h-11 shrink-0 rounded-xl px-3 text-sm font-semibold disabled:opacity-40 ${
+      className={`h-11 shrink-0 rounded-btn px-3.5 text-sm font-semibold disabled:opacity-40 ${
         armed ? "bg-danger text-raised" : "border border-line text-muted"
       }`}
     >
@@ -107,8 +110,8 @@ function UnitButton({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`h-11 flex-1 rounded-xl text-sm font-semibold ${
-        selected ? "bg-accent text-on-accent" : "border border-line text-muted"
+      className={`h-10 flex-1 rounded-[14px] text-sm font-bold ${
+        selected ? "bg-raised text-ink shadow-sm" : "text-muted"
       }`}
     >
       {UNIT_LABELS[unit]}

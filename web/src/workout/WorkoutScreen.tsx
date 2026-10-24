@@ -25,6 +25,8 @@ type Change = (workout: ActiveWorkout) => ActiveWorkout;
 interface Props {
   api: Api;
   workout: ActiveWorkout;
+  // For the finish sheet's "Nice work"
+  userName: string | null;
   router: Router;
   // Queued workouts count in the exercise stats
   pending: PendingWorkout[];
@@ -34,7 +36,7 @@ interface Props {
 }
 
 // The workout scrolls above and the set logger stays at the bottom, where the thumb is
-export function WorkoutScreen({ api, workout, router, pending, onChange, onFinish, onDiscard }: Props) {
+export function WorkoutScreen({ api, workout, userName, router, pending, onChange, onFinish, onDiscard }: Props) {
   useWakeLock();
   const exercise = currentExercise(workout);
   const { route } = router;
@@ -57,7 +59,7 @@ export function WorkoutScreen({ api, workout, router, pending, onChange, onFinis
         <button
           type="button"
           onClick={() => router.open({ name: "exercises" })}
-          className="mt-4 h-14 w-full rounded-2xl border border-line font-semibold"
+          className="mt-3 h-14 w-full rounded-card border-[1.5px] border-dashed border-line font-semibold text-muted"
         >
           + Add exercise
         </button>
@@ -102,6 +104,7 @@ export function WorkoutScreen({ api, workout, router, pending, onChange, onFinis
       {sheet === "finish" && (
         <FinishSheet
           workout={workout}
+          userName={userName}
           onSave={onFinish}
           onDiscard={onDiscard}
           onBack={router.close}
@@ -118,11 +121,14 @@ function Header({ workout, onFinish }: { workout: ActiveWorkout; onFinish: () =>
 
   return (
     <header className="flex items-center justify-between gap-4">
-      <p className="text-3xl font-bold tabular-nums">{elapsedLabel(workout, now)}</p>
+      <div className="min-w-0">
+        <p className="text-4xl leading-none font-bold tracking-tight">{elapsedLabel(workout, now)}</p>
+        <p className="mt-1.5 truncate text-sm text-muted">{workout.gymName ?? "No gym"}</p>
+      </div>
       <button
         type="button"
         onClick={onFinish}
-        className="h-11 shrink-0 rounded-xl border border-accent-ink px-4 text-sm font-semibold text-accent-ink"
+        className="h-11 shrink-0 rounded-btn border-[1.5px] border-accent-ink px-5 text-sm font-bold text-accent-ink"
       >
         Finish
       </button>

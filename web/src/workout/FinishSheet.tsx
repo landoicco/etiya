@@ -1,6 +1,7 @@
 import { DiscardButton } from "./DiscardButton";
 import { Summary } from "./Summary";
 import { useNow } from "@/platform/useNow";
+import { BottomSheet } from "@/ui/BottomSheet";
 import { Button } from "@/ui/Button";
 import {
   type ActiveWorkout,
@@ -15,11 +16,13 @@ import type { WorkoutRequest } from "@/platform/api";
 // mistake: a saved workout cannot be edited
 export function FinishSheet({
   workout,
+  userName,
   onSave,
   onDiscard,
   onBack,
 }: {
   workout: ActiveWorkout;
+  userName: string | null;
   onSave: (request: WorkoutRequest) => void;
   onDiscard: () => void;
   onBack: () => void;
@@ -29,51 +32,41 @@ export function FinishSheet({
   const dropped = workout.exercises.length - loggedExercises(workout);
 
   return (
-    <div className="fixed inset-0 z-10 flex h-dvh flex-col bg-surface">
-      <div className="safe-x safe-top flex items-start justify-between gap-4 pb-3">
-        <h2 className="text-2xl font-bold">Finish workout</h2>
-        <button type="button" onClick={onBack} className="h-11 shrink-0 px-2 text-sm text-muted">
-          Back
-        </button>
-      </div>
+    <BottomSheet onClose={onBack}>
+      <h2 className="text-2xl font-bold tracking-tight">{userName ? `Nice work, ${userName}` : "Nice work"}</h2>
 
-      <div className="safe-x min-h-0 flex-1 overflow-y-auto pb-4">
-        <dl className="rounded-2xl border border-line bg-raised p-5">
-          <Line term="Duration" value={elapsedLabel(workout, now)} />
-          <Line term="Gym" value={workout.gymName ?? "No gym"} />
-          <Line term="Exercises" value={String(loggedExercises(workout))} />
-          <Line term="Sets" value={String(loggedSets(workout))} />
-        </dl>
+      <dl className="mt-4 grid grid-cols-2 gap-2.5">
+        <Stat term="Duration" value={elapsedLabel(workout, now)} />
+        <Stat term="Gym" value={workout.gymName ?? "No gym"} text />
+        <Stat term="Exercises" value={String(loggedExercises(workout))} />
+        <Stat term="Sets" value={String(loggedSets(workout))} />
+      </dl>
 
-        {request !== null && <Summary request={request} />}
+      {request !== null && <Summary request={request} />}
 
-        {dropped > 0 && (
-          <p className="mt-3 text-sm text-muted">
-            {dropped === 1 ? "One exercise has" : `${dropped} exercises have`} no sets and will not
-            be saved.
-          </p>
-        )}
-
+      {/* Visible, not behind the info icon: it says what is about to be lost */}
+      {dropped > 0 && (
         <p className="mt-3 text-sm text-muted">
-          Saved on this phone first, and sent as soon as there is a connection.
+          {dropped === 1 ? "One exercise has" : `${dropped} exercises have`} no sets and will not
+          be saved.
         </p>
-      </div>
+      )}
 
-      <div className="safe-x safe-bottom space-y-2 border-t border-line bg-raised pt-3">
+      <div className="mt-4 space-y-1">
         <Button onClick={() => request && onSave(request)} disabled={request === null}>
           Save workout
         </Button>
         <DiscardButton onDiscard={onDiscard} />
       </div>
-    </div>
+    </BottomSheet>
   );
 }
 
-function Line({ term, value }: { term: string; value: string }) {
+function Stat({ term, value, text = false }: { term: string; value: string; text?: boolean }) {
   return (
-    <div className="flex justify-between gap-4 py-1">
-      <dt className="text-muted">{term}</dt>
-      <dd className="truncate font-semibold tabular-nums">{value}</dd>
+    <div className="min-w-0 rounded-[14px] border border-line bg-surface px-3.5 py-3">
+      <dt className="text-xs font-bold tracking-wider text-muted uppercase">{term}</dt>
+      <dd className={`mt-0.5 truncate font-bold ${text ? "pt-1 text-base" : "text-2xl"}`}>{value}</dd>
     </div>
   );
 }
