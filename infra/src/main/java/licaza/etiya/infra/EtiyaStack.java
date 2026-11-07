@@ -1,5 +1,6 @@
 package licaza.etiya.infra;
 
+import java.util.List;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -32,14 +33,36 @@ public class EtiyaStack extends Stack {
     this.database = new Database(this, "Database", kind);
     // A disposable environment is developed against localhost, which the API already allows,
     // so it skips the distribution: creating and destroying one costs about 15 minutes each way
-    this.web = kind == Kind.PRODUCTION ? new Web(this, "Web") : null;
+    this.web = kind == Kind.PRODUCTION ? new Web(this, "Web", configuredDomain()) : null;
     final String appUrl = web == null ? null : web.getUrl();
+    final List<String> appOrigins = web == null ? List.of() : web.getOrigins();
     // Web comes first: Auth links to it in the invitation email, and Api allows it in CORS
     this.auth = new Auth(this, "Auth", kind, appUrl);
     this.functions = new Functions(this, "Functions", database.getWorkoutsTable());
-    this.api = new Api(this, "Api", auth, functions, appUrl);
+    this.api = new Api(this, "Api", auth, functions, appOrigins);
 
     publishOutputs();
+  }
+
+  // From the context in cdk.json: all three keys, or none to serve on cloudfront.net. A fork
+  // puts its own there, see docs/deployment.md
+  private Web.Domain configuredDomain() {
+    String name = context("etiya:domainName");
+    String zoneName = context("etiya:hostedZoneName");
+    String zoneId = context("etiya:hostedZoneId");
+    if (name == null && zoneName == null && zoneId == null) {
+      return null;
+    }
+    if (name == null || zoneName == null || zoneId == null) {
+      throw new IllegalArgumentException(
+          "etiya:domainName, etiya:hostedZoneName and etiya:hostedZoneId go together");
+    }
+    return new Web.Domain(name, zoneName, zoneId);
+  }
+
+  private String context(final String key) {
+    Object value = getNode().tryGetContext(key);
+    return value == null ? null : value.toString();
   }
 
   // Printed by cdk deploy: everything needed to create a user, get a token and call the API.

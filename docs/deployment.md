@@ -10,7 +10,7 @@
 | `Auth` | Cognito user pool with self sign-up disabled, plus a public app client |
 | `Functions` | Three Lambdas (one per domain) with SnapStart, each exposed through a `live` alias |
 | `Api` | HTTP API with a Cognito JWT authorizer on every route, CORS, throttling and access logs |
-| `Web` | Private S3 bucket and a CloudFront distribution that serves the web app from it |
+| `Web` | Private S3 bucket and a CloudFront distribution that serves the web app from it, on its own domain when one is configured |
 
 ## Two environments
 
@@ -34,11 +34,10 @@ Every synth also runs [cdk-nag](decisions.md#security-rules-checked-on-every-syn
 
 ![Resources created by EtiyaProd](images/architecture.png)
 
-That diagram is generated from the CDK code rather than drawn, so it is right by construction — but only as of the last time somebody regenerated it, which belongs with any change to `infra/`:
+That diagram is drawn by hand ([`architecture.svg`](images/architecture.svg)), so it is only right until `infra/` changes: redraw it in the same change. To check it against what the stack really holds, `cdk-dia` draws the construct tree, into a file that is not committed:
 ```bash
 cd infra && cdk synth >/dev/null
-npx cdk-dia --include EtiyaProd \
-  --target-path "$(git rev-parse --show-toplevel)/docs/images/architecture.png"
+npx cdk-dia --include EtiyaProd --target-path /tmp/etiya-architecture.png
 ```
 `--include` matters now that there are two stacks: without it `cdk-dia` draws both in one image. `EtiyaProd` is the one worth showing, since dev is the same thing without `Web`.
 It reads `cdk.out/tree.json` and needs Graphviz, which the `infra` shell provides. Pass an absolute path: `cdk-dia` mangles relative ones that start with `..`.
@@ -63,6 +62,14 @@ cd infra && cdk bootstrap
 > ```
 > This only affects `bootstrap`, not `synth` or `deploy`.
 
+**A domain, optional.** The app is served on a name in a Route 53 hosted zone that already exists in the account, set in the `context` of [`infra/cdk.json`](../infra/cdk.json):
+```json
+"etiya:domainName": "etiya.licaza.dev",
+"etiya:hostedZoneName": "licaza.dev",
+"etiya:hostedZoneId": "Z0300615D56TUX8HMJGF"
+```
+A copy deployed to another account replaces the three with its own, or deletes them to be served on CloudFront's `*.cloudfront.net` address instead. All three or none: synth fails on a partial set. The zone id is `aws route53 list-hosted-zones-by-name --dns-name <zone>`, without the `/hostedzone/` prefix, and is given rather than looked up so that synth needs no credentials. The stack must be in `us-east-1`, the only region whose certificates CloudFront accepts.
+
 ## Deploying
 
 The Lambda jar is built first, since the CDK packages it as an asset:
@@ -75,7 +82,7 @@ cd ../infra && cdk deploy EtiyaProd
 
 The deploy prints everything needed to use the API:
 ```
-WebUrl           = https://<distribution-id>.cloudfront.net
+WebUrl           = https://etiya.licaza.dev    (https://<distribution-id>.cloudfront.net without a domain)
 WebBucketName    = etiyaprod-webbucketxxxxxxxx-xxxxxxxxxxxx
 ApiUrl           = https://<api-id>.execute-api.us-east-1.amazonaws.com
 UserPoolId       = us-east-1_xxxxxxxxx
@@ -85,7 +92,7 @@ TableName        = EtiyaProd-Workouts
 
 `cdk deploy EtiyaDev` prints the same list without the first two, since dev serves no web app.
 
-The first deploy takes a few minutes: it uploads the jar, publishes the SnapStart snapshots and creates the CloudFront distribution.
+The first deploy takes a few minutes: it uploads the jar, publishes the SnapStart snapshots and creates the CloudFront distribution. With a domain it also waits for the certificate, which ACM issues once the validation record it adds to the zone resolves, and renews by itself as long as that record stays.
 
 ## Deploying the web app
 
@@ -106,6 +113,16 @@ cd web && STACK=EtiyaDev npm run config
 * `config.json` is written after the build, so the same build works for any stack and none of those values is committed.
 * Files under `assets/` have a content hash in their name and are cached for a year. Everything else, including `index.html`, the service worker and `config.json`, is never cached, so a deploy reaches the phones on their next launch and no CloudFront invalidation is needed.
 * `assets/` is uploaded first, so a phone that fetches the new `index.html` mid-upload finds every file it points to. Old hashed files are not deleted, for phones still running the previous build.
+
+### Moving to a new address
+
+An installed app belongs to the address it was installed from, and so do its storage and its queue of unsent workouts: a new domain is a different app to the phone. The API allows the `cloudfront.net` origin as well as the domain, so the old app can still send what it holds. On each phone:
+
+1. Open the old app online and check the home screen shows no workout waiting to be sent.
+2. Remove it from the home screen.
+3. Open the new address, add it to the home screen, and sign in again.
+
+The old address keeps serving the app until it is retired: redirected to the domain and dropped from CORS, see [decisions](decisions.md#still-open).
 
 ### The exercise pictures
 
@@ -220,6 +237,35 @@ Its table, user pool and log groups use `RemovalPolicy.DESTROY`, so nothing is l
 
 > If a stack ever does own a bucket that CloudFormation refuses to delete, empty it first and run the destroy again. Production's bucket is versioned, so `aws s3 rm --recursive` is not enough: it leaves the old versions behind. **Empty** in the S3 console removes those too.
 
+## Looking at production
+
+Read-only commands, to see who has an account and what they have logged. `<POOL_ID>` and `<TABLE_NAME>` are the stack outputs `UserPoolId` and `TableName`.
+
+Who is in the pool, with their status and first name:
+```bash
+aws cognito-idp list-users --user-pool-id <POOL_ID> \
+  --query 'Users[].[Username, UserStatus, Attributes[?Name==`email`].Value | [0], Attributes[?Name==`name`].Value | [0]]' \
+  --output table
+```
+
+`Username` is the `sub`, the owner of that user's workouts. Their ten latest, newest first:
+```bash
+aws dynamodb query --table-name <TABLE_NAME> \
+  --key-condition-expression 'PK = :pk AND begins_with(SK, :prefix)' \
+  --expression-attribute-values '{":pk": {"S": "USER#<SUB>"}, ":prefix": {"S": "WORKOUT#"}}' \
+  --no-scan-index-forward --max-items 10 \
+  --projection-expression 'SK, startedAt, endedAt, gymName' --output table
+```
+
+One of them in full, by its `SK`:
+```bash
+aws dynamodb get-item --table-name <TABLE_NAME> \
+  --key '{"PK": {"S": "USER#<SUB>"}, "SK": {"S": "WORKOUT#<ULID>"}}' --output json
+```
+
+* A user's private exercises share that partition under `EXERCISE#`; the prefix keeps them out of the list.
+* Nothing here writes, and nothing scans the table.
+
 ## Cost
 
 Everything here fits the AWS free tier, with three exceptions worth knowing about:
@@ -235,13 +281,14 @@ Everything here fits the AWS free tier, with three exceptions worth knowing abou
 | S3 (CDK assets) | ⚠️ Each deploy uploads the ~54 MB jar. Cents per month, but old assets accumulate |
 | CloudFront | 1 TB of transfer and 10M requests per month, always free. Cache and header policies, Origin Access Control and error pages cost nothing. No invalidations are used |
 | S3 (web bucket) | ⚠️ Not in the always-free tier: a few hundred KB per build, plus one GET per app launch for the uncached files. A fraction of a cent per month |
+| Route 53 and ACM | Nothing added by the stack: alias queries to CloudFront are free, and so are public certificates. The hosted zone (~$0.50 a month) and the domain belong to the account already |
 
-Deliberately avoided: NAT gateways, customer-managed KMS keys, Secrets Manager, WAF, Lambda@Edge and a custom domain.
+Deliberately avoided: NAT gateways, customer-managed KMS keys, Secrets Manager, WAF, Lambda@Edge and a dedicated IP for the domain (SNI is free, a dedicated IP is ~$600 a month).
 
 ## Abuse and limits
 
 * Every route requires a valid Cognito token, and API Gateway answers `401` **before invoking any Lambda**, so unauthorized traffic costs no Lambda time. It still shows up in the access logs, with the source IP and the reason for the rejection.
 * Self sign-up is disabled, so knowing the URL is not enough to get an account.
 * The default stage throttles at 10 requests per second with a burst of 20.
-* **Honest limitation:** API Gateway bills for every request it receives, including the ones it rejects. A sustained flood at the throttle limit would cost real money, so the API URL is not published in this repo and a budget alarm is the safety net.
+* **Honest limitation:** API Gateway bills for every request it receives, including the ones it rejects, at ~$1 per million. The API URL is not in this repo, but it is not a secret either: the app's `config.json` carries it, and the domain appears in public certificate logs the moment its certificate is issued. What limits a sustained flood is the throttle, and the budget alarms are the safety net.
 * Still open: reserved concurrency per Lambda and a lower throttle. See [decisions](decisions.md#still-open).

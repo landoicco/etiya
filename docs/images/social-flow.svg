@@ -51,7 +51,7 @@
   <!-- CloudFront -> S3: the app itself -->
   <rect x="385" y="215" width="270" height="95" rx="18" fill="#211b17" stroke="#8B5CF6" stroke-width="2.5"/>
   <text x="520" y="256" fill="#f5ece1" font-size="25" font-weight="600" text-anchor="middle">CloudFront</text>
-  <text x="520" y="288" fill="#C4B5FD" font-size="18" text-anchor="middle">HTTPS · cache rules</text>
+  <text x="520" y="288" fill="#C4B5FD" font-size="18" text-anchor="middle">etiya.licaza.dev · HTTPS</text>
   <line x1="665" y1="262" x2="778" y2="262" stroke="#7a6c5f" stroke-width="3" marker-end="url(#arrow)"/>
   <rect x="790" y="215" width="290" height="95" rx="18" fill="#211b17" stroke="#22C55E" stroke-width="2.5"/>
   <text x="935" y="256" fill="#f5ece1" font-size="25" font-weight="600" text-anchor="middle">S3, private</text>

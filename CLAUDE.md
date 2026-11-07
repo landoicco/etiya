@@ -49,5 +49,5 @@ CI runs the same: [.github/workflows/ci.yml](.github/workflows/ci.yml). The web 
 - **The API changes only additively.** Installed apps and queued workouts on phones still speak the old shape.
 - **UI copy is English**; extra information goes behind an icon or a sheet, not on an always-visible line.
 - **Gym-domain assumptions come from the user**, not from guesses about how lifters train.
-- **Releases:** tags `web-vX.Y.Z` and `api-vX.Y.Z`, one per PR, titled `<tag> · <summary>`. Fixes ship as patches.
+- **Releases:** tags `web-vX.Y.Z` and `api-vX.Y.Z`, one per PR that changes the web app or the API, titled `<tag> · <summary>`. A PR that only changes infra or docs gets none; the next release's notes mention it. Fixes ship as patches.
 - **Exercise art is private**: it lives outside the repo (`ART_DIR`) and in S3, never in `web/public/`.

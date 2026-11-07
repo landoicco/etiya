@@ -3,5 +3,10 @@
   "watch": {
     "include": ["src/main/java/**"],
     "exclude": ["target", "cdk.out"]
+  },
+  "context": {
+    "etiya:domainName": "etiya.licaza.dev",
+    "etiya:hostedZoneName": "licaza.dev",
+    "etiya:hostedZoneId": "Z0300615D56TUX8HMJGF"
   }
 }

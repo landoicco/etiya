@@ -6,6 +6,8 @@ import software.amazon.awscdk.Acknowledgment;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Validations;
+import software.amazon.awscdk.services.certificatemanager.Certificate;
+import software.amazon.awscdk.services.certificatemanager.CertificateValidation;
 import software.amazon.awscdk.services.cloudfront.BehaviorOptions;
 import software.amazon.awscdk.services.cloudfront.CachePolicy;
 import software.amazon.awscdk.services.cloudfront.Distribution;
@@ -23,19 +25,31 @@ import software.amazon.awscdk.services.cloudfront.ResponseHeadersPolicy;
 import software.amazon.awscdk.services.cloudfront.ResponseHeadersReferrerPolicy;
 import software.amazon.awscdk.services.cloudfront.ResponseHeadersStrictTransportSecurity;
 import software.amazon.awscdk.services.cloudfront.ResponseSecurityHeadersBehavior;
+import software.amazon.awscdk.services.cloudfront.SecurityPolicyProtocol;
 import software.amazon.awscdk.services.cloudfront.ViewerProtocolPolicy;
 import software.amazon.awscdk.services.cloudfront.origins.S3BucketOrigin;
+import software.amazon.awscdk.services.route53.ARecord;
+import software.amazon.awscdk.services.route53.AaaaRecord;
+import software.amazon.awscdk.services.route53.HostedZone;
+import software.amazon.awscdk.services.route53.HostedZoneAttributes;
+import software.amazon.awscdk.services.route53.IHostedZone;
+import software.amazon.awscdk.services.route53.RecordTarget;
+import software.amazon.awscdk.services.route53.targets.CloudFrontTarget;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-// The PWA: a private bucket that only CloudFront can read, served on the default
-// cloudfront.net domain, which already has the HTTPS that service workers require.
+// The PWA: a private bucket that only CloudFront can read, served on its own domain when one
+// is configured, on the default cloudfront.net one otherwise.
 // The files are not part of the stack: web/scripts/deploy.sh builds and uploads them, and
 // web/scripts/deploy-art.sh the exercise pictures
 public class Web extends Construct {
+
+  // A name in a Route 53 zone that already exists. The zone is given by id: a lookup would
+  // need AWS credentials to synth and put the account id in cdk.context.json
+  public record Domain(String name, String zoneName, String zoneId) {}
 
   // Vite puts a content hash in every file name under assets/, so a new build never reuses a
   // name and those files can be cached forever. Everything else keeps its name between builds
@@ -47,9 +61,12 @@ public class Web extends Construct {
 
   private final Bucket bucket;
   private final Distribution distribution;
+  // Null when the app is served on cloudfront.net only
+  private final Domain domain;
 
-  public Web(final Construct scope, final String id) {
+  public Web(final Construct scope, final String id, final Domain domain) {
     super(scope, id);
+    this.domain = domain;
 
     this.bucket =
         Bucket.Builder.create(this, "Bucket")
@@ -71,7 +88,7 @@ public class Web extends Construct {
     // those, so the bucket stays private
     IOrigin origin = S3BucketOrigin.withOriginAccessControl(bucket);
 
-    this.distribution =
+    Distribution.Builder distributionBuilder =
         Distribution.Builder.create(this, "Distribution")
             .comment("Etiya web app")
             .defaultRootObject("index.html")
@@ -88,8 +105,54 @@ public class Web extends Construct {
             // S3 answers 403 for a missing key when the caller cannot list the bucket
             .errorResponses(List.of(spaFallback(403), spaFallback(404)))
             // North America and Europe only: the cheapest edge locations
-            .priceClass(PriceClass.PRICE_CLASS_100)
-            .build();
+            .priceClass(PriceClass.PRICE_CLASS_100);
+
+    IHostedZone zone = null;
+    if (domain != null) {
+      zone =
+          HostedZone.fromHostedZoneAttributes(
+              this,
+              "Zone",
+              HostedZoneAttributes.builder()
+                  .hostedZoneId(domain.zoneId())
+                  .zoneName(domain.zoneName())
+                  .build());
+      // CloudFront only takes certificates from us-east-1, where the stack lives
+      Certificate certificate =
+          Certificate.Builder.create(this, "Certificate")
+              .domainName(domain.name())
+              .validation(CertificateValidation.fromDns(zone))
+              .build();
+      distributionBuilder
+          .domainNames(List.of(domain.name()))
+          .certificate(certificate)
+          .minimumProtocolVersion(SecurityPolicyProtocol.TLS_V1_2_2021);
+    }
+    this.distribution = distributionBuilder.build();
+
+    if (domain != null) {
+      // Alias records: Route 53 answers them for free, and CloudFront serves IPv6 too
+      RecordTarget target = RecordTarget.fromAlias(new CloudFrontTarget(distribution));
+      ARecord.Builder.create(this, "Record")
+          .zone(zone)
+          .recordName(domain.name())
+          .target(target)
+          .build();
+      AaaaRecord.Builder.create(this, "RecordIpv6")
+          .zone(zone)
+          .recordName(domain.name())
+          .target(target)
+          .build();
+    } else {
+      Validations.of(distribution)
+          .acknowledge(
+              Acknowledgment.builder()
+                  .id("AwsSolutions-CFR4")
+                  .reason(
+                      "The default cloudfront.net certificate does not allow choosing the"
+                          + " minimum TLS version; configuring a domain does")
+                  .build());
+    }
 
     Validations.of(bucket)
         .acknowledge(
@@ -117,12 +180,6 @@ public class Web extends Construct {
                 .reason(
                     "Access logs would need a log bucket; the API access logs already record"
                         + " every call that matters")
-                .build(),
-            Acknowledgment.builder()
-                .id("AwsSolutions-CFR4")
-                .reason(
-                    "The default cloudfront.net certificate does not allow choosing the minimum"
-                        + " TLS version; that needs a custom domain, see docs/decisions.md")
                 .build());
   }
 
@@ -181,8 +238,18 @@ public class Web extends Construct {
         .build();
   }
 
-  // Origin of the app, for CORS on the API and for the stack outputs
+  // Where the app is opened, for the invitation email and the stack outputs
   public String getUrl() {
+    return domain == null ? defaultUrl() : "https://" + domain.name();
+  }
+
+  // For CORS on the API. The cloudfront.net origin stays until the apps installed from it
+  // have been reinstalled from the domain
+  public List<String> getOrigins() {
+    return domain == null ? List.of(defaultUrl()) : List.of(getUrl(), defaultUrl());
+  }
+
+  private String defaultUrl() {
     return "https://" + distribution.getDistributionDomainName();
   }
 
