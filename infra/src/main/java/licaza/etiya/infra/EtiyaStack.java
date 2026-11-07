@@ -1,5 +1,6 @@
 package licaza.etiya.infra;
 
+import java.util.List;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -34,10 +35,11 @@ public class EtiyaStack extends Stack {
     // so it skips the distribution: creating and destroying one costs about 15 minutes each way
     this.web = kind == Kind.PRODUCTION ? new Web(this, "Web") : null;
     final String appUrl = web == null ? null : web.getUrl();
+    final List<String> appOrigins = web == null ? List.of() : web.getOrigins();
     // Web comes first: Auth links to it in the invitation email, and Api allows it in CORS
     this.auth = new Auth(this, "Auth", kind, appUrl);
     this.functions = new Functions(this, "Functions", database.getWorkoutsTable());
-    this.api = new Api(this, "Api", auth, functions, appUrl);
+    this.api = new Api(this, "Api", auth, functions, appOrigins);
 
     publishOutputs();
   }
