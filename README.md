@@ -19,7 +19,7 @@ Two halves. A serverless API in Java and Spring Cloud Function on AWS Lambda, be
 ```mermaid
 flowchart LR
     Phone["PWA on a phone<br/>logs sets offline"]
-    Phone -->|"app shell"| CF["CloudFront + S3"]
+    Phone -->|"app shell"| CF["etiya.licaza.dev<br/>CloudFront + S3"]
     Phone -->|"sign-in (SRP)"| Cognito["Cognito<br/>user pool"]
     Phone -->|"Bearer token"| API["HTTP API<br/>JWT authorizer"]
     Cognito -. "validates tokens" .-> API
