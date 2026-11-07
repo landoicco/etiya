@@ -16,6 +16,7 @@ import {
   identityOf,
   logSet,
   nextSet,
+  removeCurrentExercise,
   selectExercise,
   undoLastSet,
 } from "./workout";
@@ -49,31 +50,36 @@ export function WorkoutScreen({ api, workout, userName, router, pending, onChang
 
   return (
     <main className="flex h-dvh flex-col">
-      <div className="safe-x safe-top min-h-0 flex-1 overflow-y-auto pb-6">
+      <div className="safe-x safe-top min-h-0 flex-1 overflow-y-auto">
         <Header workout={workout} onFinish={() => router.open({ name: "finish" })} />
         <ExerciseList
           workout={workout}
           onSelect={(index) => onChange((current) => selectExercise(current, index))}
           onHistory={(logged) => router.open({ name: "exerciseHistory", exercise: identityOf(logged) })}
         />
-        <button
-          type="button"
-          onClick={() => router.open({ name: "exercises" })}
-          className="mt-3 h-14 w-full rounded-card border-[1.5px] border-dashed border-line font-semibold text-muted"
-        >
-          + Add exercise
-        </button>
+        {/* Pinned above the set logger once the list scrolls, with the list fading under it */}
+        <div className="sticky bottom-0 bg-linear-to-t from-surface from-70% to-transparent pt-5 pb-4">
+          <button
+            type="button"
+            onClick={() => router.open({ name: "exercises" })}
+            className="h-12 w-full rounded-card border-[1.5px] border-dashed border-line bg-surface font-semibold text-muted"
+          >
+            + Add exercise
+          </button>
+        </div>
       </div>
 
       {exercise && (
-        // A logged or undone set is a new draft, so the logger starts over from what the
-        // next set should suggest
+        // Another exercise, or a logged or undone set, is a new draft, so the logger starts over
+        // from what the next set should suggest. Keyed by identity, not position, which a
+        // removed exercise shifts
         <SetLogger
-          key={`${workout.currentExerciseIndex}:${exercise.sets.length}`}
+          key={`${identityOf(exercise)}:${exercise.sets.length}`}
           exercise={exercise}
           draft={nextSet(workout)}
           onLog={(set) => onChange((current) => logSet(current, set))}
           onUndo={() => onChange(undoLastSet)}
+          onRemove={() => onChange(removeCurrentExercise)}
         />
       )}
 

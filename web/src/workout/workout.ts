@@ -112,6 +112,22 @@ export function undoLastSet(workout: ActiveWorkout): ActiveWorkout {
   return replaceCurrent(workout, { ...current, sets: current.sets.slice(0, -1) });
 }
 
+// Only an exercise without sets goes, so removing one never loses a set: those are undone
+// first. The logger moves to the exercise before it, or after it when it was the first
+export function removeCurrentExercise(workout: ActiveWorkout): ActiveWorkout {
+  const current = currentExercise(workout);
+  if (current === null || current.sets.length > 0) {
+    return workout;
+  }
+  const removed = workout.currentExerciseIndex;
+  const exercises = workout.exercises.filter((_, index) => index !== removed);
+  return {
+    ...workout,
+    exercises,
+    currentExerciseIndex: Math.min(Math.max(removed - 1, 0), exercises.length - 1),
+  };
+}
+
 // What the set logger opens with: the same set again, since sets repeat far more often
 // than they change. A new exercise starts from the unit already in use in this workout
 export function nextSet(workout: ActiveWorkout): GymSet {
