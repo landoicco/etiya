@@ -22,11 +22,13 @@ export function SetLogger({
   draft,
   onLog,
   onUndo,
+  onRemove,
 }: {
   exercise: LoggedExercise;
   draft: GymSet;
   onLog: (set: GymSet) => void;
   onUndo: () => void;
+  onRemove: () => void;
 }) {
   const [set, setSet] = useState(draft);
 
@@ -37,7 +39,7 @@ export function SetLogger({
           <p className="truncate text-sm font-bold">{exercise.name}</p>
           <p className="text-xs text-muted">Set {exercise.sets.length + 1}</p>
         </div>
-        <UndoButton sets={exercise.sets.length} onUndo={onUndo} />
+        <UndoButton sets={exercise.sets.length} onUndo={onUndo} onRemove={onRemove} />
       </div>
 
       <div className="mt-3 flex gap-3">
@@ -78,20 +80,28 @@ export function SetLogger({
 }
 
 // By the exercise name, away from "Log set", where it was hit by mistake. Two taps: an undone
-// set is gone
-function UndoButton({ sets, onUndo }: { sets: number; onUndo: () => void }) {
-  const { armed, onClick } = useConfirm(onUndo);
+// set is gone. With no sets left it removes the exercise, so one added by mistake can go
+function UndoButton({
+  sets,
+  onUndo,
+  onRemove,
+}: {
+  sets: number;
+  onUndo: () => void;
+  onRemove: () => void;
+}) {
+  const empty = sets === 0;
+  const { armed, onClick } = useConfirm(empty ? onRemove : onUndo);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={sets === 0}
-      className={`h-11 shrink-0 rounded-btn px-3.5 text-sm font-semibold disabled:opacity-40 ${
+      className={`h-11 shrink-0 rounded-btn px-3.5 text-sm font-semibold ${
         armed ? "bg-danger text-raised" : "border border-line text-muted"
       }`}
     >
-      {armed ? "Tap again" : "Undo set"}
+      {armed ? "Tap again" : empty ? "Remove" : "Undo set"}
     </button>
   );
 }

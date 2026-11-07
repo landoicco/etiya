@@ -9,6 +9,7 @@ import {
   loggedSets,
   logSet,
   nextSet,
+  removeCurrentExercise,
   selectExercise,
   setLabel,
   setUnit,
@@ -35,6 +36,12 @@ function kg(count: number, weight: number): GymSet {
 function workoutWith(...sets: GymSet[]): ActiveWorkout {
   const started = addExercise(startWorkout(START, null), BENCH);
   return sets.reduce(logSet, started);
+}
+
+// Bench, squat and pull-up, none with sets, with the logger on the given one
+function threeOn(index: number): ActiveWorkout {
+  const workout = [BENCH, SQUAT, PULL_UP].reduce(addExercise, startWorkout(START, null));
+  return selectExercise(workout, index);
 }
 
 describe("startWorkout", () => {
@@ -162,6 +169,50 @@ describe("logSet and undoLastSet", () => {
 
     expect(second.exercises[0]?.sets).toEqual([kg(12, 60)]);
     expect(undoLastSet(second).exercises[0]?.sets).toEqual([kg(12, 60)]);
+  });
+});
+
+describe("removeCurrentExercise", () => {
+  it("removes the current exercise and moves to the one before it", () => {
+    const workout = removeCurrentExercise(threeOn(2));
+
+    expect(workout.exercises.map((exercise) => exercise.name)).toEqual([
+      "Barbell Bench Press",
+      "Barbell Squat",
+    ]);
+    expect(currentExercise(workout)?.name).toBe("Barbell Squat");
+  });
+
+  it("moves to the next one when the first is removed", () => {
+    const workout = removeCurrentExercise(threeOn(0));
+
+    expect(workout.exercises).toHaveLength(2);
+    expect(currentExercise(workout)?.name).toBe("Barbell Squat");
+  });
+
+  it("leaves an empty workout when the only exercise is removed", () => {
+    const workout = removeCurrentExercise(addExercise(startWorkout(START, null), BENCH));
+
+    expect(workout.exercises).toEqual([]);
+    expect(currentExercise(workout)).toBeNull();
+  });
+
+  it("refuses an exercise that still has sets", () => {
+    const workout = workoutWith(kg(12, 60));
+
+    expect(removeCurrentExercise(workout)).toBe(workout);
+  });
+
+  it("goes once its sets have been undone", () => {
+    const undone = undoLastSet(workoutWith(kg(12, 60)));
+
+    expect(removeCurrentExercise(undone).exercises).toEqual([]);
+  });
+
+  it("does nothing on a workout without exercises", () => {
+    const workout = startWorkout(START, null);
+
+    expect(removeCurrentExercise(workout)).toBe(workout);
   });
 });
 

@@ -16,6 +16,7 @@ import {
   identityOf,
   logSet,
   nextSet,
+  removeCurrentExercise,
   selectExercise,
   undoLastSet,
 } from "./workout";
@@ -66,14 +67,16 @@ export function WorkoutScreen({ api, workout, userName, router, pending, onChang
       </div>
 
       {exercise && (
-        // A logged or undone set is a new draft, so the logger starts over from what the
-        // next set should suggest
+        // Another exercise, or a logged or undone set, is a new draft, so the logger starts over
+        // from what the next set should suggest. Keyed by identity, not position, which a
+        // removed exercise shifts
         <SetLogger
-          key={`${workout.currentExerciseIndex}:${exercise.sets.length}`}
+          key={`${identityOf(exercise)}:${exercise.sets.length}`}
           exercise={exercise}
           draft={nextSet(workout)}
           onLog={(set) => onChange((current) => logSet(current, set))}
           onUndo={() => onChange(undoLastSet)}
+          onRemove={() => onChange(removeCurrentExercise)}
         />
       )}
 
