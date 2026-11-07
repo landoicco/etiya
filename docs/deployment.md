@@ -220,6 +220,35 @@ Its table, user pool and log groups use `RemovalPolicy.DESTROY`, so nothing is l
 
 > If a stack ever does own a bucket that CloudFormation refuses to delete, empty it first and run the destroy again. Production's bucket is versioned, so `aws s3 rm --recursive` is not enough: it leaves the old versions behind. **Empty** in the S3 console removes those too.
 
+## Looking at production
+
+Read-only commands, to see who has an account and what they have logged. `<POOL_ID>` and `<TABLE_NAME>` are the stack outputs `UserPoolId` and `TableName`.
+
+Who is in the pool, with their status and first name:
+```bash
+aws cognito-idp list-users --user-pool-id <POOL_ID> \
+  --query 'Users[].[Username, UserStatus, Attributes[?Name==`email`].Value | [0], Attributes[?Name==`name`].Value | [0]]' \
+  --output table
+```
+
+`Username` is the `sub`, the owner of that user's workouts. Their ten latest, newest first:
+```bash
+aws dynamodb query --table-name <TABLE_NAME> \
+  --key-condition-expression 'PK = :pk AND begins_with(SK, :prefix)' \
+  --expression-attribute-values '{":pk": {"S": "USER#<SUB>"}, ":prefix": {"S": "WORKOUT#"}}' \
+  --no-scan-index-forward --max-items 10 \
+  --projection-expression 'SK, startedAt, endedAt, gymName' --output table
+```
+
+One of them in full, by its `SK`:
+```bash
+aws dynamodb get-item --table-name <TABLE_NAME> \
+  --key '{"PK": {"S": "USER#<SUB>"}, "SK": {"S": "WORKOUT#<ULID>"}}' --output json
+```
+
+* A user's private exercises share that partition under `EXERCISE#`; the prefix keeps them out of the list.
+* Nothing here writes, and nothing scans the table.
+
 ## Cost
 
 Everything here fits the AWS free tier, with three exceptions worth knowing about:

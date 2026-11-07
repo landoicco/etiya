@@ -134,10 +134,10 @@ Both halves are in production since September 2026: the API at `api-v1.0.0`, the
 Next, in this order, one release at a time and each used for a few days before the next:
 
 1. **The project's own domain**, `etiya.licaza.dev`, instead of CloudFront's. Installed apps are reinstalled once, so it comes after the new icon.
-2. **A page that explains the app before signing in**: what it is for and what it does, shown as a carousel, with the sign-in button always in reach. About moves there, and a shared link previews the same pictures.
-3. **A workout clock that pauses when it is forgotten**: after 10 minutes without a set it stops, and asks whether to resume or finish.
-4. **Removing an exercise during a workout** by swiping it away, after a confirmation. To be evaluated.
-5. **Correcting a logged set**, so a typo does not skew an exercise's average. To be evaluated: workouts are deliberately not editable today.
-6. **Java packages under `dev.licaza`**, matching the domain, with its URL in the project's metadata.
+2. **A workout screen that keeps its controls in reach**: "Add exercise" always visible above the set logger, and "Undo set" turning into "Remove" on an exercise without sets, so one added by mistake can go.
+3. **Java packages under `dev.licaza`**, matching the domain, with its URL in the project's metadata.
+4. **A page that explains the app before signing in**: what it is for and what it does, shown as a carousel, with the sign-in button always in reach. About moves there, and a shared link previews the same pictures.
+5. **A workout clock that pauses when it is forgotten**: after 10 minutes without a set it stops, and asks whether to resume or finish.
+6. **Correcting a logged set**, so a typo does not skew an exercise's average. To be evaluated: workouts are deliberately not editable today.
 
 After that come the things the app has already asked for while being used: the first set of an exercise starting from last session's numbers, and cardio logged as time rather than reps. What comes later, and the trigger for each, lives in the [still open](docs/decisions.md#still-open) table.
