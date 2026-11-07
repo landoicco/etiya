@@ -41,16 +41,15 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-// The PWA: a private bucket that only CloudFront can read, served on etiya.licaza.dev.
+// The PWA: a private bucket that only CloudFront can read, served on its own domain when one
+// is configured, on the default cloudfront.net one otherwise.
 // The files are not part of the stack: web/scripts/deploy.sh builds and uploads them, and
 // web/scripts/deploy-art.sh the exercise pictures
 public class Web extends Construct {
 
-  // The zone already exists, registered with the domain. Its id is not a credential, and a
-  // lookup would need AWS credentials to synth and put the account id in cdk.context.json
-  private static final String ZONE_NAME = "licaza.dev";
-  private static final String ZONE_ID = "Z0300615D56TUX8HMJGF";
-  private static final String DOMAIN = "etiya." + ZONE_NAME;
+  // A name in a Route 53 zone that already exists. The zone is given by id: a lookup would
+  // need AWS credentials to synth and put the account id in cdk.context.json
+  public record Domain(String name, String zoneName, String zoneId) {}
 
   // Vite puts a content hash in every file name under assets/, so a new build never reuses a
   // name and those files can be cached forever. Everything else keeps its name between builds
@@ -62,9 +61,12 @@ public class Web extends Construct {
 
   private final Bucket bucket;
   private final Distribution distribution;
+  // Null when the app is served on cloudfront.net only
+  private final Domain domain;
 
-  public Web(final Construct scope, final String id) {
+  public Web(final Construct scope, final String id, final Domain domain) {
     super(scope, id);
+    this.domain = domain;
 
     this.bucket =
         Bucket.Builder.create(this, "Bucket")
@@ -86,25 +88,9 @@ public class Web extends Construct {
     // those, so the bucket stays private
     IOrigin origin = S3BucketOrigin.withOriginAccessControl(bucket);
 
-    IHostedZone zone =
-        HostedZone.fromHostedZoneAttributes(
-            this,
-            "Zone",
-            HostedZoneAttributes.builder().hostedZoneId(ZONE_ID).zoneName(ZONE_NAME).build());
-
-    // CloudFront only takes certificates from us-east-1, where the stack already lives
-    Certificate certificate =
-        Certificate.Builder.create(this, "Certificate")
-            .domainName(DOMAIN)
-            .validation(CertificateValidation.fromDns(zone))
-            .build();
-
-    this.distribution =
+    Distribution.Builder distributionBuilder =
         Distribution.Builder.create(this, "Distribution")
             .comment("Etiya web app")
-            .domainNames(List.of(DOMAIN))
-            .certificate(certificate)
-            .minimumProtocolVersion(SecurityPolicyProtocol.TLS_V1_2_2021)
             .defaultRootObject("index.html")
             .defaultBehavior(
                 behavior(origin, CachePolicy.CACHING_DISABLED, headers("NeverCache", NEVER_CACHE)))
@@ -119,17 +105,54 @@ public class Web extends Construct {
             // S3 answers 403 for a missing key when the caller cannot list the bucket
             .errorResponses(List.of(spaFallback(403), spaFallback(404)))
             // North America and Europe only: the cheapest edge locations
-            .priceClass(PriceClass.PRICE_CLASS_100)
-            .build();
+            .priceClass(PriceClass.PRICE_CLASS_100);
 
-    // Alias records: Route 53 answers them for free, and CloudFront serves IPv6 too
-    RecordTarget target = RecordTarget.fromAlias(new CloudFrontTarget(distribution));
-    ARecord.Builder.create(this, "Record").zone(zone).recordName(DOMAIN).target(target).build();
-    AaaaRecord.Builder.create(this, "RecordIpv6")
-        .zone(zone)
-        .recordName(DOMAIN)
-        .target(target)
-        .build();
+    IHostedZone zone = null;
+    if (domain != null) {
+      zone =
+          HostedZone.fromHostedZoneAttributes(
+              this,
+              "Zone",
+              HostedZoneAttributes.builder()
+                  .hostedZoneId(domain.zoneId())
+                  .zoneName(domain.zoneName())
+                  .build());
+      // CloudFront only takes certificates from us-east-1, where the stack lives
+      Certificate certificate =
+          Certificate.Builder.create(this, "Certificate")
+              .domainName(domain.name())
+              .validation(CertificateValidation.fromDns(zone))
+              .build();
+      distributionBuilder
+          .domainNames(List.of(domain.name()))
+          .certificate(certificate)
+          .minimumProtocolVersion(SecurityPolicyProtocol.TLS_V1_2_2021);
+    }
+    this.distribution = distributionBuilder.build();
+
+    if (domain != null) {
+      // Alias records: Route 53 answers them for free, and CloudFront serves IPv6 too
+      RecordTarget target = RecordTarget.fromAlias(new CloudFrontTarget(distribution));
+      ARecord.Builder.create(this, "Record")
+          .zone(zone)
+          .recordName(domain.name())
+          .target(target)
+          .build();
+      AaaaRecord.Builder.create(this, "RecordIpv6")
+          .zone(zone)
+          .recordName(domain.name())
+          .target(target)
+          .build();
+    } else {
+      Validations.of(distribution)
+          .acknowledge(
+              Acknowledgment.builder()
+                  .id("AwsSolutions-CFR4")
+                  .reason(
+                      "The default cloudfront.net certificate does not allow choosing the"
+                          + " minimum TLS version; configuring a domain does")
+                  .build());
+    }
 
     Validations.of(bucket)
         .acknowledge(
@@ -217,13 +240,17 @@ public class Web extends Construct {
 
   // Where the app is opened, for the invitation email and the stack outputs
   public String getUrl() {
-    return "https://" + DOMAIN;
+    return domain == null ? defaultUrl() : "https://" + domain.name();
   }
 
   // For CORS on the API. The cloudfront.net origin stays until the apps installed from it
   // have been reinstalled from the domain
   public List<String> getOrigins() {
-    return List.of(getUrl(), "https://" + distribution.getDistributionDomainName());
+    return domain == null ? List.of(defaultUrl()) : List.of(getUrl(), defaultUrl());
+  }
+
+  private String defaultUrl() {
+    return "https://" + distribution.getDistributionDomainName();
   }
 
   // Where the deploy script uploads the build
