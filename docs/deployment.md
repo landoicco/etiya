@@ -34,11 +34,10 @@ Every synth also runs [cdk-nag](decisions.md#security-rules-checked-on-every-syn
 
 ![Resources created by EtiyaProd](images/architecture.png)
 
-That diagram is generated from the CDK code rather than drawn, so it is right by construction — but only as of the last time somebody regenerated it, which belongs with any change to `infra/`:
+That diagram is drawn by hand ([`architecture.svg`](images/architecture.svg)), so it is only right until `infra/` changes: redraw it in the same change. To check it against what the stack really holds, `cdk-dia` draws the construct tree, into a file that is not committed:
 ```bash
 cd infra && cdk synth >/dev/null
-npx cdk-dia --include EtiyaProd \
-  --target-path "$(git rev-parse --show-toplevel)/docs/images/architecture.png"
+npx cdk-dia --include EtiyaProd --target-path /tmp/etiya-architecture.png
 ```
 `--include` matters now that there are two stacks: without it `cdk-dia` draws both in one image. `EtiyaProd` is the one worth showing, since dev is the same thing without `Web`.
 It reads `cdk.out/tree.json` and needs Graphviz, which the `infra` shell provides. Pass an absolute path: `cdk-dia` mangles relative ones that start with `..`.
